@@ -90,7 +90,6 @@ ROLLBACK;
 
 
 # Check seat availability
-# Ticket booking
 DROP PROCEDURE seat_availability;
 
 DELIMITER //
