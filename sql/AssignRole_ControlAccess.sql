@@ -1,10 +1,21 @@
 -- Create account for admin and ticket clerk
-CREATE USER 'Admin'@'local_host' IDENTIFIED BY 'Admin_password';
-CREATE USER 'Ticket_clerk'@'local_host' IDENTIFIED BY 'Clerk_password';
--- Provide privileges for admin and ticket clerk
-GRANT ALL PRIVILEGES ON cinema_management.* TO 'Admin'@'local_host';
-GRANT SELECT, INSERT ON cinema_management.movies TO 'Ticket_clerk'@'local_host';
-GRANT SELECT, INSERT ON cinema_management.customers TO 'Ticket_clerk'@'local_host';
-GRANT SELECT, INSERT ON cinema_management.tickets TO 'Ticket_clerk'@'local_host';
--- Revoke Update, Delete from ticket clerk for customers information
-REVOKE UPDATE, DELETE ON cinema_management.customers FROM 'Ticket_clerk'@'local_host';
+CREATE USER 'admin'@'localhost' IDENTIFIED BY 'quang123';
+CREATE USER 'manager'@'localhost' IDENTIFIED BY 'khang123';
+CREATE USER 'ticket_clerk'@'localhost' IDENTIFIED BY 'dat123';
+
+-- Admin
+GRANT ALL PRIVILEGES ON admin.* TO 'admin'@'localhost';
+
+-- Manager
+GRANT SELECT, INSERT, UPDATE, DELETE ON cinema_management.movies TO 'manager'@'localhost';
+GRANT SELECT, INSERT, UPDATE, DELETE ON cinema_management.screenings TO 'manager'@'localhost';
+GRANT SELECT, UPDATE, INSERT, DELETE ON cinema_management.customers TO 'manager'@'localhost';
+GRANT SELECT, INSERT, UPDATE, DELETE ON cinema_management.tickets TO 'manager'@'localhost';
+
+-- Ticket_clerk 
+GRANT SELECT ON cinema_management.movies TO 'ticket_clerk'@'localhost';
+GRANT SELECT ON cinema_management.screenings TO 'ticket_clerk'@'localhost';
+GRANT SELECT ON cinema_management.cinemarooms TO 'ticket_clerk'@'localhost';
+
+GRANT SELECT, INSERT ON cinema_management.customers TO 'ticket_clerk'@'localhost';
+GRANT SELECT, INSERT ON cinema_management.tickets TO 'ticket_clerk'@'localhost';
