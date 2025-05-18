@@ -1,10 +1,10 @@
 -- Create account for admin and ticket clerk
-CREATE USER 'cinema_owner'@'localhost' IDENTIFIED BY 'quang123';
+CREATE USER 'admin'@'localhost' IDENTIFIED BY 'quang123';
 CREATE USER 'manager'@'localhost' IDENTIFIED BY 'khang123';
 CREATE USER 'ticket_clerk'@'localhost' IDENTIFIED BY 'dat123';
 
 -- cinema_owner
-GRANT ALL PRIVILEGES ON cinema_management.* TO 'admin'@'localhost';
+GRANT ALL PRIVILEGES ON admin.* TO 'admin'@'localhost';
 
 -- Manager
 GRANT SELECT, INSERT, UPDATE, DELETE ON cinema_management.movies TO 'manager'@'localhost';
