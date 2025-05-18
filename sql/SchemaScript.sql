@@ -1,3 +1,4 @@
+DROP DATABASE cinema_management;
 -- Generate script:
 CREATE DATABASE cinema_management;
 
@@ -16,8 +17,16 @@ CREATE TABLE CinemaRooms
 (
   RoomID INT NOT NULL AUTO_INCREMENT,
   RoomName VARCHAR(100) NOT NULL,
-  Capacity INT NOT NULL,
   PRIMARY KEY (RoomID)
+);
+
+CREATE TABLE Seats
+(
+SeatID INT NOT NULL AUTO_INCREMENT,
+RoomID INT NOT NULL,
+SeatNumber VARCHAR(100) NOT NULL,
+PRIMARY KEY (SeatID),
+FOREIGN KEY (RoomID) REFERENCES CinemaRooms(RoomID)
 );
 
 CREATE TABLE Customers
@@ -46,8 +55,9 @@ CREATE TABLE Tickets
   TicketID INT NOT NULL AUTO_INCREMENT,
   CustomerID INT NOT NULL,
   ScreeningID INT NOT NULL,
-  SeatNumber VARCHAR(100) NOT NULL,
+  SeatID INT NOT NULL,
   PRIMARY KEY (TicketID),
   FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID),
-  FOREIGN KEY (ScreeningID) REFERENCES Screenings(ScreeningID)
+  FOREIGN KEY (ScreeningID) REFERENCES Screenings(ScreeningID),
+  FOREIGN KEY (SeatID) REFERENCES Seats(SeatID)
 );

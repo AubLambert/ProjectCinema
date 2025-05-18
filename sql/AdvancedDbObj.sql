@@ -17,24 +17,37 @@ ON screenings(ScreeningDate);
 -- Views
 # Summaries of daily screening
 CREATE OR REPLACE VIEW daily_screening AS
-SELECT s.ScreeningDate, m.MovieTitle, r.RoomName, COUNT(s.MovieID) AS total_screening
-FROM screenings s
-JOIN movies m ON s.movieID = m.movieID
-JOIN cinemarooms r ON s.RoomID = r.RoomID
-WHERE s.ScreeningDate = CURDATE()
-GROUP BY ScreeningDate, MovieTitle, RoomName;
+SELECT 
+  s.ScreeningDate AS 'Date',
+  m.MovieTitle AS 'Movie title',
+  r.RoomName AS 'Room',
+  s.ScreeningTime AS 'Time',
+  COUNT(DISTINCT se.SeatID) AS 'Total seats',
+  COUNT(DISTINCT t.SeatID) AS 'Booked seats',
+  COUNT(DISTINCT se.SeatID) - COUNT(DISTINCT t.SeatID) AS 'Available seats'
+FROM Screenings s
+JOIN Movies m ON s.MovieID = m.MovieID
+JOIN CinemaRooms r ON s.RoomID = r.RoomID
+JOIN Seats se ON se.RoomID = r.RoomID
+LEFT JOIN Tickets t 
+  ON t.ScreeningID = s.ScreeningID AND t.SeatID = se.SeatID
+WHERE s.ScreeningDate = '2025-05-11' -- Replace with desired date
+GROUP BY s.ScreeningID, s.ScreeningDate, m.MovieTitle, r.RoomName, s.ScreeningTime;
 
+-- View usage:
 SELECT * FROM daily_screening;
 
 # Available seats
 CREATE OR REPLACE VIEW available_seat AS
-SELECT s.ScreeningDate, m.MovieTitle, r.RoomName, r.Capacity, COUNT(t.SeatNumber) AS Booked_seats, r.Capacity - COUNT(t.SeatNumber) AS available_seats
-FROM screenings s
-JOIN movies m ON s.movieID = m.movieID
-JOIN cinemarooms r ON s.RoomID = r.RoomID
-JOIN tickets t ON s.ScreeningID = t.ScreeningID
-WHERE s.ScreeningDate = CURDATE()
-GROUP BY ScreeningDate, MovieTitle, RoomName, r.Capacity;
+SELECT s.ScreeningDate AS 'Date', m.MovieTitle AS 'Movie title', r.RoomName AS 'Room name', COUNT(t.SeatID) AS 'Booked seats', COUNT(se.SeatID) - COUNT(t.SeatID) AS 'Available seats'
+FROM Screenings s
+JOIN Movies m ON s.MovieID = m.MovieID
+JOIN CinemaRooms r ON s.RoomID = r.RoomID
+JOIN Seats se ON se.RoomID = r.RoomID
+LEFT JOIN Tickets t 
+  ON t.ScreeningID = s.ScreeningID AND t.SeatID = se.SeatID
+WHERE s.ScreeningDate = '2025-05-11' -- replace any date you want
+GROUP BY ScreeningDate, MovieTitle, RoomName;
 
 SELECT * FROM available_seat;
 
