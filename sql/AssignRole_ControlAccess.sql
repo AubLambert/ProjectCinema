@@ -3,7 +3,7 @@ CREATE USER 'admin'@'localhost' IDENTIFIED BY 'quang123';
 CREATE USER 'manager'@'localhost' IDENTIFIED BY 'khang123';
 CREATE USER 'ticket_clerk'@'localhost' IDENTIFIED BY 'dat123';
 
--- cinema_owner
+-- Admin
 GRANT ALL PRIVILEGES ON admin.* TO 'admin'@'localhost';
 
 -- Manager
@@ -19,5 +19,3 @@ GRANT SELECT ON cinema_management.cinemarooms TO 'ticket_clerk'@'localhost';
 
 GRANT SELECT, INSERT ON cinema_management.customers TO 'ticket_clerk'@'localhost';
 GRANT SELECT, INSERT ON cinema_management.tickets TO 'ticket_clerk'@'localhost';
-
-
