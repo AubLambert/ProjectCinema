@@ -123,49 +123,23 @@ DROP PROCEDURE seat_availability;
 
 DELIMITER //
 CREATE PROCEDURE seat_availability (
-    IN screening_id INT, 
-    IN seat_code VARCHAR(100), 
-    OUT result VARCHAR(100)
+    IN screening_id INT
 )
 BEGIN
-    DECLARE room_id INT;
-    DECLARE seat_id INT;
-    DECLARE seat_taken INT;
-    proc_check: BEGIN
-        -- Validate screening
-        SELECT RoomID INTO room_id FROM Screenings 
-        WHERE ScreeningID = screening_id;
-        
-        IF room_id IS NULL THEN
-            SET result = 'Screening does not exist';
-            LEAVE proc_check;
-        END IF;
-
-        -- Validate seat number
-        SELECT SeatID INTO seat_id FROM Seats 
-        WHERE RoomID = room_id AND SeatNumber = seat_code;
-        
-        IF seat_id IS NULL THEN
-            SET result = 'Seat not found in the screening room';
-            LEAVE proc_check;
-        END IF;
-
+         -- Validate screening existence
+		IF NOT EXISTS (SELECT 1 FROM Screenings WHERE ScreeningID = screening_id) THEN
+			SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Screening does not exist';
+		END IF;
+    
         -- Check seat availability
-        SELECT COUNT(*) INTO seat_taken FROM Tickets 
-        WHERE ScreeningID = screening_id AND SeatID = seat_id;
-        
-        IF seat_taken > 0 THEN
-            SET result = 'Seat is already taken';
-        ELSE
-            SET result = 'Seat is available';
-        END IF;
-    END proc_check;
+        SELECT SeatID FROM seats s JOIN screenings sc ON s.RoomID = sc.RoomID
+        WHERE ScreeningID = screening_id
+			AND s.SeatID NOT IN (SELECT t.SeatID FROM tickets t WHERE t.ScreeningID = screening_id);
 END //
 DELIMITER ;
 
 # Testing stored procedure
-CALL seat_availability(3, 'B2', @result);
-SELECT @result;
+CALL seat_availability(1);
 
 -- User defined functions
 # Calculate occupancy rate
