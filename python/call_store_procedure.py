@@ -9,38 +9,58 @@ mydb = mysql.connector.connect(
 
 mycursor = mydb.cursor()
 
-#Seat booking call store procedure
 
-cust_name = input("Enter Customer name: ")
-cust_phone = input("Enter Phone number: ")
-screening_id = input("Enter Screening ID: ")
-seat_number = input("Enter Seat Number: ")
+# Call store procedure seat availability
 
-def call_seat_availability(screening_id, seat_number):
+def call_seat_availability(screening_id, seat_code):
     try:
-        mycursor.callproc('seat_availability', (screening_id, seat_number, ''))
+        mycursor.callproc('seat_availability', (screening_id, seat_code, ''))
+        availability_status = results[2]
         mydb.commit()
-        print("Seat is available!")
+        print(f"Seat availability: {availability_status}")
+        return availability_status
     except mysql.connector.errors as err:
         print(f"Seat check failed: {err.msg}")
+        return None
 
-def call_ticket_booking(cust_name, cust_phone, screening_id, seat_number):
+# Call store procedure ticket booking
+def call_ticket_booking(cust_name, cust_phone, screening_id, seat_code):
     try:
-        result = mycursor.callproc('ticket_booking', (cust_name, cust_phone, screening_id, seat_number, ''))
+        result = mycursor.callproc('ticket_booking', (cust_name, cust_phone, screening_id, seat_code, ''))
         booking_status = result[4]
 
         print("Booking result:", booking_status)
 
     except mysql.connector.Error as err:
-        print(f"Error during booking: {err.msg}")
+        print(f"Error booking ticket: {err.msg}")
+
+#Booking seat program
+def booking_seat_process():
+    print("Welcome to the Cinema Booking System")
+    cust_name = input("Enter customer name: ")
+    cust_phone = input("Enter phone number: ")
+    screening_id = int(input("Enter screening ID: "))
+    seat_code = input("Enter seat code: ")
+
+    availability = call_seat_availability(screening_id, seat_code)
+
+    if availability == 'Seat is available':
+        call_ticket_booking(cust_name, cust_phone, screening_id, seat_code)
+    else:
+        print("Booking cancelled due to seat unavailability.")
+
+booking_seat_process()
+
 
 # Find customer's ticket through phone number
 
 def find_tickets_by_phone(phone_number):
     query = """
-    SELECT t.TicketID, c.CustomerName, t.ScreeningID, t.SeatNumber
+    SELECT t.TicketID, c.CustomerName, t.ScreeningID, s.ScreeningDate, s.ScreeningTime, se.SeatNumber
     FROM Tickets t
     JOIN Customers c ON t.CustomerID = c.CustomerID
+    JOIN Screenings s ON t.ScreeningID = s.ScreeningID
+    JOIN Seats se ON t.SeatID = se.SeatID
     WHERE c.PhoneNumber = %s
     """
     mycursor.execute(query, (phone_number,))
@@ -52,10 +72,10 @@ def find_tickets_by_phone(phone_number):
 
     print("Tickets found:")
     for row in results:
-        print(f"TicketID: {row[0]}, Customer: {row[1]}, ScreeningID: {row[2]}, Seat: {row[3]}")
+        print(f"TicketID: {row[0]}, Customer: {row[1]}, ScreeningID: {row[2]}, Date: {row[3]}, Time: {row[4]}, Seat: {row[5]}")
     return results
 
-#Cancellation
+#Cancellation confirmation
 
 def cancel_ticket(ticket_id):
     while True:
