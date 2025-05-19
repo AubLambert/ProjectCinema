@@ -14,7 +14,7 @@ mycursor = mydb.cursor()
 
 def call_seat_availability(screening_id, seat_code):
     try:
-        mycursor.callproc('seat_availability', (screening_id, seat_code, ''))
+        results = mycursor.callproc('seat_availability', (screening_id, seat_code, ''))
         availability_status = results[2]
         mydb.commit()
         print(f"Seat availability: {availability_status}")
