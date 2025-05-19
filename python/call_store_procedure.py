@@ -12,16 +12,23 @@ mycursor = mydb.cursor()
 
 # Call store procedure seat availability
 
-def call_seat_availability(screening_id, seat_code):
+def call_seat_availability(screening_id):
     try:
-        results = mycursor.callproc('seat_availability', (screening_id, seat_code, ''))
-        availability_status = results[2]
-        mydb.commit()
-        print(f"Seat availability: {availability_status}")
-        return availability_status
-    except mysql.connector.errors as err:
-        print(f"Seat check failed: {err.msg}")
-        return None
+         mycursor.callproc('seat_availability', (screening_id,))
+         for result in mycursor.stored_results():
+            rows = result.fetchall()
+        
+            if not rows:
+                print("No available seats found.")
+                return []
+
+            print("Available seats:")
+            for row in rows:
+                print(f"- SeatID: {row[0]}")
+            return [row[0] for row in rows]  
+    except mysql.connector.Error as err:
+        print(f"Error checking seat availability: {err.msg}")
+        return []
 
 # Call store procedure ticket booking
 def call_ticket_booking(cust_name, cust_phone, screening_id, seat_code):
@@ -42,12 +49,13 @@ def booking_seat_process():
     screening_id = int(input("Enter screening ID: "))
     seat_code = input("Enter seat code: ")
 
-    availability = call_seat_availability(screening_id, seat_code)
+    available_seats = call_seat_availability(screening_id, seat_code)
 
-    if availability == 'Seat is available':
-        call_ticket_booking(cust_name, cust_phone, screening_id, seat_code)
-    else:
-        print("Booking cancelled due to seat unavailability.")
+    if not available_seats:
+        print("Cannot proceed with booking because there are no available seats.")
+        return
+
+    call_ticket_booking(cust_name, cust_phone, screening_id, seat_code)
 
 booking_seat_process()
 
