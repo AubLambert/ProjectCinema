@@ -1,6 +1,31 @@
 import tkinter as tk
+from tkinter import messagebox
 from tkinter import font
 from PIL import Image, ImageTk
+import mysql.connector
+from mysql.connector import Error
+
+def login():
+    global connection
+    username = account_entry.get()
+    password = password_entry.get()
+
+    try:
+        connection = mysql.connector.connect(
+            host='localhost',
+            user=username,
+            password=password,
+            database='cinema_management'
+        )
+
+        if connection.is_connected():
+            messagebox.showinfo("Login Success", f"Welcome, {username}")
+        else:
+            messagebox.showerror("Login Failed", f"Error Occurred")
+
+    except Error as F:
+        messagebox.showerror("Login Failed", f"Invalid username or password.\n\n{F}")
+
 
 root = tk.Tk()
 root.title("LIEMORA Cinema Login")
@@ -32,7 +57,7 @@ password_label.pack()
 password_entry = tk.Entry(frame, show="*", width=30)
 password_entry.pack(pady=5)
 
-login_button = tk.Button(frame, text="Login", width=10)
+login_button = tk.Button(frame, text="Login", width=10, command=login)
 login_button.pack(pady=10)
 
 root.mainloop()
