@@ -45,6 +45,8 @@ CREATE TABLE Screenings
   RoomID INT NOT NULL,
   ScreeningDate DATE NOT NULL,
   ScreeningTime TIME NOT NULL,
+  MovieFormat VARCHAR(100) NOT NULL,
+  Price FLOAT NOT NULL,
   PRIMARY KEY (ScreeningID),
   FOREIGN KEY (MovieID) REFERENCES Movies(MovieID),
   FOREIGN KEY (RoomID) REFERENCES CinemaRooms(RoomID)
@@ -60,4 +62,17 @@ CREATE TABLE Tickets
   FOREIGN KEY (CustomerID) REFERENCES Customers(CustomerID),
   FOREIGN KEY (ScreeningID) REFERENCES Screenings(ScreeningID),
   FOREIGN KEY (SeatID) REFERENCES Seats(SeatID)
+);
+
+CREATE TABLE Payments
+(
+  PaymentID INT NOT NULL AUTO_INCREMENT,
+  CustomerID INT NOT NULL,
+  ScreeningID INT NOT NULL,
+  TicketID INT NOT NULL,
+  Amount FLOAT NOT NULL,
+  PRIMARY KEY (PaymentID),
+  FOREIGN KEY (CustomerID) REFERENCES customers(CustomerID),
+  FOREIGN KEY (ScreeningID) REFERENCES Screenings(ScreeningID),
+  FOREIGN KEY (TicketID) REFERENCES Tickets(TicketID)
 );
