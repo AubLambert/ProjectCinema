@@ -5,7 +5,7 @@ SELECT * FROM customers;
 SELECT * FROM movies;
 SELECT * FROM screenings;
 SELECT * FROM tickets;
-
+SELECT * FROM seats;
 
 -- Index
 CREATE INDEX idx_title
@@ -166,3 +166,33 @@ DELIMITER ;
 # Testing stored procedure
 CALL seat_availability(3, 'B2', @result);
 SELECT @result;
+
+-- User defined functions
+# Calculate occupancy rate
+DROP FUNCTION calc_OccupancyRate
+
+DELIMITER $$
+CREATE FUNCTION calc_OccupancyRate(screen_ID INT)
+RETURNS DECIMAL(5,2)
+DETERMINISTIC
+BEGIN
+	DECLARE total_seats INT;
+    DECLARE booked_seats INT;
+    SET total_seats = (
+		SELECT COUNT(se.SeatID) 
+        FROM seats se
+		WHERE se.RoomID = (
+			SELECT s.RoomID FROM screenings s WHERE s.ScreeningID = screen_ID)
+		);
+	SET booked_seats = (
+		SELECT COUNT(t.SeatID)
+        FROM tickets t
+		WHERE t.ScreeningID = screen_ID
+        );
+        
+	 RETURN (booked_seats/total_seats)*100;
+END $$
+DELIMITER ;
+
+# Testing UDF
+SELECT calc_OccupancyRate(1) AS 'Occupacy Rate (%)'
