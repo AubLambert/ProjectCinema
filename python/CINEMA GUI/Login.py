@@ -7,7 +7,7 @@ root.title("LIEMORA Cinema Login")
 root.geometry("650x450")
 root.resizable(True, True)
 
-bg_image = Image.open(r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\CINEMA GUI\Cat.jpg")
+bg_image = Image.open(r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Cat.jpg")
 bg_image = bg_image.resize((650, 450), Image.LANCZOS)
 bg_photo = ImageTk.PhotoImage(bg_image)
 
