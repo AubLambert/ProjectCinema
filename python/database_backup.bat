@@ -1,4 +1,4 @@
-rem path to your mysql server 8.0 bin folder
+rem path to mysql server 8.0 bin folder
 cd "C:\Program Files\MySQL\MySQL Server 8.0\bin"
 
 set mysql_user=root
