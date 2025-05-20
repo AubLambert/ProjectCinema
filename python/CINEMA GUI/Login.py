@@ -6,7 +6,6 @@ import mysql.connector
 from mysql.connector import Error
 
 def login():
-    global connection
     username = account_entry.get()
     password = password_entry.get()
 
