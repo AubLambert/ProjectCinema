@@ -1,6 +1,14 @@
 import tkinter as tk
 from tkinter import Label, Frame, Button, Toplevel
 from PIL import Image, ImageTk
+import mysql.connector
+
+mydb = mysql.connector.connect(
+    host = "localhost",
+    user = "admin",
+    password = "quang123",
+    database="cinema_management"
+)
 
 root = tk.Tk()
 root.title("Movie Selection")
