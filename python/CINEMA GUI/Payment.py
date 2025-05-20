@@ -3,6 +3,7 @@ from tkinter import Label, Frame, Button, Toplevel, StringVar
 from PIL import Image, ImageTk
 from datetime import datetime
 import mysql.connector
+from mysql.connector import Error
 
 mydb = mysql.connector.connect(
     host = "localhost",
@@ -71,13 +72,28 @@ def calculate_amount_due(*args):
 
 
 def confirm_form():
+    customer_name = customer_name_entry.get().strip()
+    phone = phone_entry.get().strip()
+
     day = day_entry.get().strip()
     month = month_entry.get().strip()
     year = year_entry.get().strip()
+    dob = None
+    if day and month and year:
+        dob = f"{year}-{month:0>2}-{day:0>2}"
 
-    dob = ""
-    if day or month or year:
-        dob = f"{day:0>2}/{month:0>2}/{year}" if day and month and year else f"{day}/{month}/{year}"
+    try:
+        mycursor = mydb.cursor()
+        sql = "INSERT INTO Customers (customername, phonenumber, dob) VALUES (%s, %s, %s)"
+        values = (customer_name, phone, dob)
+        mycursor.execute(sql, values)
+        mydb.commit()
+        print("Customer data inserted successfully.")
+    except mysql.connector.Error as err:
+        print("Error:", err)
+    finally:
+        if mycursor:
+            mycursor.close()
 
 root = tk.Tk()
 root.title("Customer Form")
@@ -135,6 +151,5 @@ discount_entry.bind('<FocusOut>', calculate_amount_due)
 price_entry.insert(0, "")
 discount_entry.insert(0, "")
 calculate_amount_due()
-
 
 root.mainloop()
