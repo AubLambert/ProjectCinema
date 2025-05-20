@@ -5,22 +5,22 @@ import mysql.connector
 from mysql.connector import Error
 
 timeslot_window = None
-connection = None
+mydb = None
 
 def login():
     username = account_entry.get()
     password = password_entry.get()
 
     try:
-        global connection
-        connection = mysql.connector.connect(
+        global mydb
+        mydb = mysql.connector.connect(
             host='localhost',
             user=username,
             password=password,
             database='cinema_management'
         )
 
-        if connection.is_connected():
+        if mydb.is_connected():
             messagebox.showinfo("Login Success", f"Welcome, {username}")
             root.withdraw()
             movie_selection_gui()
@@ -73,7 +73,7 @@ def movie_selection_gui():
     root2.configure(bg="white")
 
     def log_off():
-        connection.close()
+        mydb.close()
         root2.destroy()
         root.deiconify()
 
