@@ -36,7 +36,7 @@ root.title("LIEMORA Cinema Login")
 root.geometry("650x450")
 root.resizable(True, True)
 
-bg_image = Image.open(r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Cat.jpg") #"Copy as path" ảnh CAT trong folder images
+bg_image = Image.open(r"D:\Works\BA\Database management\ProjectCinema\python\Images\Cat.jpg") #"Copy as path" ảnh CAT trong folder images
 bg_image = bg_image.resize((650, 450), Image.LANCZOS)
 bg_photo = ImageTk.PhotoImage(bg_image)
 
@@ -94,12 +94,12 @@ def movie_selection_gui():
 
     # Chọn ảnh trong folder images ở python
     movie_images = [
-        r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-        r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-        r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-        r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-        r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-        r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg"
+        r"D:\Works\BA\Database management\ProjectCinema\python\Images\Johnwick.jpg",
+        r"D:\Works\BA\Database management\ProjectCinema\python\Images\Johnwick.jpg",
+        r"D:\Works\BA\Database management\ProjectCinema\python\Images\Johnwick.jpg",
+        r"D:\Works\BA\Database management\ProjectCinema\python\Images\Johnwick.jpg",
+        r"D:\Works\BA\Database management\ProjectCinema\python\Images\Johnwick.jpg",
+        r"D:\Works\BA\Database management\ProjectCinema\python\Images\Johnwick.jpg"
     ]
 
     timeslot_window = None

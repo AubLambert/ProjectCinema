@@ -71,6 +71,7 @@ CREATE TABLE Payments
   ScreeningID INT NOT NULL,
   TicketID INT NOT NULL,
   Amount FLOAT NOT NULL,
+  PayTime DATETIME DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (PaymentID),
   FOREIGN KEY (CustomerID) REFERENCES customers(CustomerID),
   FOREIGN KEY (ScreeningID) REFERENCES Screenings(ScreeningID),
