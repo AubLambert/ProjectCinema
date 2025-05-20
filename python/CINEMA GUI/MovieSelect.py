@@ -24,12 +24,12 @@ movie_titles = [
 
 # Chọn ảnh trong folder images ở python
 movie_images = [
-    r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-    r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-    r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-    r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-    r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-    r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg"
+    r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\Johnwick.jpg",
+    r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\EdgeOfTomorrow.jpg",
+    r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\Interstellar.jpg",
+    r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\Coco.jpg",
+    r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\Parasite.jpg",
+    r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\TheRevenant.jpg"
 ]
 
 timeslot_window = None
