@@ -63,6 +63,7 @@ password_entry.pack(pady=5)
 
 login_button = tk.Button(frame, text="Login", width=10, command=login)
 login_button.pack(pady=10)
+root.bind("<Return>", lambda event: login())
 
 def movie_selection_gui():
     global timeslot_window
