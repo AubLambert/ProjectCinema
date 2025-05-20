@@ -42,7 +42,6 @@ def validate_year_input(text):
     if len(text) > 4:
         return False
     return True
-
 def calculate_amount_due(*args):
     try:
         price_text = price_entry.get().strip()
@@ -70,11 +69,9 @@ def calculate_amount_due(*args):
     except ValueError:
         amount_due_var.set("0.00")
 
-
 def confirm_form():
     customer_name = customer_name_entry.get().strip()
     phone = phone_entry.get().strip()
-
     day = day_entry.get().strip()
     month = month_entry.get().strip()
     year = year_entry.get().strip()
