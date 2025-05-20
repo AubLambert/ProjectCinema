@@ -40,7 +40,7 @@ def timeslot_gui(movie_title):
         timeslot_window.title(f"Select Timeslot - {movie_title}")
         timeslot_window.geometry("500x400")
         Label(timeslot_window, text=f"Timeslots for '{movie_title}'", font=14).pack(pady=20)
-        for time in ["X", "X", "X", "X"]: #thay đổi timeslot ở đây
+        for time in ["X", "X", "X",  "X"]: #thay đổi timeslot ở đây
             Button(timeslot_window, text=time, width=15).pack(pady=5)
         timeslot_window.transient(root)
         timeslot_window.grab_set()
