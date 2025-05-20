@@ -32,7 +32,7 @@ JOIN CinemaRooms r ON s.RoomID = r.RoomID
 JOIN Seats se ON se.RoomID = r.RoomID
 LEFT JOIN Tickets t 
   ON t.ScreeningID = s.ScreeningID AND t.SeatID = se.SeatID
-WHERE s.ScreeningDate = '2025-05-11' -- Replace with desired date
+WHERE s.ScreeningDate = '2025-05-11' -- Change date
 GROUP BY s.ScreeningID, s.ScreeningDate, m.MovieTitle, r.RoomName, s.ScreeningTime;
 
 -- View usage:
@@ -47,7 +47,7 @@ JOIN CinemaRooms r ON s.RoomID = r.RoomID
 JOIN Seats se ON se.RoomID = r.RoomID
 LEFT JOIN Tickets t 
   ON t.ScreeningID = s.ScreeningID AND t.SeatID = se.SeatID
-WHERE s.ScreeningDate = '2025-05-11' -- replace any date you want
+WHERE s.ScreeningDate = '2025-05-11' -- change date
 GROUP BY ScreeningDate, MovieTitle, RoomName;
 
 SELECT * FROM available_seat;
