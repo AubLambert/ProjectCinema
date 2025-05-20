@@ -149,10 +149,9 @@ def movie_selection_gui():
         label = Label(grid_frame, text=title, font=10, bg="white")
         label.grid(row=row + 1, column=col, pady=(0, vertical_spacing))
 def open_admin_dashboard():
-    admin_window = tk.Toplevel()
+    admin_window = tk.Toplevel(root)
     admin_window.title("Admin Dashboard")
-    admin_window.geometry("800x500")
-    tk.Label(admin_window, text="Welcome to the Admin Dashboard", font=(14)).pack(pady=50)
-    admin_window.mainloop()
+    admin_window.geometry("1000x700")
+    admin_window.configure(bg="white")
 root.mainloop()
 
