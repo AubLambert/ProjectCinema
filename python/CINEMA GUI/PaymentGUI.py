@@ -46,7 +46,7 @@ Label(root, text="Amount Due:").place(x=500, y=340)
 amount_due_entry = tk.Entry(root, width=20)
 amount_due_entry.place(x=600, y=340)
 
-complete_button = Button(root, text="Confirm",font=10, width=15, command=calculate_amount_due)
+complete_button = Button(root, text="Confirm",font=10, width=15)
 complete_button.place(x=330, y=420)
 
 root.mainloop()
