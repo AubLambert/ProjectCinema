@@ -23,7 +23,10 @@ def login():
         if mydb.is_connected():
             messagebox.showinfo("Login Success", f"Welcome, {username}")
             root.withdraw()
-            movie_selection_gui()
+            if username == "admin":
+                open_admin_dashboard()
+            else:
+                movie_selection_gui()
         else:
             messagebox.showerror("Login Failed", f"Error Occurred")
 
@@ -145,4 +148,11 @@ def movie_selection_gui():
 
         label = Label(grid_frame, text=title, font=10, bg="white")
         label.grid(row=row + 1, column=col, pady=(0, vertical_spacing))
+def open_admin_dashboard():
+    admin_window = tk.Toplevel()
+    admin_window.title("Admin Dashboard")
+    admin_window.geometry("800x500")
+    tk.Label(admin_window, text="Welcome to the Admin Dashboard", font=(14)).pack(pady=50)
+    admin_window.mainloop()
 root.mainloop()
+
