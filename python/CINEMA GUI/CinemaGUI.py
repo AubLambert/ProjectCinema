@@ -11,6 +11,7 @@ class Liemora(tk.Tk):
         self.geometry("700x500")
         self.resizable(False, False)
         self.mydb = None
+        self.timeslot_window = None
         self.build_login_ui()
         self.bg_photo = None
         self.account_entry = None
@@ -84,13 +85,12 @@ class MovieSelection(tk.Toplevel):
         grid_frame.place(relx=0.5, rely=0.55, anchor="center")
 
         titles = ["John Weed", "Edge of Tomorrow", "Interstellar", "Coco", "Parasite", "The Revenant"]
-        # Đổi lại path của ảnh
         images = [r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
                   r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Interstellar.jpg",
                   r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
                   r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
                   r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg"]
+                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg"] # Đổi lại path của ảnh
 
         for i, (title, img_path) in enumerate(zip(titles, images)):
             img = Image.open(img_path).resize((180, 230))
@@ -126,6 +126,6 @@ class AdminGUI(tk.Toplevel):
         self.configure(bg="white")
 
 if __name__ == "__main__":
-    app=Liemora()
+    app = Liemora()
     app.mainloop()
 
