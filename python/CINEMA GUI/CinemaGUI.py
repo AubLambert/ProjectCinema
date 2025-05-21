@@ -4,149 +4,125 @@ from PIL import Image, ImageTk
 import mysql.connector
 from mysql.connector import Error
 
-timeslot_window = None
-mydb = None
-root = tk.Tk()
-root.title("LIEMORA Cinema Login")
-root.geometry("650x450")
-root.resizable(True, True)
-bg_image = Image.open(r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Cat.jpg") #"Copy as path" ảnh CAT trong folder images
-bg_image = bg_image.resize((650, 450), Image.LANCZOS)
-bg_photo = ImageTk.PhotoImage(bg_image)
-canvas = tk.Canvas(root, width=600, height=400)
-canvas.pack(fill="both", expand=True)
-canvas.create_image(0, 0, image=bg_photo, anchor="nw")
-frame = tk.Frame(canvas, bd=2, relief="solid", padx=25, pady=25)
-frame_window = canvas.create_window(325, 225, window=frame)
-title_font = font.Font(family="Helvetica", size=14, weight="bold")
-title_label = tk.Label(frame, text="LIEMORA Cinema", font=title_font)
-title_label.pack(pady=(0, 20))
-account_label = tk.Label(frame, text="Account")
-account_label.pack()
-account_entry = tk.Entry(frame, width=30)
-account_entry.pack(pady=5)
-password_label = tk.Label(frame, text="Password")
-password_label.pack()
-password_entry = tk.Entry(frame, show="*", width=30)
-password_entry.pack(pady=5)
+class Liemora(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("LIEMORA Cinema Login")
+        self.geometry("700x500")
+        self.resizable(False, False)
+        self.mydb = None
+        self.timeslot_window = None
+        self.build_login_ui()
 
-#MySQL CONNECTION
-def login():
-    username = account_entry.get()
-    password = password_entry.get()
+    def build_login_ui(self):
+        #Đổi lại path của ảnh
+        bg_image = Image.open(r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Cat.jpg").resize((700, 500), Image.LANCZOS)
+        bg_photo = ImageTk.PhotoImage(bg_image)
+        self.bg_photo = bg_photo
 
-    try:
-        global mydb
-        mydb = mysql.connector.connect(
-            host='localhost',
-            user=username,
-            password=password,
-            database='cinema_management'
-        )
+        canvas = tk.Canvas(self, width=650, height=450)
+        canvas.pack(fill="both", expand=True)
+        canvas.create_image(0, 0, image=bg_photo, anchor="nw")
 
-        if mydb.is_connected():
-            messagebox.showinfo("Login Success", f"Welcome, {username}")
-            root.withdraw()
-            if username == "admin":
-                open_admin_dashboard()
+        frame = tk.Frame(canvas, bd=2, relief="solid", padx=25, pady=25)
+        canvas.create_window(350, 250, window=frame)
+
+        tk.Label(frame, text="LIEMORA Cinema", font=("Helvetica", 14, "bold")).pack(pady=(0, 20))
+        tk.Label(frame, text="Account").pack()
+        self.account_entry = tk.Entry(frame, width=30)
+        self.account_entry.pack(pady=5)
+
+        tk.Label(frame, text="Password").pack()
+        self.password_entry = tk.Entry(frame, show="*", width=30)
+        self.password_entry.pack(pady=5)
+
+        login_btn = tk.Button(frame, text="Login", width=10, command=self.login)
+        login_btn.pack(pady=10)
+        self.bind("<Return>", lambda e: self.login())
+
+    def login(self):
+        username = self.account_entry.get()
+        password = self.password_entry.get()
+
+        try:
+            self.mydb = mysql.connector.connect(
+                host='localhost',
+                user=username,
+                password=password,
+                database='cinema_management'
+            )
+            if self.mydb.is_connected():
+                messagebox.showinfo("Login Success", f"Welcome, {username}")
+                self.withdraw()
+                if username == "admin":
+                    AdminGUI(self)
+                else:
+                    MovieSelection(self, username)
             else:
-                movie_selection_gui()
-        else:
-            messagebox.showerror("Login Failed", f"Error Occurred")
+                messagebox.showerror("Login Failed", "Error Occurred")
 
-    except Error as F:
-        messagebox.showerror("Login Failed", f"Invalid username or password.\n\n{F}")
-#MOVIE SELECTION GUI
-def movie_selection_gui():
-    global timeslot_window
-    root2 = Toplevel(root)
-    root2.title("Movie Selection")
-    root2.geometry("1000x700")
-    root2.configure(bg="white")
+        except Error as e:
+            messagebox.showerror("Login Failed", f"Invalid username or password.\n\n{e}")
 
-    def log_off():
-        mydb.close()
-        root2.destroy()
-        root.deiconify()
+class MovieSelection(tk.Toplevel):
+    def __init__(self, parent, username):
+        super().__init__(parent)
+        self.title("Movie Selection")
+        self.geometry("1000x700")
+        self.configure(bg="white")
+        self.parent = parent
+        self.username = username
+        self.build_ui()
 
-    back1_button = Button(root2, text="Logout", font=10, width=7, height=1, command=log_off)
-    back1_button.grid(row=0, column=0, sticky="nw", padx=20, pady=20)
+    def build_ui(self):
+        tk.Button(self, text="Logout", font=10, width=7, command=self.logout).grid(row=0, column=0, sticky="nw",
+                                                                                   padx=20, pady=20)
 
-    grid_frame = Frame(root2, bg="white")
-    grid_frame.place(relx=0.5, rely=0.55, anchor="center")
+        grid_frame = tk.Frame(self, bg="white")
+        grid_frame.place(relx=0.5, rely=0.55, anchor="center")
 
-    movie_titles = [
-        "John Weed",
-        "Edge of Tomorrow",
-        "Interstellar",
-        "Coco",
-        "Parasite",
-        "The Revenant"
-    ]
+        titles = ["John Weed", "Edge of Tomorrow", "Interstellar", "Coco", "Parasite", "The Revenant"]
+        images = [r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
+                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Interstellar.jpg",
+                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
+                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
+                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
+                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg"] # Đổi lại path của ảnh
 
-    # Chọn ảnh trong folder images ở python
-    movie_images = [
-        r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-        r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-        r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-        r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-        r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-        r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg"
-    ]
+        for i, (title, img_path) in enumerate(zip(titles, images)):
+            img = Image.open(img_path).resize((180, 230))
+            img = ImageTk.PhotoImage(img)
 
-    timeslot_window = None
+            btn = tk.Button(grid_frame, image=img, width=180, height=230,
+                            command=lambda t=title: self.show_timeslots(t))
+            btn.image = img
+            btn.grid(row=(i // 3) * 2, column=i % 3, padx=20, pady=10)
 
-    def timeslot_gui(movie_title):
-        global timeslot_window
-        if timeslot_window is None or not timeslot_window.winfo_exists():
-            timeslot_window = Toplevel(root2)
-            timeslot_window.title(f"Select Timeslot - {movie_title}")
-            timeslot_window.geometry("500x400")
-            Label(timeslot_window, text=f"Timeslots for '{movie_title}'", font=14).pack(pady=20)
-            for time in ["X", "X", "X", "X"]:  # thay đổi timeslot ở đây
-                Button(timeslot_window, text=time, width=15).pack(pady=5)
-            timeslot_window.transient(root2)
-            timeslot_window.grab_set()
+            tk.Label(grid_frame, text=title, bg="white").grid(row=(i // 3) * 2 + 1, column=i % 3, pady=10)
 
-    poster_width = 180
-    poster_height = 230
-    horizontal_spacing = 50
-    vertical_spacing = 25
+    def show_timeslots(self, movie_title):
+        ts_window = tk.Toplevel(self)
+        ts_window.title(f"Timeslots for {movie_title}")
+        ts_window.geometry("500x400")
+        tk.Label(ts_window, text=f"Timeslots for '{movie_title}'", font=14).pack(pady=20)
+        for time in ["X", "X", "X", "X"]:
+            tk.Button(ts_window, text=time, width=15).pack(pady=5)
+        ts_window.transient(self)
+        ts_window.grab_set()
 
-    for index, title in enumerate(movie_titles):
-        row = (index // 3) * 2
-        col = index % 3
+    def logout(self):
+        self.parent.mydb.close()
+        self.destroy()
+        self.parent.deiconify()
 
-        img = Image.open(movie_images[index])
-        img = img.resize((poster_width, poster_height))
-        img = ImageTk.PhotoImage(img)
+class AdminGUI(tk.Toplevel):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.title("Liemora's Report")
+        self.geometry("1000x700")
+        self.configure(bg="white")
 
-        poster_button = Button(
-            grid_frame,
-            width=poster_width,
-            height=poster_height,
-            bg="white",
-            relief="solid",
-            borderwidth=1,
-            command=lambda t=title: timeslot_gui(t)
-        )
-        poster_button.image = img
-        poster_button.grid(row=row, column=col, padx=horizontal_spacing, pady=(0, 10))
-        poster_button.grid_propagate(False)
-        poster_button.config(image=img)
-
-        label = Label(grid_frame, text=title, font=10, bg="white")
-        label.grid(row=row + 1, column=col, pady=(0, vertical_spacing))
-#ADMIN GUI
-def open_admin_dashboard():
-    admin_window = tk.Toplevel(root)
-    admin_window.title("Admin Dashboard")
-    admin_window.geometry("1000x700")
-    admin_window.configure(bg="white")
-
-login_button = tk.Button(frame, text="Login", width=10, command=login)
-login_button.pack(pady=10)
-root.bind("<Return>", lambda event: login())
-
-root.mainloop()
+if __name__ == "__main__":
+    app = Liemora()
+    app.mainloop()
 
