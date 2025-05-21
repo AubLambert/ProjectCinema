@@ -13,6 +13,9 @@ class Liemora(tk.Tk):
         self.mydb = None
         self.timeslot_window = None
         self.build_login_ui()
+        self.bg_photo = None
+        self.account_entry = None
+        self.password_entry = None
 
     def build_login_ui(self):
         #Đổi lại path của ảnh
