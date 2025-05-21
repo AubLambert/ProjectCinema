@@ -10,8 +10,8 @@ class Liemora(tk.Tk):
         self.title("LIEMORA Cinema Login")
         self.geometry("700x500")
         self.resizable(False, False)
-        self.mydb = None
-        self.timeslot_window = None
+        self.mydb = None #!
+        self.timeslot_window = None #!
         self.build_login_ui()
 
     def build_login_ui(self):
@@ -72,9 +72,9 @@ class MovieSelection(tk.Toplevel):
         self.configure(bg="white")
         self.parent = parent
         self.username = username
-        self.build_ui()
+        self.movie_ui()
 
-    def build_ui(self):
+    def movie_ui(self):
         tk.Button(self, text="Logout", font=10, width=7, command=self.logout).grid(row=0, column=0, sticky="nw",
                                                                                    padx=20, pady=20)
 
@@ -123,6 +123,6 @@ class AdminGUI(tk.Toplevel):
         self.configure(bg="white")
 
 if __name__ == "__main__":
-    app = Liemora()
+    app=Liemora()
     app.mainloop()
 

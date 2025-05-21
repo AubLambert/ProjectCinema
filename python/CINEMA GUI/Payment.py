@@ -1,152 +1,116 @@
 import tkinter as tk
-from tkinter import Label, Frame, Button, Toplevel, StringVar
+from tkinter import Label, Frame, Button, Toplevel, StringVar, messagebox
 from PIL import Image, ImageTk
 from datetime import datetime
 import mysql.connector
 from mysql.connector import Error
 
-mydb = mysql.connector.connect(
-    host = "localhost",
-    user = "admin",
-    password = "quang123",
-    database="cinema_management"
-)
+class CustomerFormApp(tk.Tk):
+    def __init__(self):
+        super().__init__()
+        self.title("Customer Form")
+        self.geometry("800x500")
+        self.mydb = self.connect_db()
+        self.amount_due_var = StringVar(value="0.00")
+        self.create_widgets()
 
-def validate_day_input(text):
-    if text == "":
-        return True
-    if not text.isdigit():
-        return False
-    if len(text) > 2:
-        return False
-    if len(text) == 2:
-        day = int(text)
-        return 1 <= day <= 31
-    return True
-def validate_month_input(text):
-    if text == "":
-        return True
-    if not text.isdigit():
-        return False
-    if len(text) > 2:
-        return False
-    if len(text) == 2:
-        month = int(text)
-        return 1 <= month <= 12
-    return True
-def validate_year_input(text):
-    if text == "":
-        return True
-    if not text.isdigit():
-        return False
-    if len(text) > 4:
-        return False
-    return True
-def calculate_amount_due(*args):
-    try:
-        price_text = price_entry.get().strip()
-        discount_text = discount_entry.get().strip()
+    def connect_db(self):
+        try:
+            return mysql.connector.connect(
+                host="localhost",
+                user="admin",
+                password="quang123",
+                database="cinema_management"
+            )
+        except mysql.connector.Error as err:
+            messagebox.showerror("Database Connection Error", f"Error: {err}")
+            return None
 
-        price = 0.0
-        discount = 0.0
+#wot da hell
+    def validate_day_input(self, text):
+        return text == "" or (text.isdigit() and len(text) <= 2 and (len(text) < 2 or 1 <= int(text) <= 31))
+    def validate_month_input(self, text):
+        return text == "" or (text.isdigit() and len(text) <= 2 and (len(text) < 2 or 1 <= int(text) <= 12))
+    def validate_year_input(self, text):
+        return text == "" or (text.isdigit() and len(text) <= 4)
+    def calculate_amount_due(self, *args):
+        try:
+            price_text = self.price_entry.get().strip()
+            discount_text = self.discount_entry.get().strip()
+            price = float(price_text) if price_text else 0.0
+            discount = float(discount_text) if discount_text else 0.0
 
-        if price_text:
-            price = float(price_text)
+            discount = min(max(discount, 0), 100)
+            if float(discount_text or 0) != discount:
+                self.discount_entry.delete(0, tk.END)
+                self.discount_entry.insert(0, str(discount))
 
-        if discount_text:
-            discount = float(discount_text)
-            if discount < 0:
-                discount = 0
-            elif discount > 100:
-                discount = 100
-                discount_entry.delete(0, tk.END)
-                discount_entry.insert(0, "100")
+            amount_due = price * (100 - discount) / 100
+            self.amount_due_var.set(f"{amount_due:.2f}")
+        except ValueError:
+            self.amount_due_var.set("0.00")
 
-        amount_due = price * (100 - discount) / 100
 
-        amount_due_var.set(f"{amount_due:.2f}")
+    def confirm_form(self):
+        customer_name = self.customer_name_entry.get().strip()
+        phone = self.phone_entry.get().strip()
+        day = self.day_entry.get().strip()
+        month = self.month_entry.get().strip()
+        year = self.year_entry.get().strip()
+        dob = f"{year}-{month.zfill(2)}-{day.zfill(2)}" if day and month and year else None
 
-    except ValueError:
-        amount_due_var.set("0.00")
-
-def confirm_form():
-    customer_name = customer_name_entry.get().strip()
-    phone = phone_entry.get().strip()
-    day = day_entry.get().strip()
-    month = month_entry.get().strip()
-    year = year_entry.get().strip()
-    dob = None
-    if day and month and year:
-        dob = f"{year}-{month:0>2}-{day:0>2}"
-
-    try:
-        mycursor = mydb.cursor()
-        sql = "INSERT INTO Customers (customername, phonenumber, dob) VALUES (%s, %s, %s)"
-        values = (customer_name, phone, dob)
-        mycursor.execute(sql, values)
-        mydb.commit()
-        print("Customer data inserted successfully.")
-    except mysql.connector.Error as err:
-        print("Error:", err)
-    finally:
-        if mycursor:
+        try:
+            mycursor = self.mydb.cursor()
+            sql = "INSERT INTO Customers (customername, phonenumber, dob) VALUES (%s, %s, %s)"
+            mycursor.execute(sql, (customer_name, phone, dob))
+            self.mydb.commit()
+            messagebox.showinfo("Success", "Customer data inserted successfully.")
+        except mysql.connector.Error as err:
+            messagebox.showerror("Database Error", f"Error: {err}")
+        finally:
             mycursor.close()
+    def create_widgets(self):
+        Button(self, text="Confirm", font=("Arial", 10), width=15, command=self.confirm_form).place(x=330, y=420)
+        Button(self, text="BACK", font=("Arial", 10), width=7).place(x=10, y=10)
 
-root = tk.Tk()
-root.title("Customer Form")
-root.geometry("800x500")
+        Label(self, text="Customer Name:").place(x=80, y=100)
+        self.customer_name_entry = tk.Entry(self, width=40)
+        self.customer_name_entry.place(x=250, y=100)
 
-#button
-complete_button = Button(root, text="Confirm", font=("Arial", 10), width=15, command=confirm_form)
-complete_button.place(x=330, y=420)
-back_button = Button(root, text="BACK", font=("Arial", 10), width=7, height=1)
-back_button.place(x=10, y=10)
+        Label(self, text="Phone Number:").place(x=80, y=150)
+        self.phone_entry = tk.Entry(self, width=40)
+        self.phone_entry.place(x=250, y=150)
 
-#label
-Label(root, text="Customer Name:").place(x=80, y=100)
-customer_name_entry = tk.Entry(root, width=40)
-customer_name_entry.place(x=250, y=100)
+        Label(self, text="DOB - optional:").place(x=80, y=200)
+        self.day_entry = tk.Entry(self, width=3, validate='key', validatecommand=(self.register(self.validate_day_input), '%P'))
+        self.day_entry.place(x=250, y=200)
+        Label(self, text="/").place(x=275, y=200)
+        self.month_entry = tk.Entry(self, width=3, validate='key', validatecommand=(self.register(self.validate_month_input), '%P'))
+        self.month_entry.place(x=285, y=200)
+        Label(self, text="/").place(x=310, y=200)
+        self.year_entry = tk.Entry(self, width=5, validate='key', validatecommand=(self.register(self.validate_year_input), '%P'))
+        self.year_entry.place(x=320, y=200)
 
-Label(root, text="Phone Number:").place(x=80, y=150)
-phone_entry = tk.Entry(root, width=40)
-phone_entry.place(x=250, y=150)
+        Label(self, text="Price ($):").place(x=500, y=260)
+        self.price_entry = tk.Entry(self, width=20)
+        self.price_entry.place(x=600, y=260)
 
-dob_label = Label(root, text="DOB - optional:")
-dob_label.place(x=80, y=200)
-day_vcmd = (root.register(validate_day_input), '%P')
-day_entry = tk.Entry(root, width=3, validate='key', validatecommand=day_vcmd)
-day_entry.place(x=250, y=200)
-slash1_label = Label(root, text="/")
-slash1_label.place(x=275, y=200)
-month_vcmd = (root.register(validate_month_input), '%P')
-month_entry = tk.Entry(root, width=3, validate='key', validatecommand=month_vcmd)
-month_entry.place(x=285, y=200)
-slash2_label = Label(root, text="/")
-slash2_label.place(x=310, y=200)
-year_vcmd = (root.register(validate_year_input), '%P')
-year_entry = tk.Entry(root, width=5, validate='key', validatecommand=year_vcmd)
-year_entry.place(x=320, y=200)
+        Label(self, text="Discount (%):").place(x=500, y=300)
+        self.discount_entry = tk.Entry(self, width=20)
+        self.discount_entry.place(x=600, y=300)
 
-Label(root, text="Price ($):").place(x=500, y=260)
-price_entry = tk.Entry(root, width=20)
-price_entry.place(x=600, y=260)
+        Label(self, text="Amount Due ($):").place(x=500, y=340)
+        Label(self, textvariable=self.amount_due_var, width=18, relief="sunken", bg="white", anchor="w").place(x=600, y=340)
 
-Label(root, text="Discount (%):").place(x=500, y=300)
-discount_entry = tk.Entry(root, width=20)
-discount_entry.place(x=600, y=300)
+        self.price_entry.bind('<KeyRelease>', self.calculate_amount_due)
+        self.discount_entry.bind('<KeyRelease>', self.calculate_amount_due)
+        self.price_entry.bind('<FocusOut>', self.calculate_amount_due)
+        self.discount_entry.bind('<FocusOut>', self.calculate_amount_due)
 
-Label(root, text="Amount Due ($):").place(x=500, y=340)
-amount_due_var = StringVar()
-amount_due_var.set("0.00")
-amount_due_display = Label(root, textvariable=amount_due_var, width=18,
-                           relief="sunken", bg="white", anchor="w")
-amount_due_display.place(x=600, y=340)
-price_entry.bind('<KeyRelease>', calculate_amount_due)
-discount_entry.bind('<KeyRelease>', calculate_amount_due)
-price_entry.bind('<FocusOut>', calculate_amount_due)
-discount_entry.bind('<FocusOut>', calculate_amount_due)
-price_entry.insert(0, "")
-discount_entry.insert(0, "")
-calculate_amount_due()
+        self.price_entry.insert(0, "")
+        self.discount_entry.insert(0, "")
+        self.calculate_amount_due()
 
-root.mainloop()
+if __name__ == "__main__":
+    app=CustomerFormApp()
+    app.mainloop()
