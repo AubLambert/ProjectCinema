@@ -56,16 +56,16 @@ class Liemora(tk.Tk):
                 messagebox.showinfo("Login Success", f"Welcome, {username}")
                 self.withdraw()
                 if username == "admin":
-                    AdminGUI(self)
+                    admin(self)
                 else:
-                    MovieSelection(self, username)
+                    movie(self, username)
             else:
                 messagebox.showerror("Login Failed", "Error Occurred")
 
         except Error as e:
             messagebox.showerror("Login Failed", f"Invalid username or password.\n\n{e}")
 
-class MovieSelection(tk.Toplevel):
+class movie(tk.Toplevel):
     def __init__(self, parent, username):
         super().__init__(parent)
         self.title("Movie Selection")
@@ -74,6 +74,13 @@ class MovieSelection(tk.Toplevel):
         self.parent = parent
         self.username = username
         self.movie_ui()
+        self.protocol("WM_DELETE_WINDOW", self.on_close)
+
+    def on_close(self):
+        if self.parent.mydb.is_connected():
+            self.parent.mydb.close()
+        self.destroy()
+        self.parent.destroy()
 
     def movie_ui(self):
         tk.Button(self, text="Logout", font=10, width=7, command=self.logout).grid(row=0, column=0, sticky="nw",
@@ -116,14 +123,16 @@ class MovieSelection(tk.Toplevel):
         self.destroy()
         self.parent.deiconify()
 
-class AdminGUI(tk.Toplevel):
+class admin(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
         self.title("Liemora's Report")
         self.geometry("1350x750")
         self.resizable(False, False)
         self.configure(bg="white")
+        self.parent = parent
         tab_control = ttk.Notebook(self)
+        self.protocol("WM_DELETE_WINDOW", self.on_close)
 
         #Style Configuration
         style = ttk.Style(self)
@@ -140,6 +149,13 @@ class AdminGUI(tk.Toplevel):
         tab_control.add(tab2, text='Occupation Rate')
         tab_control.add(tab3, text='Screening Rate')
         tab_control.pack(expand=True, fill='both')
+
+    def on_close(self):
+        if self.parent.mydb and self.parent.mydb.is_connected():
+            self.parent.mydb.close()
+        self.destroy()
+        self.parent.destroy()
+
 
 if __name__ == "__main__":
     app=Liemora()
