@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox, font, Label, Frame, Button, Toplevel
 from PIL import Image, ImageTk
+from tkinter import ttk
 import mysql.connector
 from mysql.connector import Error
 
@@ -119,8 +120,26 @@ class AdminGUI(tk.Toplevel):
     def __init__(self, parent):
         super().__init__(parent)
         self.title("Liemora's Report")
-        self.geometry("1000x700")
+        self.geometry("1350x750")
+        self.resizable(False, False)
         self.configure(bg="white")
+        tab_control = ttk.Notebook(self)
+
+        #Style Configuration
+        style = ttk.Style(self)
+        style.theme_use('default')
+        style.layout("TNotebook.Tab", [("Notebook.tab", {"sticky": "nsew","children": [("Notebook.padding", {"sticky": "nsew","children": [("Notebook.label", {"sticky": "nsew"})]})]})])
+        style.map("TNotebook.Tab",background=[("selected", "white")],foreground=[("selected", "black")])
+        style.configure("TNotebook.Tab",padding=(0, 10),font="bold",background="lightgrey",foreground="black",width=450,anchor="center")
+
+        tab1 = ttk.Frame(tab_control)
+        tab2 = ttk.Frame(tab_control)
+        tab3 = ttk.Frame(tab_control)
+
+        tab_control.add(tab1, text='Ticket Sales')
+        tab_control.add(tab2, text='Occupation Rate')
+        tab_control.add(tab3, text='Screening Rate')
+        tab_control.pack(expand=True, fill='both')
 
 if __name__ == "__main__":
     app=Liemora()
