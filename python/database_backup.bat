@@ -1,8 +1,7 @@
-rem path to mysql server 8.0 bin folder
 cd "C:\Program Files\MySQL\MySQL Server 8.0\bin"
 
-set mysql_user=root
-set mysql_password=longday123vn
+set mysql_user=admin
+set mysql_password=quang123
 
 set backup_path=D:\Backup
 set backup_name=cinema_management_backup
