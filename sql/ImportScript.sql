@@ -7470,7 +7470,6 @@ INSERT INTO Screenings (MovieID, RoomID, ScreeningDate, ScreeningTime, MovieForm
 
 -- Tickets
 INSERT INTO Tickets (CustomerID, ScreeningID, SeatID) VALUES
-INSERT INTO Tickets (CustomerID, ScreeningID, SeatID) VALUES
 (1, 4678, 52),
 (1, 5715, 16),
 (2, 5757, 90),
