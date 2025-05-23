@@ -70,16 +70,18 @@ class SeatBooking:
         
         #Seat layout
         seat_buttons = {}
+        ''' thich cai nao hon thi chon
         for col in range(8):
             col_label = tk.Label(seat_frame, text=str(col + 1), font=("Arial", 12, "bold"))
             col_label.grid(row=0, column=col + 1, padx=15, pady=10)
         for row in range(5):
             row_label_right = tk.Label(seat_frame, text=chr(65 + row), font=("Arial", 12, "bold"))
             row_label_right.grid(column=9, padx=(20, 0), pady=20)
+        '''
         for row in range(5):
             for col in range(8):
                 seat_number = f"{chr(65+row)}{col+1}"  # A1, A2, ...
-                seat_button = tk.Button(seat_frame, width=4, height=2,relief=tk.RIDGE,bd=1,
+                seat_button = tk.Button(seat_frame, width=4, height=2, text=f"{seat_number}", relief=tk.RIDGE,bd=1,
                     command=lambda s=seat_number: toggle_seat(s) #seat selection command
                 )
                 seat_button.grid(row=row+1, column=col+1, padx=15, pady=20)
