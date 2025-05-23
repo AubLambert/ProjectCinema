@@ -46,6 +46,7 @@ BEGIN
 END//
 DELIMITER ;
 
+/*
 -- BƯỚC 5: Event tự động reset ghế sau khi suất chiếu kết thúc
 DELIMITER //
 CREATE EVENT reset_expired_bookings
@@ -73,3 +74,4 @@ BEGIN
     WHERE p.TicketID NOT IN (SELECT TicketID FROM Tickets);
 END//
 DELIMITER ;
+*/
