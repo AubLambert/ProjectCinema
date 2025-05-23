@@ -56,31 +56,31 @@ class Liemora(tk.Tk):
                 messagebox.showinfo("Login Success", f"Welcome, {username}")
                 self.withdraw()
                 if username == "admin":
-                    admin(self)
+                    Admin(self)
                 else:
-                    movie(self, username)
+                    Movie(self, username)
             else:
                 messagebox.showerror("Login Failed", "Error Occurred")
 
         except Error as e:
             messagebox.showerror("Login Failed", f"Invalid username or password.\n\n{e}")
 
-class movie(tk.Toplevel):
-    def __init__(self, parent, username):
-        super().__init__(parent)
+class Movie(tk.Toplevel):
+    def __init__(self, main, username):
+        super().__init__(main)
         self.title("Movie Selection")
         self.geometry("1000x700")
         self.configure(bg="white")
-        self.parent = parent
+        self.main = main
         self.username = username
         self.movie_ui()
         self.protocol("WM_DELETE_WINDOW", self.on_close)
 
     def on_close(self):
-        if self.parent.mydb.is_connected():
-            self.parent.mydb.close()
+        if self.main.mydb.is_connected():
+            self.main.mydb.close()
         self.destroy()
-        self.parent.destroy()
+        self.main.destroy()
 
     def movie_ui(self):
         tk.Button(self, text="Logout", font=10, width=7, command=self.logout).grid(row=0, column=0, sticky="nw",
@@ -113,24 +113,26 @@ class movie(tk.Toplevel):
         ts_window.title(f"Timeslots for {movie_title}")
         ts_window.geometry("500x400")
         tk.Label(ts_window, text=f"Timeslots for '{movie_title}'", font=14).pack(pady=20)
-        for time in ["X", "X", "X", "X"]:
+        for time in ["X", "X", "X"]:
             tk.Button(ts_window, text=time, width=15).pack(pady=5)
         ts_window.transient(self)
         ts_window.grab_set()
 
     def logout(self):
-        self.parent.mydb.close()
+        self.main.mydb.close()
         self.destroy()
-        self.parent.deiconify()
+        self.main.account_entry.delete(0, tk.END)
+        self.main.password_entry.delete(0, tk.END)
+        self.main.deiconify()
 
-class admin(tk.Toplevel):
-    def __init__(self, parent):
-        super().__init__(parent)
+class Admin(tk.Toplevel):
+    def __init__(self, main):
+        super().__init__(main)
         self.title("Liemora's Report")
         self.geometry("1350x750")
         self.resizable(False, False)
         self.configure(bg="white")
-        self.parent = parent
+        self.main = main
         tab_control = ttk.Notebook(self)
         self.protocol("WM_DELETE_WINDOW", self.on_close)
 
@@ -141,21 +143,31 @@ class admin(tk.Toplevel):
         style.map("TNotebook.Tab",background=[("selected", "white")],foreground=[("selected", "black")])
         style.configure("TNotebook.Tab",padding=(0, 10),font="bold",background="lightgrey",foreground="black",width=450,anchor="center")
 
+        #tab control
         tab1 = ttk.Frame(tab_control)
         tab2 = ttk.Frame(tab_control)
         tab3 = ttk.Frame(tab_control)
-
         tab_control.add(tab1, text='Ticket Sales')
         tab_control.add(tab2, text='Occupation Rate')
         tab_control.add(tab3, text='Screening Rate')
         tab_control.pack(expand=True, fill='both')
 
-    def on_close(self):
-        if self.parent.mydb and self.parent.mydb.is_connected():
-            self.parent.mydb.close()
-        self.destroy()
-        self.parent.destroy()
+        logout_button = Button(tab1, text="Logout", font="bold", command=self.logout)
+        logout_button.pack(pady=10, padx=10, side="left", anchor="sw")
 
+    #def
+    def on_close(self):
+        if self.main.mydb and self.main.mydb.is_connected():
+            self.main.mydb.close()
+        self.destroy()
+        self.main.destroy()
+
+    def logout(self):
+        self.main.mydb.close()
+        self.destroy()
+        self.main.account_entry.delete(0, tk.END)
+        self.main.password_entry.delete(0, tk.END)
+        self.main.deiconify()
 
 if __name__ == "__main__":
     app=Liemora()
