@@ -6,6 +6,8 @@ import mysql.connector
 from mysql.connector import Error
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 class Liemora(tk.Tk):
     def __init__(self):
@@ -115,7 +117,7 @@ class Movie(tk.Toplevel):
         ts_window.title(f"Timeslots for {movie_title}")
         ts_window.geometry("500x400")
         tk.Label(ts_window, text=f"Timeslots for '{movie_title}'", font=14).pack(pady=20)
-        for time in ["X", "X", "X"]:
+        for time in ["8:00 AM", "14:00 PM", "20:00 PM"]:
             tk.Button(ts_window, text=time, width=15).pack(pady=5)
         ts_window.transient(self)
         ts_window.grab_set()
@@ -149,7 +151,7 @@ class Admin(tk.Toplevel):
         self.tab2 = ttk.Frame(tab_control)
         self.tab3 = ttk.Frame(tab_control)
 
-        tab_control.add(self.tab1, text='Ticket Sales')
+        tab_control.add(self.tab1, text='Sales Overview')
         tab_control.add(self.tab2, text='Occupation Rate')
         tab_control.add(self.tab3, text='Screening Rate')
 
@@ -171,28 +173,19 @@ class Admin(tk.Toplevel):
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
             elif tab == self.tab2:
-                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5)
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
             elif tab == self.tab3:
-                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5)
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
 
     #DEF
-    def display_ticket_sales_chart(self):
-        fig = Figure(figsize=(8, 6), dpi=100)
-        ax = fig.add_subplot(111)
-        ax.plot([1, 2, 3], [4, 5, 6], marker='o', linestyle='-')
-        ax.set_title("Monthly Tickets Sold")
-        canvas = FigureCanvasTkAgg(fig, master=self.tab1.winfo_children()[0].winfo_children()[1])
-        canvas.draw()
-        canvas.get_tk_widget().pack(pady=20)
-
     def on_close(self):
         if self.main.mydb and self.main.mydb.is_connected():
             self.main.mydb.close()
@@ -205,6 +198,45 @@ class Admin(tk.Toplevel):
         self.main.account_entry.delete(0, tk.END)
         self.main.password_entry.delete(0, tk.END)
         self.main.deiconify()
+
+    def display_ticket_sales_chart(self):
+        query = """
+            SELECT 
+                DATE_FORMAT(PayTime, '%Y-%m') AS SaleDate,
+                COUNT(*) AS TicketsSold
+            FROM 
+                Payments
+            WHERE 
+                PayTime < DATE_FORMAT(NOW(), '%Y-%m-01')
+            GROUP BY 
+                DATE_FORMAT(PayTime, '%Y-%m')
+            ORDER BY 
+                SaleDate;
+        """
+        try:
+            df = pd.read_sql(query, self.main.mydb)
+            if df.empty:
+                raise ValueError("No data found for chart.")
+            df['SaleDate'] = pd.to_datetime(df['SaleDate'])
+
+            fig = Figure(figsize=(13, 8), dpi=100)
+            ax = fig.add_subplot(111)
+            ax.plot(df['SaleDate'], df['TicketsSold'], marker='o', linestyle='-')
+            ax.set_title("Monthly Tickets Sold")
+            ax.set_xlabel("Month")
+            ax.set_ylabel("Tickets Sold")
+            fig.autofmt_xdate()
+
+            right_frame = self.tab1.winfo_children()[0].winfo_children()[1]
+            for widget in right_frame.winfo_children():
+                widget.destroy()
+
+            canvas = FigureCanvasTkAgg(fig, master=right_frame)
+            canvas.draw()
+            canvas.get_tk_widget().pack(pady=20)
+
+        except Exception as e:
+            print(f"Error generating chart: {e}")
 
 if __name__ == "__main__":
     app=Liemora()
