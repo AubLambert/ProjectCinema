@@ -17,7 +17,7 @@ class Liemora(tk.Tk):
 
     def build_login_ui(self):
         #Đổi lại path của ảnh
-        bg_image = Image.open(r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Cat.jpg").resize((700, 500), Image.LANCZOS)
+        bg_image = Image.open(r"D:\Works\BA\Database management\ProjectCinema\python\Images\Cat.jpg").resize((700, 500), Image.LANCZOS)
         bg_photo = ImageTk.PhotoImage(bg_image)
         self.bg_photo = bg_photo
 
@@ -90,12 +90,12 @@ class Movie(tk.Toplevel):
         grid_frame.place(relx=0.5, rely=0.55, anchor="center")
 
         titles = ["John Weed", "Edge of Tomorrow", "Interstellar", "Coco", "Parasite", "The Revenant"]
-        images = [r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Interstellar.jpg",
-                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg"] # Đổi lại path của ảnh
+        images = [r"D:\Works\BA\Database management\ProjectCinema\python\Images\Johnwick.jpg",
+                  r"D:\Works\BA\Database management\ProjectCinema\python\Images\Interstellar.jpg",
+                  r"D:\Works\BA\Database management\ProjectCinema\python\Images\Johnwick.jpg",
+                  r"D:\Works\BA\Database management\ProjectCinema\python\Images\Johnwick.jpg",
+                  r"D:\Works\BA\Database management\ProjectCinema\python\Images\Johnwick.jpg",
+                  r"D:\Works\BA\Database management\ProjectCinema\python\Images\Johnwick.jpg"] # Đổi lại path của ảnh
 
         for i, (title, img_path) in enumerate(zip(titles, images)):
             img = Image.open(img_path).resize((180, 230))
