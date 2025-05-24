@@ -135,6 +135,7 @@ class Admin(tk.Toplevel):
         self.resizable(False, False)
         self.configure(bg="white")
         self.main = main
+        self.protocol("WM_DELETE_WINDOW", self.on_close)
 
         # Style configuration
         style = ttk.Style()
@@ -183,9 +184,6 @@ class Admin(tk.Toplevel):
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
 
     #DEF
-    def logout(self):
-        self.destroy()
-
     def display_ticket_sales_chart(self):
         fig = Figure(figsize=(8, 6), dpi=100)
         ax = fig.add_subplot(111)
@@ -194,6 +192,19 @@ class Admin(tk.Toplevel):
         canvas = FigureCanvasTkAgg(fig, master=self.tab1.winfo_children()[0].winfo_children()[1])
         canvas.draw()
         canvas.get_tk_widget().pack(pady=20)
+
+    def on_close(self):
+        if self.main.mydb and self.main.mydb.is_connected():
+            self.main.mydb.close()
+        self.destroy()
+        self.main.destroy()
+
+    def logout(self):
+        self.main.mydb.close()
+        self.destroy()
+        self.main.account_entry.delete(0, tk.END)
+        self.main.password_entry.delete(0, tk.END)
+        self.main.deiconify()
 
 if __name__ == "__main__":
     app=Liemora()
