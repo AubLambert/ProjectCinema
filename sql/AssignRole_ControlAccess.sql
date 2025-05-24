@@ -1,3 +1,7 @@
+-- Drop old user
+DROP USER 'admin'@'localhost';
+DROP USER 'manager'@'localhost';
+DROP USER 'ticket_clerk'@'localhost';
 -- Create account for admin and ticket clerk
 CREATE USER 'admin'@'localhost' IDENTIFIED BY 'quang123';
 CREATE USER 'manager'@'localhost' IDENTIFIED BY 'khang123';
