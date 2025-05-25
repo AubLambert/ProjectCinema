@@ -174,6 +174,8 @@ class Admin(tk.Toplevel):
                 self.buttons_frame.pack(fill="x", pady=10)
 
                 tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5)
+                tk.Button(left_frame, width=20, height=2, text="Total Revenue",
+                          command=self.display_total_revenue).pack(pady=3, padx=5)
                 tk.Button(left_frame,width=20,height=2, text="Revenue Trends", command=self.display_revenue_sales_chart).pack(pady=3,padx=5)
                 tk.Button(left_frame, text="Tickets Sold Trend", width=20, height=2,command=self.display_ticket_chart).pack(pady=3, padx=5)
                 self.all_time_btn = tk.Button(self.buttons_frame, text="All time", width=20, height=2,state="disabled",
@@ -623,6 +625,46 @@ class Admin(tk.Toplevel):
             canvas.get_tk_widget().pack(pady=20)
         except Exception as e:
             print(f"Error generating all-time chart: {e}")
+
+    def display_total_revenue(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        cursor = self.main.mydb.cursor()
+        query = """
+                SELECT
+                    DATE(PayTime) AS PayDate,
+                    SUM(Amount) AS TotalRevenue
+                FROM Payments
+                GROUP BY PayDate
+                ORDER BY PayDate;
+                """
+        cursor.execute(query)
+        data = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame)
+        table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        columns = ("YearMonth", "TotalRevenue")
+        tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
+        tree.heading("YearMonth", text="Year-Month")
+        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.column("YearMonth", width=150, anchor="center")
+        tree.column("TotalRevenue", width=200, anchor="center")
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        tree.pack(fill="both", expand=True)
+
+        for row in data:
+            year_month, total_revenue = row
+            tree.insert("", "end", values=(year_month, total_revenue))
+
+        self.last_6_months_btn.config(state="disabled")
+        self.last_year_btn.config(state="disabled")
+        self.all_time_btn.config(state="disabled")
+        self.last_30_days_btn.config(state="disabled")
 
 if __name__ == "__main__":
     app=Liemora()
