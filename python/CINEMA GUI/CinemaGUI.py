@@ -636,7 +636,7 @@ class Admin(tk.Toplevel):
                     SUM(Amount) AS TotalRevenue
                 FROM Payments
                 GROUP BY PayDate
-                ORDER BY PayDate;
+                ORDER BY PayDate DESC;
                 """
         cursor.execute(query)
         data = cursor.fetchall()
