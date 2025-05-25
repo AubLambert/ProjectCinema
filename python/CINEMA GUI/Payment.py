@@ -142,11 +142,11 @@ class CustomerFormApp(tk.Tk):
         self.year_entry.place(x=320, y=200)
 
         Label(self, text="Price ($):").place(x=500, y=260)
-        self.price_entry = tk.Entry(self, width=20)
+        self.price_entry = tk.Entry(self, width=20, state = "readonly")
         self.price_entry.place(x=600, y=260)
 
         Label(self, text="Discount (%):").place(x=500, y=300)
-        self.discount_entry = tk.Entry(self, width=20, state="normal")
+        self.discount_entry = tk.Entry(self, width=20, state="readonly")
         self.discount_entry.place(x=600, y=300)
 
         Label(self, text="Amount Due ($):").place(x=500, y=340)
@@ -166,7 +166,7 @@ class CustomerFormApp(tk.Tk):
 
         self.day_entry.bind('<FocusOut>', self.check_auto_discount)
         self.month_entry.bind('<FocusOut>', self.check_auto_discount)
-        self.year_entry.bind('<FocusOut>', self.check_auto_discount)
+        self.year_entry.bind('<KeyRelease>', self.check_auto_discount)
 
 if __name__ == "__main__":
     app=CustomerFormApp()
