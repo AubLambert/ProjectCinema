@@ -18,8 +18,9 @@ class CustomerFormApp(tk.Tk):
         try:
             return mysql.connector.connect(
                 host="localhost",
-                user="admin",
-                password="quang123",
+                port = 3307,
+                user="ticket_clerk",
+                password="dat123",
                 database="cinema_management"
             )
         except mysql.connector.Error as err:
@@ -33,6 +34,10 @@ class CustomerFormApp(tk.Tk):
         return text == "" or (text.isdigit() and len(text) <= 2 and (len(text) < 2 or 1 <= int(text) <= 12))
     def validate_year_input(self, text):
         return text == "" or (text.isdigit() and len(text) <= 4)
+    def validate_name_input(self, text):
+        return text == "" or all(char.isalpha() or char.isspace() for char in text)
+    def validate_phone_input(self, text):
+        return text == "" or text.isdigit()
     def calculate_amount_due(self, *args):
         try:
             price_text = self.price_entry.get().strip()
@@ -59,6 +64,12 @@ class CustomerFormApp(tk.Tk):
         year = self.year_entry.get().strip()
         dob = f"{year}-{month.zfill(2)}-{day.zfill(2)}" if day and month and year else None
 
+        if not customer_name or not phone:
+            self.error_label.config(text="Please enter customer name and phone number!")
+            return
+        else:
+            self.error_label.config(text="")
+
         try:
             mycursor = self.mydb.cursor()
             sql = "INSERT INTO Customers (customername, phonenumber, dob) VALUES (%s, %s, %s)"
@@ -69,16 +80,55 @@ class CustomerFormApp(tk.Tk):
             messagebox.showerror("Database Error", f"Error: {err}")
         finally:
             mycursor.close()
+
+    def check_auto_discount(self, event=None):
+        try:
+            day = int(self.day_entry.get())
+            month = int(self.month_entry.get())
+            year = int(self.year_entry.get())
+
+            today = datetime.today()
+            dob = datetime(year, month, day)
+
+            is_birthday = (dob.day == today.day and dob.month == today.month)
+            age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+            is_under18_or_over65 = (age <= 18 or age >= 65)
+
+            if is_under18_or_over65 and is_birthday:
+                discount = 25
+            elif is_under18_or_over65:
+                discount = 20
+            elif is_birthday:
+                discount = 15
+
+            else:
+                discount = None
+
+            if discount is not None:
+                self.discount_entry.config(state="normal")
+                self.discount_entry.delete(0, tk.END)
+                self.discount_entry.insert(0, str(discount))
+                self.discount_entry.config(state="readonly")
+            else:
+                self.discount_entry.config(state="normal")
+
+            self.calculate_amount_due()
+
+        except ValueError:
+            pass
+
     def create_widgets(self):
         Button(self, text="Confirm", font=("Arial", 10), width=15, command=self.confirm_form).place(x=330, y=420)
         Button(self, text="BACK", font=("Arial", 10), width=7).place(x=10, y=10)
 
         Label(self, text="Customer Name:").place(x=80, y=100)
-        self.customer_name_entry = tk.Entry(self, width=40)
+        vcmd_name = (self.register(self.validate_name_input), '%P')
+        self.customer_name_entry = tk.Entry(self, width=40, validate='key', validatecommand = vcmd_name)
         self.customer_name_entry.place(x=250, y=100)
 
         Label(self, text="Phone Number:").place(x=80, y=150)
-        self.phone_entry = tk.Entry(self, width=40)
+        vcmd_phone = (self.register(self.validate_phone_input), '%P')
+        self.phone_entry = tk.Entry(self, width=40, validate='key', validatecommand = vcmd_phone)
         self.phone_entry.place(x=250, y=150)
 
         Label(self, text="DOB - optional:").place(x=80, y=200)
@@ -96,7 +146,7 @@ class CustomerFormApp(tk.Tk):
         self.price_entry.place(x=600, y=260)
 
         Label(self, text="Discount (%):").place(x=500, y=300)
-        self.discount_entry = tk.Entry(self, width=20)
+        self.discount_entry = tk.Entry(self, width=20, state="normal")
         self.discount_entry.place(x=600, y=300)
 
         Label(self, text="Amount Due ($):").place(x=500, y=340)
@@ -110,6 +160,13 @@ class CustomerFormApp(tk.Tk):
         self.price_entry.insert(0, "")
         self.discount_entry.insert(0, "")
         self.calculate_amount_due()
+
+        self.error_label = Label(self, text="", fg="red", font=("Arial", 10))
+        self.error_label.place(x=250, y=390)
+
+        self.day_entry.bind('<FocusOut>', self.check_auto_discount)
+        self.month_entry.bind('<FocusOut>', self.check_auto_discount)
+        self.year_entry.bind('<FocusOut>', self.check_auto_discount)
 
 if __name__ == "__main__":
     app=CustomerFormApp()
