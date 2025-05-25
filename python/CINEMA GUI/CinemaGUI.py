@@ -4,6 +4,10 @@ from PIL import Image, ImageTk
 from tkinter import ttk
 import mysql.connector
 from mysql.connector import Error
+import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 class Liemora(tk.Tk):
     def __init__(self):
@@ -113,7 +117,7 @@ class Movie(tk.Toplevel):
         ts_window.title(f"Timeslots for {movie_title}")
         ts_window.geometry("500x400")
         tk.Label(ts_window, text=f"Timeslots for '{movie_title}'", font=14).pack(pady=20)
-        for time in ["X", "X", "X"]:
+        for time in ["8:00 AM", "14:00 PM", "20:00 PM"]:
             tk.Button(ts_window, text=time, width=15).pack(pady=5)
         ts_window.transient(self)
         ts_window.grab_set()
@@ -133,29 +137,55 @@ class Admin(tk.Toplevel):
         self.resizable(False, False)
         self.configure(bg="white")
         self.main = main
-        tab_control = ttk.Notebook(self)
         self.protocol("WM_DELETE_WINDOW", self.on_close)
 
-        #Style Configuration
-        style = ttk.Style(self)
+        # Style configuration
+        style = ttk.Style()
         style.theme_use('default')
-        style.layout("TNotebook.Tab", [("Notebook.tab", {"sticky": "nsew","children": [("Notebook.padding", {"sticky": "nsew","children": [("Notebook.label", {"sticky": "nsew"})]})]})])
-        style.map("TNotebook.Tab",background=[("selected", "white")],foreground=[("selected", "black")])
-        style.configure("TNotebook.Tab",padding=(0, 10),font="bold",background="lightgrey",foreground="black",width=450,anchor="center")
+        fixed_width = 17
+        style.configure('TNotebook.Tab',width=fixed_width,padding=[0, 10],anchor='center',font=('Helvetica', 12, 'bold'))
 
-        #tab control
-        tab1 = ttk.Frame(tab_control)
-        tab2 = ttk.Frame(tab_control)
-        tab3 = ttk.Frame(tab_control)
-        tab_control.add(tab1, text='Ticket Sales')
-        tab_control.add(tab2, text='Occupation Rate')
-        tab_control.add(tab3, text='Screening Rate')
+        tab_control = ttk.Notebook(self)
         tab_control.pack(expand=True, fill='both')
+        self.tab1 = ttk.Frame(tab_control)
+        self.tab2 = ttk.Frame(tab_control)
+        self.tab3 = ttk.Frame(tab_control)
 
-        logout_button = Button(tab1, text="Logout", font="bold", command=self.logout)
-        logout_button.pack(pady=10, padx=10, side="left", anchor="sw")
+        tab_control.add(self.tab1, text='Sales Overview')
+        tab_control.add(self.tab2, text='Occupation Rate')
+        tab_control.add(self.tab3, text='Screening Rate')
 
-    #def
+        for tab in (self.tab1, self.tab2, self.tab3):
+            main_frame = tk.Frame(tab)
+            main_frame.pack(fill="both", expand=True)
+
+            left_frame = tk.Frame(main_frame, width=160, bg="lightgrey")
+            left_frame.pack(side="left", fill="y")
+
+            right_frame = tk.Frame(main_frame)
+            right_frame.pack(side="right", fill="both", expand=True)
+
+            #Button
+            if tab == self.tab1:
+                tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5)
+                tk.Button(left_frame,width=20,height=2, text="PLACEHOLDER", command=self.display_ticket_sales_chart).pack(pady=3,padx=5)
+                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2,).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
+            elif tab == self.tab2:
+                tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5)
+                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
+            elif tab == self.tab3:
+                tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5)
+                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
+
+    #DEF
     def on_close(self):
         if self.main.mydb and self.main.mydb.is_connected():
             self.main.mydb.close()
@@ -168,6 +198,45 @@ class Admin(tk.Toplevel):
         self.main.account_entry.delete(0, tk.END)
         self.main.password_entry.delete(0, tk.END)
         self.main.deiconify()
+
+    def display_ticket_sales_chart(self):
+        query = """
+            SELECT 
+                DATE_FORMAT(PayTime, '%Y-%m') AS SaleDate,
+                COUNT(*) AS TicketsSold
+            FROM 
+                Payments
+            WHERE 
+                PayTime < DATE_FORMAT(NOW(), '%Y-%m-01')
+            GROUP BY 
+                DATE_FORMAT(PayTime, '%Y-%m')
+            ORDER BY 
+                SaleDate;
+        """
+        try:
+            df = pd.read_sql(query, self.main.mydb)
+            if df.empty:
+                raise ValueError("No data found for chart.")
+            df['SaleDate'] = pd.to_datetime(df['SaleDate'])
+
+            fig = Figure(figsize=(13, 8), dpi=100)
+            ax = fig.add_subplot(111)
+            ax.plot(df['SaleDate'], df['TicketsSold'], marker='o', linestyle='-')
+            ax.set_title("Monthly Tickets Sold")
+            ax.set_xlabel("Month")
+            ax.set_ylabel("Tickets Sold")
+            fig.autofmt_xdate()
+
+            right_frame = self.tab1.winfo_children()[0].winfo_children()[1]
+            for widget in right_frame.winfo_children():
+                widget.destroy()
+
+            canvas = FigureCanvasTkAgg(fig, master=right_frame)
+            canvas.draw()
+            canvas.get_tk_widget().pack(pady=20)
+
+        except Exception as e:
+            print(f"Error generating chart: {e}")
 
 if __name__ == "__main__":
     app=Liemora()
