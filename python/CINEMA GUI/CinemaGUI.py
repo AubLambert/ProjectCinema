@@ -139,7 +139,6 @@ class Admin(tk.Toplevel):
         self.configure(bg="white")
         self.main = main
         self.protocol("WM_DELETE_WINDOW", self.on_close)
-        
 
         # Style configuration
         style = ttk.Style()
@@ -178,13 +177,13 @@ class Admin(tk.Toplevel):
                 tk.Button(left_frame,width=20,height=2, text="Revenue", command=self.display_revenue_sales_chart).pack(pady=3,padx=5)
                 tk.Button(left_frame, text="Tickets sold", width=20, height=2,command=self.display_ticket_chart).pack(pady=3, padx=5)
                 self.all_time_btn = tk.Button(self.buttons_frame, text="All time", width=20, height=2,state="disabled",
-                                              command=self.display_alltime_chart)
+                                              command=lambda: self.update_chart_by_range("all"))
                 self.last_year_btn = tk.Button(self.buttons_frame, text="Last year", width=20, height=2,state="disabled",
-                                               command=self.display_year_chart)
+                                               command=lambda: self.update_chart_by_range("year"))
                 self.last_6_months_btn = tk.Button(self.buttons_frame, text="Last 6 months", width=20, height=2,state="disabled",
-                                                   command=self.display_6_months_chart)
+                                                   command=lambda: self.update_chart_by_range("6m"))
                 self.last_30_days_btn = tk.Button(self.buttons_frame, text="Last 30 days", width=20, height=2, state="disabled",
-                                                  command=self.display_30_days_chart)
+                                                  command=lambda: self.update_chart_by_range("30"))
                 self.last_30_days_btn.pack(side="right", padx=10)
                 self.last_6_months_btn.pack(side="right", padx=10)
                 self.last_year_btn.pack(side="right", padx=10)
@@ -215,6 +214,26 @@ class Admin(tk.Toplevel):
         self.main.account_entry.delete(0, tk.END)
         self.main.password_entry.delete(0, tk.END)
         self.main.deiconify()
+
+    def update_chart_by_range(self, range_type):
+        if self.chart_mode == "revenue":
+            if range_type == "30":
+                self.display_30_days_revenue()
+            elif range_type == "6m":
+                self.display_6_months_revenue()
+            elif range_type == "year":
+                self.display_year_revenue()
+            elif range_type == "all":
+                self.display_alltime_revenue()
+        elif self.chart_mode == "ticket":
+            if range_type == "30":
+                self.display_ticket_30days()
+            elif range_type == "6m":
+                self.display_ticket_6months()
+            elif range_type == "year":
+                self.display_ticket_year()
+            elif range_type == "all":
+                self.display_ticket_alltime()
 
     def display_revenue_sales_chart(self):
         query = """
@@ -253,8 +272,10 @@ class Admin(tk.Toplevel):
         self.last_year_btn.config(state="normal")
         self.all_time_btn.config(state="normal")
         self.last_30_days_btn.config(state="normal")
+        self.chart_mode = "revenue"
+        self.update_chart_by_range("30")
 
-    def display_30_days_chart(self):
+    def display_30_days_revenue(self):
         query = """
                 SELECT 
                     Date, 
@@ -288,7 +309,7 @@ class Admin(tk.Toplevel):
         except Exception as e:
             print(f"Error generating chart: {e}")
 
-    def display_6_months_chart(self):
+    def display_6_months_revenue(self):
         query = """
             SELECT 
                 Date, 
@@ -323,7 +344,7 @@ class Admin(tk.Toplevel):
         except Exception as e:
             print(f"Error generating 6-month chart: {e}")
 
-    def display_year_chart(self):
+    def display_year_revenue(self):
         query = """
             SELECT 
                 Date, 
@@ -358,7 +379,7 @@ class Admin(tk.Toplevel):
         except Exception as e:
             print(f"Error generating yearly chart: {e}")
 
-    def display_alltime_chart(self):
+    def display_alltime_revenue(self):
         query = """
             SELECT 
                 Date, 
@@ -436,6 +457,172 @@ class Admin(tk.Toplevel):
 
         except Exception as e:
             messagebox.showerror("Error", f"Could not load ticket sales chart.\n{str(e)}")
+
+        self.last_6_months_btn.config(state="normal")
+        self.last_year_btn.config(state="normal")
+        self.all_time_btn.config(state="normal")
+        self.last_30_days_btn.config(state="normal")
+        self.chart_mode = "ticket"
+        self.update_chart_by_range("30")
+
+    def display_ticket_30days(self):
+        query = """
+                    SELECT 
+                        Date, 
+                        TotalTicketsSold 
+                    FROM 
+                        ticket_30days
+                    ORDER BY 
+                        Date;
+                """
+        try:
+            df = pd.read_sql(query, self.main.mydb)
+            if df.empty:
+                raise ValueError("No data found for ticket sales.")
+
+            fig = Figure(figsize=(11, 6), dpi=100)
+            ax = fig.add_subplot(111)
+
+            # Line chart for tickets sold
+            ax.plot(df['Date'], df['TotalTicketsSold'], marker='o', linestyle='-', color='blue')
+            ax.set_title("Tickets Sold (Last 30 Days)")
+            ax.set_xlabel("Date")
+            ax.set_ylabel("Tickets Sold")
+            ax.set_xticks(range(len(df['Date'])))
+            ax.set_xticklabels(df['Date'], rotation=45)
+            ax.ticklabel_format(style='plain', axis='y')
+            fig.autofmt_xdate()
+            fig.tight_layout()
+
+            # Replace old graph
+            for widget in self.graph_frame.winfo_children():
+                widget.destroy()
+
+            canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
+            canvas.draw()
+            canvas.get_tk_widget().pack(pady=20)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not load ticket sales chart.\n{str(e)}")
+
+    def display_ticket_6months(self):
+        query = """
+                    SELECT 
+                        Date, 
+                        TotalTicketsSold 
+                    FROM 
+                        ticket_6months
+                    ORDER BY 
+                        Date;
+                """
+        try:
+            df = pd.read_sql(query, self.main.mydb)
+            if df.empty:
+                raise ValueError("No data found for ticket sales.")
+
+            fig = Figure(figsize=(11, 6), dpi=100)
+            ax = fig.add_subplot(111)
+
+            # Line chart for tickets sold
+            ax.plot(df['Date'], df['TotalTicketsSold'], marker='o', linestyle='-', color='blue')
+            ax.set_title("Tickets Sold (Last 30 Days)")
+            ax.set_xlabel("Date")
+            ax.set_ylabel("Tickets Sold")
+            ax.set_xticks(range(len(df['Date'])))
+            ax.set_xticklabels(df['Date'], rotation=45)
+            ax.ticklabel_format(style='plain', axis='y')
+            fig.autofmt_xdate()
+            fig.tight_layout()
+
+            # Replace old graph
+            for widget in self.graph_frame.winfo_children():
+                widget.destroy()
+
+            canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
+            canvas.draw()
+            canvas.get_tk_widget().pack(pady=20)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not load ticket sales chart.\n{str(e)}")
+
+    def display_ticket_year(self):
+        query = """
+                            SELECT 
+                                Date, 
+                                TotalTicketsSold 
+                            FROM 
+                                ticket_year
+                            ORDER BY 
+                                Date;
+                        """
+        try:
+            df = pd.read_sql(query, self.main.mydb)
+            if df.empty:
+                raise ValueError("No data found for ticket sales.")
+
+            fig = Figure(figsize=(11, 6), dpi=100)
+            ax = fig.add_subplot(111)
+
+            # Line chart for tickets sold
+            ax.plot(df['Date'], df['TotalTicketsSold'], marker='o', linestyle='-', color='blue')
+            ax.set_title("Tickets Sold (Last 30 Days)")
+            ax.set_xlabel("Date")
+            ax.set_ylabel("Tickets Sold")
+            ax.set_xticks(range(len(df['Date'])))
+            ax.set_xticklabels(df['Date'], rotation=45)
+            ax.ticklabel_format(style='plain', axis='y')
+            fig.autofmt_xdate()
+            fig.tight_layout()
+
+            # Replace old graph
+            for widget in self.graph_frame.winfo_children():
+                widget.destroy()
+
+            canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
+            canvas.draw()
+            canvas.get_tk_widget().pack(pady=20)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Could not load ticket sales chart.\n{str(e)}")
+
+    def display_ticket_alltime(self):
+        query = """
+             SELECT 
+                 Date, 
+                 TotalTicketsSold 
+             FROM 
+                 ticket_alltime
+             ORDER BY 
+                 Date;
+         """
+        try:
+            df = pd.read_sql(query, self.main.mydb)
+            if df.empty:
+                raise ValueError("No data found for all-time ticket sold.")
+
+            fig = Figure(figsize=(11, 6), dpi=100)
+            ax = fig.add_subplot(111)
+
+            # Bar chart instead of line chart
+            ax.bar(df['Date'], df['TotalTicketsSold'], color='blue')
+
+            ax.set_title("All-Time Ticket Sold (Quarterly)")
+            ax.set_xlabel("Quarter")
+            ax.set_ylabel("Total Ticket")
+            ax.ticklabel_format(style='plain', axis='y')
+            ax.set_xticks(range(len(df['Date'])))
+            ax.set_xticklabels(df['Date'], rotation=45)
+            fig.autofmt_xdate()
+            fig.tight_layout()
+
+            # Replace old graph
+            for widget in self.graph_frame.winfo_children():
+                widget.destroy()
+            canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
+            canvas.draw()
+            canvas.get_tk_widget().pack(pady=20)
+        except Exception as e:
+            print(f"Error generating all-time chart: {e}")
 
 if __name__ == "__main__":
     app=Liemora()
