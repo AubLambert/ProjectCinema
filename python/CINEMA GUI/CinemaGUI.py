@@ -259,7 +259,7 @@ class Admin(tk.Toplevel):
             ax.set_title("Revenue Over Last 30 Days")
             ax.set_xlabel("Date")
             ax.set_ylabel("Total Revenue")
-            ax.ticklabel_format(style='plain', axis='y')  # Disable scientific notation
+            ax.ticklabel_format(style='plain', axis='y')
             fig.autofmt_xdate()
             fig.tight_layout()
 
@@ -299,7 +299,7 @@ class Admin(tk.Toplevel):
             ax.set_title("Revenue Over Last 30 Days")
             ax.set_xlabel("Date")
             ax.set_ylabel("Total Revenue")
-            ax.ticklabel_format(style='plain', axis='y')  # Disable scientific notation
+            ax.ticklabel_format(style='plain', axis='y')
             fig.autofmt_xdate()
             fig.tight_layout()
 
@@ -337,7 +337,6 @@ class Admin(tk.Toplevel):
             fig.autofmt_xdate()
             fig.tight_layout()
 
-            # Replace old graph
             for widget in self.graph_frame.winfo_children():
                 widget.destroy()
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
@@ -372,7 +371,7 @@ class Admin(tk.Toplevel):
             fig.autofmt_xdate()
             fig.tight_layout()
 
-            # Replace old graph
+
             for widget in self.graph_frame.winfo_children():
                 widget.destroy()
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
@@ -399,7 +398,7 @@ class Admin(tk.Toplevel):
             fig = Figure(figsize=(11, 6), dpi=100)
             ax = fig.add_subplot(111)
 
-            # Bar chart instead of line chart
+
             ax.bar(df['Date'], df['TotalRevenue'], color='green')
 
             ax.set_title("All-Time Revenue (Quarterly)")
@@ -411,7 +410,7 @@ class Admin(tk.Toplevel):
             fig.autofmt_xdate()
             fig.tight_layout()
 
-            # Replace old graph
+
             for widget in self.graph_frame.winfo_children():
                 widget.destroy()
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
@@ -438,7 +437,7 @@ class Admin(tk.Toplevel):
             fig = Figure(figsize=(11, 6), dpi=100)
             ax = fig.add_subplot(111)
 
-            # Line chart for tickets sold
+
             ax.plot(df['Date'], df['TotalTicketsSold'], marker='o', linestyle='-', color='blue')
             ax.set_title("Tickets Sold (Last 30 Days)")
             ax.set_xlabel("Date")
@@ -449,7 +448,6 @@ class Admin(tk.Toplevel):
             fig.autofmt_xdate()
             fig.tight_layout()
 
-            # Replace old graph
             for widget in self.graph_frame.winfo_children():
                 widget.destroy()
 
@@ -485,7 +483,7 @@ class Admin(tk.Toplevel):
             fig = Figure(figsize=(11, 6), dpi=100)
             ax = fig.add_subplot(111)
 
-            # Line chart for tickets sold
+
             ax.plot(df['Date'], df['TotalTicketsSold'], marker='o', linestyle='-', color='blue')
             ax.set_title("Tickets Sold (Last 30 Days)")
             ax.set_xlabel("Date")
@@ -496,7 +494,7 @@ class Admin(tk.Toplevel):
             fig.autofmt_xdate()
             fig.tight_layout()
 
-            # Replace old graph
+
             for widget in self.graph_frame.winfo_children():
                 widget.destroy()
 
@@ -525,7 +523,7 @@ class Admin(tk.Toplevel):
             fig = Figure(figsize=(11, 6), dpi=100)
             ax = fig.add_subplot(111)
 
-            # Line chart for tickets sold
+
             ax.plot(df['Date'], df['TotalTicketsSold'], marker='o', linestyle='-', color='blue')
             ax.set_title("Tickets Sold (Last 30 Days)")
             ax.set_xlabel("Date")
@@ -536,7 +534,7 @@ class Admin(tk.Toplevel):
             fig.autofmt_xdate()
             fig.tight_layout()
 
-            # Replace old graph
+
             for widget in self.graph_frame.winfo_children():
                 widget.destroy()
 
@@ -565,7 +563,7 @@ class Admin(tk.Toplevel):
             fig = Figure(figsize=(11, 6), dpi=100)
             ax = fig.add_subplot(111)
 
-            # Line chart for tickets sold
+
             ax.plot(df['Date'], df['TotalTicketsSold'], marker='o', linestyle='-', color='blue')
             ax.set_title("Tickets Sold (Last 30 Days)")
             ax.set_xlabel("Date")
@@ -576,7 +574,7 @@ class Admin(tk.Toplevel):
             fig.autofmt_xdate()
             fig.tight_layout()
 
-            # Replace old graph
+
             for widget in self.graph_frame.winfo_children():
                 widget.destroy()
 
@@ -605,7 +603,7 @@ class Admin(tk.Toplevel):
             fig = Figure(figsize=(11, 6), dpi=100)
             ax = fig.add_subplot(111)
 
-            # Bar chart instead of line chart
+
             ax.bar(df['Date'], df['TotalTicketsSold'], color='blue')
 
             ax.set_title("All-Time Ticket Sold (Quarterly)")
@@ -617,7 +615,7 @@ class Admin(tk.Toplevel):
             fig.autofmt_xdate()
             fig.tight_layout()
 
-            # Replace old graph
+
             for widget in self.graph_frame.winfo_children():
                 widget.destroy()
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
