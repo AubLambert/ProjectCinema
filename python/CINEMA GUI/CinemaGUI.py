@@ -174,8 +174,8 @@ class Admin(tk.Toplevel):
                 self.buttons_frame.pack(fill="x", pady=10)
 
                 tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5)
-                tk.Button(left_frame,width=20,height=2, text="Revenue", command=self.display_revenue_sales_chart).pack(pady=3,padx=5)
-                tk.Button(left_frame, text="Tickets sold", width=20, height=2,command=self.display_ticket_chart).pack(pady=3, padx=5)
+                tk.Button(left_frame,width=20,height=2, text="Revenue Trends", command=self.display_revenue_sales_chart).pack(pady=3,padx=5)
+                tk.Button(left_frame, text="Tickets Sold Trend", width=20, height=2,command=self.display_ticket_chart).pack(pady=3, padx=5)
                 self.all_time_btn = tk.Button(self.buttons_frame, text="All time", width=20, height=2,state="disabled",
                                               command=lambda: self.update_chart_by_range("all"))
                 self.last_year_btn = tk.Button(self.buttons_frame, text="Last year", width=20, height=2,state="disabled",
