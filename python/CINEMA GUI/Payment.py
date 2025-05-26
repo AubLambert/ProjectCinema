@@ -63,6 +63,11 @@ class CustomerFormApp(tk.Tk):
         month = self.month_entry.get().strip()
         year = self.year_entry.get().strip()
         dob = f"{year}-{month.zfill(2)}-{day.zfill(2)}" if day and month and year else None
+        seat_number = self.seat_entry.get().strip()
+        screening_id = int(self.screening_id_entry.get().strip())
+        amount_due = float(self.amount_due_var.get())
+
+        self.book_ticket_and_insert_payment(customer_name, phone, screening_id, seat_number, amount_due)
 
         if not customer_name or not phone:
             self.error_label.config(text="Please enter customer name and phone number!")
@@ -110,12 +115,59 @@ class CustomerFormApp(tk.Tk):
                 self.discount_entry.insert(0, str(discount))
                 self.discount_entry.config(state="readonly")
             else:
-                self.discount_entry.config(state="normal")
+                self.discount_entry.config(state="readonly")
 
             self.calculate_amount_due()
 
         except ValueError:
             pass
+
+    def book_ticket_and_insert_payment(self, customer_name, phone, screening_id, seat_number, amount):
+        try:
+            result = ''
+            cursor = self.mydb.cursor()
+
+            # Gọi stored procedure ticket_booking
+            cursor.callproc("ticket_booking", (customer_name, phone, screening_id, seat_number, result))
+
+            # Lấy kết quả từ OUT param
+            for res in cursor.stored_results():
+                result = res.fetchone()[0]
+
+            if "successfully" not in result.lower():
+                messagebox.showerror("Booking Failed", result)
+                return
+
+            # Truy vấn các ID cần để insert payment
+            cursor.execute("SELECT CustomerID FROM Customers WHERE PhoneNumber = %s", (phone,))
+            customer_id = cursor.fetchone()[0]
+
+            cursor.execute("SELECT RoomID FROM Screenings WHERE ScreeningID = %s", (screening_id,))
+            room_id = cursor.fetchone()[0]
+
+            cursor.execute("SELECT SeatID FROM Seats WHERE RoomID = %s AND SeatNumber = %s", (room_id, seat_number))
+            seat_id = cursor.fetchone()[0]
+
+            cursor.execute("""
+                SELECT TicketID FROM Tickets 
+                WHERE CustomerID = %s AND ScreeningID = %s AND SeatID = %s
+                ORDER BY TicketID DESC LIMIT 1
+            """, (customer_id, screening_id, seat_id))
+            ticket_id = cursor.fetchone()[0]
+
+            # Insert payment
+            cursor.execute("""
+                INSERT INTO Payments (CustomerID, ScreeningID, TicketID, Amount, PayTime)
+                VALUES (%s, %s, %s, %s, NOW())
+            """, (customer_id, screening_id, ticket_id, amount))
+
+            self.mydb.commit()
+            messagebox.showinfo("Success", "Ticket booked and payment saved successfully!")
+
+        except mysql.connector.Error as err:
+            messagebox.showerror("Database Error", f"Error: {err}")
+        finally:
+            cursor.close()
 
     def create_widgets(self):
         Button(self, text="Confirm", font=("Arial", 10), width=15, command=self.confirm_form).place(x=330, y=420)
@@ -140,9 +192,14 @@ class CustomerFormApp(tk.Tk):
         Label(self, text="/").place(x=310, y=200)
         self.year_entry = tk.Entry(self, width=5, validate='key', validatecommand=(self.register(self.validate_year_input), '%P'))
         self.year_entry.place(x=320, y=200)
-
-        Label(self, text="Price ($):").place(x=500, y=260)
-        self.price_entry = tk.Entry(self, width=20, state = "readonly")
+        Label(self, text="Seat Number:").place(x=80, y=250)
+        self.seat_entry = tk.Entry(self, width=20, state="readonly")
+        self.seat_entry.place(x=250, y=250)
+        Label(self, text="Screening ID:").place(x=80, y=300)
+        self.screening_id_entry = tk.Entry(self, width=20, state="readonly")
+        self.screening_id_entry.place(x=250, y=300)
+        Label(self, text="Price (VND):").place(x=500, y=260)
+        self.price_entry = tk.Entry(self, width=20, state="readonly")
         self.price_entry.place(x=600, y=260)
 
         Label(self, text="Discount (%):").place(x=500, y=300)
@@ -166,7 +223,7 @@ class CustomerFormApp(tk.Tk):
 
         self.day_entry.bind('<FocusOut>', self.check_auto_discount)
         self.month_entry.bind('<FocusOut>', self.check_auto_discount)
-        self.year_entry.bind('<KeyRelease>', self.check_auto_discount)
+        self.year_entry.bind('<FocusOut>', self.check_auto_discount)
 
 if __name__ == "__main__":
     app=CustomerFormApp()

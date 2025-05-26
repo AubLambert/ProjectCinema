@@ -2,6 +2,7 @@ import mysql.connector
 
 mydb = mysql.connector.connect(
     host = "localhost",
+    port = 3307,
     user = "root",
     password = "datk572004",
     database="cinema_management"
@@ -12,9 +13,9 @@ mycursor = mydb.cursor()
 
 # Call store procedure seat availability
 
-def call_seat_availability(screening_id):
+def call_seat_availability(screening_id, seat_code):
     try:
-         mycursor.callproc('seat_availability', (screening_id,))
+         mycursor.callproc('seat_availability', (screening_id, seat_code))
          for result in mycursor.stored_results():
             rows = result.fetchall()
         
@@ -59,7 +60,6 @@ def booking_seat_process():
 
 booking_seat_process()
 
-
 # Find customer's ticket through phone number
 
 def find_tickets_by_phone(phone_number):
@@ -87,7 +87,7 @@ def find_tickets_by_phone(phone_number):
 
 def cancel_ticket(ticket_id):
     while True:
-        confirmation = input(f"Are you want to cancel TicketID {ticket_id}? (y/n): ").strip().lower()
+        confirmation = input(f"Do you want to cancel TicketID {ticket_id}? (y/n): ").strip().lower()
 
         if confirmation in ['y', 'n']:
             break
@@ -95,15 +95,14 @@ def cancel_ticket(ticket_id):
             print("Invalid input. Please enter 'y' or 'n' only.")
 
     if confirmation == 'y':
-        print("Cancellation successfully.")
-        return
-
-    try:
-        mycursor.execute("DELETE FROM Tickets WHERE TicketID = %s", (ticket_id,))
-        mydb.commit()
-        print("Ticket has been cancelled.")
-    except mysql.connector.Error as err:
-        print(f"Failed to cancel ticket: {err.msg}")
+        try:
+            mycursor.execute("DELETE FROM Tickets WHERE TicketID = %s", (ticket_id,))
+            mydb.commit()
+            print("Ticket has been cancelled.")
+        except mysql.connector.Error as err:
+            print(f"Failed to cancel ticket: {err.msg}")
+    else:
+        print("Cancellation aborted.")
 
 #Cancellation program
 
