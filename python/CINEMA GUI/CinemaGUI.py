@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.dates as mdates
+from matplotlib.ticker import MaxNLocator
 import os
 from SeatSelect import SeatBooking
 
@@ -105,13 +106,13 @@ class Movie(tk.Toplevel):
         tk.Button(self, text="Logout", font=10, width=7, command=self.logout).grid(row=0, column=0, sticky="nw", padx=20, pady=20)
 
         titles = ["John Wick", "Edge of Tomorrow", "Interstellar", "Coco", "Parasite", "The Revenant"]
-        images = images = [
-                        os.path.join(base_dir, "Images", "Johnwick.jpg"),
-                        os.path.join(base_dir, "Images", "EdgeOfTomorrow.jpg"),
-                        os.path.join(base_dir, "Images", "Interstellar.jpg"),
-                        os.path.join(base_dir, "Images", "Coco.jpg"),
-                        os.path.join(base_dir, "Images", "Parasite.jpg"),
-                        os.path.join(base_dir, "Images", "TheRevenant.jpg")
+        images = [
+            os.path.join(base_dir, "Images", "Johnwick.jpg"),
+            os.path.join(base_dir, "Images", "EdgeOfTomorrow.jpg"),
+            os.path.join(base_dir, "Images", "Interstellar.jpg"),
+            os.path.join(base_dir, "Images", "Coco.jpg"),
+            os.path.join(base_dir, "Images", "Parasite.jpg"),
+            os.path.join(base_dir, "Images", "TheRevenant.jpg")
         ]
 
         self.movie_image_map = dict(zip(titles, images))
@@ -270,7 +271,7 @@ class Admin(tk.Toplevel):
 
         tab_control.add(self.tab1, text='Sales Overview')
         tab_control.add(self.tab2, text='Performance Report')
-        tab_control.add(self.tab3, text='Placeholder text')
+        tab_control.add(self.tab3, text='Customer Insight')
 
         for tab in (self.tab1, self.tab2, self.tab3):
             main_frame = tk.Frame(tab)
@@ -319,11 +320,43 @@ class Admin(tk.Toplevel):
                 self.ticket_yearly_btn = tk.Button(self.buttons_frame, text="Yearly", width=20, height=2,command=self.ticket_yearly)
 
             elif tab == self.tab2:
+                self.graph_frame2 = tk.Frame(right_frame)
+                self.graph_frame2.pack(fill="both", expand=True)
+                self.buttons_frame2 = tk.Frame(right_frame)
+                self.buttons_frame2.pack(fill="x", pady=10)
+
                 tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5,side="bottom")
-                tk.Button(left_frame, text="Top Performing Movies", width=20, height=2, ).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="Occupation Rate", width=20, height=2, ).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="Movie Performance", width=20, height=2,command=self.display_movie).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="Occupation Rate", width=20, height=2, command=self.display_occupation).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="Screening Time", width=20, height=2,command=self.display_screeningtime).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="Weekday Performance", width=20, height=2,command=self.day_performance).pack(pady=3, padx=5)
+
+                #Movies
+                self.last_14days = tk.Button(self.buttons_frame2, text="Last 14 days", width=20, height=2,command=self.display_movie14)
+                self.last_30days = tk.Button(self.buttons_frame2, text="Last 30 days", width=20, height=2,command=self.display_movie30)
+                self.last_60days = tk.Button(self.buttons_frame2, text="Last 60 days", width=20, height=2,command=self.display_movie60)
+
+                #Occupation
+                self.Occupation_table = tk.Button(self.buttons_frame2, text="Table", width=20, height=2,
+                                             command=self.display_occupation_table)
+                self.Occupation_graph = tk.Button(self.buttons_frame2, text="Graph", width=20, height=2,
+                                                  command=self.display_occupation_graph)
+
+                #Screening
+                self.screening30 = tk.Button(self.buttons_frame2, text="Last 30 days", width=20, height=2,
+                                             command=self.display_screening30)
+                self.screening90 = tk.Button(self.buttons_frame2, text="Last 90 days", width=20, height=2,
+                                           command=self.display_screening90)
+                self.screening = tk.Button(self.buttons_frame2, text="All time", width=20, height=2,
+                                           command=self.display_screening)
+                #Day Performance
+                self.day_30 = tk.Button(self.buttons_frame2, text="Last 30 days", width=20, height=2,
+                                             command=self.display_day30)
+                self.day_90 = tk.Button(self.buttons_frame2, text="Last 90 days", width=20, height=2,
+                                             command=self.display_day90)
+                self.day_all = tk.Button(self.buttons_frame2, text="All time", width=20, height=2,
+                                             command=self.display_day_all)
+
             elif tab == self.tab3:
                 tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5,side="bottom")
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
@@ -337,51 +370,43 @@ class Admin(tk.Toplevel):
             self.main.mydb.close()
         self.destroy()
         self.main.destroy()
-
     def logout(self):
         self.main.mydb.close()
         self.destroy()
         self.main.account_entry.delete(0, tk.END)
         self.main.password_entry.delete(0, tk.END)
         self.main.deiconify()
-
     #DEF Show/hide buttons
     def hide_time_range_totalrevenue(self):
         self.revenue_daily_btn.pack_forget()
         self.revenue_monthly_btn.pack_forget()
         self.revenue_quarterly_btn.pack_forget()
         self.revenue_yearly_btn.pack_forget()
-
     def show_time_range_totalrevenue(self):
         self.revenue_daily_btn.pack(side="right", padx=10)
         self.revenue_monthly_btn.pack(side="right", padx=10)
         self.revenue_quarterly_btn.pack(side="right", padx=10)
         self.revenue_yearly_btn.pack(side="right", padx=10)
-
     def hide_time_range_buttons(self):
         self.all_time_btn.pack_forget()
         self.last_year_btn.pack_forget()
         self.last_6_months_btn.pack_forget()
         self.last_30_days_btn.pack_forget()
-
     def show_time_range_button(self):
         self.last_30_days_btn.pack(side="right", padx=10)
         self.last_6_months_btn.pack(side="right", padx=10)
         self.last_year_btn.pack(side="right", padx=10)
         self.all_time_btn.pack(side="right", padx=10)
-
     def show_time_range_ticket(self):
         self.ticket_daily_btn.pack(side="right", padx=10)
         self.ticket_monthly_btn.pack(side="right", padx=10)
         self.ticket_quarterly_btn.pack(side="right", padx=10)
         self.ticket_yearly_btn.pack(side="right", padx=10)
-
     def hide_time_range_ticket(self):
         self.ticket_daily_btn.pack_forget()
         self.ticket_monthly_btn.pack_forget()
         self.ticket_quarterly_btn.pack_forget()
         self.ticket_yearly_btn.pack_forget()
-
     def update_chart_by_range(self, range_type):
         if self.chart_mode == "revenue":
             if range_type == "30":
@@ -401,7 +426,6 @@ class Admin(tk.Toplevel):
                 self.display_ticket_year()
             elif range_type == "all":
                 self.display_ticket_alltime()
-
     #Revenue trend
     def display_revenue_sales_chart(self):
         query = """
@@ -441,7 +465,6 @@ class Admin(tk.Toplevel):
         self.show_time_range_button()
         self.chart_mode = "revenue"
         self.update_chart_by_range("30")
-
     def display_30_days_revenue(self):
         query = """
                 SELECT 
@@ -475,7 +498,6 @@ class Admin(tk.Toplevel):
             canvas.get_tk_widget().pack(pady=20)
         except Exception as e:
             print(f"Error generating chart: {e}")
-
     def display_6_months_revenue(self):
         query = """
             SELECT 
@@ -509,7 +531,6 @@ class Admin(tk.Toplevel):
             canvas.get_tk_widget().pack(pady=20)
         except Exception as e:
             print(f"Error generating 6-month chart: {e}")
-
     def display_year_revenue(self):
         query = """
             SELECT 
@@ -544,7 +565,6 @@ class Admin(tk.Toplevel):
             canvas.get_tk_widget().pack(pady=20)
         except Exception as e:
             print(f"Error generating yearly chart: {e}")
-
     def display_alltime_revenue(self):
         query = """
             SELECT 
@@ -583,7 +603,6 @@ class Admin(tk.Toplevel):
             canvas.get_tk_widget().pack(pady=20)
         except Exception as e:
             print(f"Error generating all-time chart: {e}")
-
     #ticket trend
     def display_ticket_chart(self):
         query = """
@@ -605,7 +624,7 @@ class Admin(tk.Toplevel):
 
 
             ax.plot(df['Date'], df['TotalTicketsSold'], marker='o', linestyle='-', color='blue')
-            ax.set_title("Tickets Sold (Last 30 Days)")
+            ax.set_title("Tickets Sold Over Last 30 Days")
             ax.set_xlabel("Date")
             ax.set_ylabel("Tickets Sold")
             ax.set_xticks(range(len(df['Date'])))
@@ -629,7 +648,6 @@ class Admin(tk.Toplevel):
         self.show_time_range_button()
         self.chart_mode = "ticket"
         self.update_chart_by_range("30")
-
     def display_ticket_30days(self):
         query = """
                     SELECT 
@@ -650,7 +668,7 @@ class Admin(tk.Toplevel):
 
 
             ax.plot(df['Date'], df['TotalTicketsSold'], marker='o', linestyle='-', color='blue')
-            ax.set_title("Tickets Sold (Last 30 Days)")
+            ax.set_title("Tickets Sold Over Last 30 Days")
             ax.set_xlabel("Date")
             ax.set_ylabel("Tickets Sold")
             ax.set_xticks(range(len(df['Date'])))
@@ -669,7 +687,6 @@ class Admin(tk.Toplevel):
 
         except Exception as e:
             messagebox.showerror("Error", f"Could not load ticket sales chart.\n{str(e)}")
-
     def display_ticket_6months(self):
         query = """
                     SELECT 
@@ -690,7 +707,7 @@ class Admin(tk.Toplevel):
 
 
             ax.plot(df['Date'], df['TotalTicketsSold'], marker='o', linestyle='-', color='blue')
-            ax.set_title("Tickets Sold (Last 30 Days)")
+            ax.set_title("Tickets Sold Over Last 6 Months")
             ax.set_xlabel("Date")
             ax.set_ylabel("Tickets Sold")
             ax.set_xticks(range(len(df['Date'])))
@@ -709,7 +726,6 @@ class Admin(tk.Toplevel):
 
         except Exception as e:
             messagebox.showerror("Error", f"Could not load ticket sales chart.\n{str(e)}")
-
     def display_ticket_year(self):
         query = """
                             SELECT 
@@ -730,7 +746,7 @@ class Admin(tk.Toplevel):
 
 
             ax.plot(df['Date'], df['TotalTicketsSold'], marker='o', linestyle='-', color='blue')
-            ax.set_title("Tickets Sold (Last 30 Days)")
+            ax.set_title("Tickets Sold Over Last Year")
             ax.set_xlabel("Date")
             ax.set_ylabel("Tickets Sold")
             ax.set_xticks(range(len(df['Date'])))
@@ -749,7 +765,6 @@ class Admin(tk.Toplevel):
 
         except Exception as e:
             messagebox.showerror("Error", f"Could not load ticket sales chart.\n{str(e)}")
-
     def display_ticket_alltime(self):
         query = """
              SELECT 
@@ -788,7 +803,6 @@ class Admin(tk.Toplevel):
             canvas.get_tk_widget().pack(pady=20)
         except Exception as e:
             print(f"Error generating all-time chart: {e}")
-
     #Revenue
     def display_total_revenue(self):
         for widget in self.graph_frame.winfo_children():
@@ -829,7 +843,6 @@ class Admin(tk.Toplevel):
         self.hide_time_range_buttons()
         self.hide_time_range_ticket()
         self.show_time_range_totalrevenue()
-
     def revenue_daily(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
@@ -865,7 +878,6 @@ class Admin(tk.Toplevel):
             year_month, total_revenue = row
             formatted_revenue = "{:,.0f} ₫".format(total_revenue).replace(",", ".")
             tree.insert("", "end", values=(year_month, formatted_revenue))
-
     def revenue_monthly(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
@@ -901,7 +913,6 @@ class Admin(tk.Toplevel):
             year_month, total_revenue = row
             formatted_revenue = "{:,.0f} ₫".format(total_revenue).replace(",", ".")
             tree.insert("", "end", values=(year_month, formatted_revenue))
-
     def revenue_quarterly(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
@@ -942,7 +953,6 @@ class Admin(tk.Toplevel):
             year_month, total_revenue = row
             formatted_revenue = "{:,.0f} ₫".format(total_revenue).replace(",", ".")
             tree.insert("", "end", values=(year_month, formatted_revenue))
-
     def revenue_yearly(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
@@ -983,7 +993,6 @@ class Admin(tk.Toplevel):
             year_month, total_revenue = row
             formatted_revenue = "{:,.0f} ₫".format(total_revenue).replace(",", ".")
             tree.insert("", "end", values=(year_month, formatted_revenue))
-
     #Ticket
     def display_ticket(self):
         for widget in self.graph_frame.winfo_children():
@@ -1007,7 +1016,7 @@ class Admin(tk.Toplevel):
         columns = ("YearMonth", "TotalRevenue")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
         tree.heading("YearMonth", text="Date")
-        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.heading("TotalRevenue", text="Total Ticket Sold")
         tree.column("YearMonth", width=150, anchor="center")
         tree.column("TotalRevenue", width=200, anchor="center")
 
@@ -1024,7 +1033,6 @@ class Admin(tk.Toplevel):
         self.hide_time_range_buttons()
         self.hide_time_range_totalrevenue()
         self.show_time_range_ticket()
-
     def ticket_daily(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
@@ -1047,7 +1055,7 @@ class Admin(tk.Toplevel):
         columns = ("YearMonth", "TotalRevenue")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
         tree.heading("YearMonth", text="Date")
-        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.heading("TotalRevenue", text="Total Ticket Sold")
         tree.column("YearMonth", width=150, anchor="center")
         tree.column("TotalRevenue", width=200, anchor="center")
 
@@ -1060,7 +1068,6 @@ class Admin(tk.Toplevel):
             year_month, total_revenue = row
             formatted_revenue = "{:,.0f}".format(total_revenue).replace(",", ".")
             tree.insert("", "end", values=(year_month, formatted_revenue))
-
     def ticket_monthly(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
@@ -1083,7 +1090,7 @@ class Admin(tk.Toplevel):
         columns = ("YearMonth", "TotalRevenue")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
         tree.heading("YearMonth", text="Date")
-        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.heading("TotalRevenue", text="Total Ticket Sold")
         tree.column("YearMonth", width=150, anchor="center")
         tree.column("TotalRevenue", width=200, anchor="center")
 
@@ -1096,7 +1103,6 @@ class Admin(tk.Toplevel):
             year_month, total_revenue = row
             formatted_revenue = "{:,.0f}".format(total_revenue).replace(",", ".")
             tree.insert("", "end", values=(year_month, formatted_revenue))
-
     def ticket_quarterly(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
@@ -1125,7 +1131,7 @@ class Admin(tk.Toplevel):
         columns = ("YearMonth", "TotalRevenue")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
         tree.heading("YearMonth", text="Date")
-        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.heading("TotalRevenue", text="Total Ticket Sold")
         tree.column("YearMonth", width=150, anchor="center")
         tree.column("TotalRevenue", width=200, anchor="center")
 
@@ -1138,21 +1144,15 @@ class Admin(tk.Toplevel):
             year_month, total_revenue = row
             formatted_revenue = "{:,.0f}".format(total_revenue).replace(",", ".")
             tree.insert("", "end", values=(year_month, formatted_revenue))
-
     def ticket_yearly(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
         cursor = self.main.mydb.cursor()
         query = """
                 SELECT
-                  Year,
-                  COUNT(*) AS TotalTicketsSold
-                FROM (
-                  SELECT 
-                    TicketID,
-                    YEAR(PayTime) AS Year
-                  FROM Payments
-                ) AS sub
+                    DATE_FORMAT(PayTime, '%Y') AS Year,
+                    COUNT(TicketID) AS TotalTicketsSold
+                FROM Payments
                 GROUP BY Year
                 ORDER BY Year DESC;
                 """
@@ -1166,7 +1166,7 @@ class Admin(tk.Toplevel):
         columns = ("YearMonth", "TotalRevenue")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
         tree.heading("YearMonth", text="Date")
-        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.heading("TotalRevenue", text="Total Ticket Sold")
         tree.column("YearMonth", width=150, anchor="center")
         tree.column("TotalRevenue", width=200, anchor="center")
 
@@ -1180,8 +1180,615 @@ class Admin(tk.Toplevel):
             formatted_revenue = "{:,.0f}".format(total_revenue).replace(",", ".")
             tree.insert("", "end", values=(year_month, formatted_revenue))
 
-    #DEF TAB2
 
+    #DEF TAB2
+    #Show/Hide button
+    def hide_button2(self):
+        self.hide_movie_button()
+        self.hide_occupation()
+        self.hide_screening()
+        self.hide_day_button()
+    def show_movie_button(self):
+        self.last_14days.pack(side="right", padx=10)
+        self.last_30days.pack(side="right", padx=10)
+        self.last_60days.pack(side="right", padx=10)
+    def hide_movie_button(self):
+        self.last_14days.pack_forget()
+        self.last_30days.pack_forget()
+        self.last_60days.pack_forget()
+    def show_occupation(self):
+        self.Occupation_table.pack(side="right", padx=10)
+        self.Occupation_graph.pack(side="right", padx=10)
+    def hide_occupation(self):
+        self.Occupation_table.pack_forget()
+        self.Occupation_graph.pack_forget()
+    def show_screening(self):
+        self.screening30.pack(side="right", padx=10)
+        self.screening90.pack(side="right", padx=10)
+        self.screening.pack(side="right", padx=10)
+    def hide_screening(self):
+        self.screening30.pack_forget()
+        self.screening90.pack_forget()
+        self.screening.pack_forget()
+    def show_day_button(self):
+        self.day_30.pack(side="right", padx=10)
+        self.day_90.pack(side="right", padx=10)
+        self.day_all.pack(side="right", padx=10)
+    def hide_day_button(self):
+        self.day_30.pack_forget()
+        self.day_90.pack_forget()
+        self.day_all.pack_forget()
+
+
+    #Movie
+    def display_movie(self):
+        for widget in self.graph_frame2.winfo_children():
+            widget.destroy()
+
+        cursor = self.main.mydb.cursor()
+        query = "SELECT MovieID, MovieTitle, Genre, TicketsSold, TotalRevenue, AttendanceRate FROM movie_14days"
+        cursor.execute(query)
+        data = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame2)
+        table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        columns = ("MovieID", "MovieTitle", "Genre", "TicketsSold", "TotalRevenue", "AttendanceRate")
+        tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
+
+        tree.heading("MovieID", text="Movie ID")
+        tree.heading("MovieTitle", text="Title")
+        tree.heading("Genre", text="Genre")
+        tree.heading("TicketsSold", text="Tickets Sold")
+        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.heading("AttendanceRate", text="Attendance Rate")
+
+        tree.column("MovieID", width=80, anchor="center")
+        tree.column("MovieTitle", width=200, anchor="center")
+        tree.column("Genre", width=100, anchor="center")
+        tree.column("TicketsSold", width=100, anchor="center")
+        tree.column("TotalRevenue", width=150, anchor="center")
+        tree.column("AttendanceRate", width=150, anchor="center")
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        tree.pack(fill="both", expand=True)
+
+        for row in data:
+            movie_id, title, genre, tickets, revenue, attendance = row
+            formatted_revenue = "{:,.0f} ₫".format(revenue).replace(",", ".")
+            formatted_attendance = f"{attendance * 100:.2f}%"
+            tree.insert("", "end", values=(movie_id, title, genre, tickets, formatted_revenue, formatted_attendance))
+
+        self.hide_button2()
+        self.show_movie_button()
+    def display_movie14(self):
+        for widget in self.graph_frame2.winfo_children():
+            widget.destroy()
+
+        cursor = self.main.mydb.cursor()
+        query = "SELECT MovieID, MovieTitle, Genre, TicketsSold, TotalRevenue, AttendanceRate FROM movie_14days"
+        cursor.execute(query)
+        data = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame2)
+        table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        columns = ("MovieID", "MovieTitle", "Genre", "TicketsSold", "TotalRevenue", "AttendanceRate")
+        tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
+
+        tree.heading("MovieID", text="Movie ID")
+        tree.heading("MovieTitle", text="Title")
+        tree.heading("Genre", text="Genre")
+        tree.heading("TicketsSold", text="Tickets Sold")
+        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.heading("AttendanceRate", text="Attendance Rate")
+
+        tree.column("MovieID", width=80, anchor="center")
+        tree.column("MovieTitle", width=200, anchor="center")
+        tree.column("Genre", width=100, anchor="center")
+        tree.column("TicketsSold", width=100, anchor="center")
+        tree.column("TotalRevenue", width=150, anchor="center")
+        tree.column("AttendanceRate", width=150, anchor="center")
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        tree.pack(fill="both", expand=True)
+
+        for row in data:
+            movie_id, title, genre, tickets, revenue, attendance = row
+            formatted_revenue = "{:,.0f} ₫".format(revenue).replace(",", ".")
+            formatted_attendance = f"{attendance * 100:.2f}%"
+            tree.insert("", "end", values=(movie_id, title, genre, tickets, formatted_revenue, formatted_attendance))
+    def display_movie30(self):
+        for widget in self.graph_frame2.winfo_children():
+            widget.destroy()
+
+        cursor = self.main.mydb.cursor()
+        query = "SELECT MovieID, MovieTitle, Genre, TicketsSold, TotalRevenue, AttendanceRate FROM movie_30days"
+        cursor.execute(query)
+        data = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame2)
+        table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        columns = ("MovieID", "MovieTitle", "Genre", "TicketsSold", "TotalRevenue", "AttendanceRate")
+        tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
+
+        tree.heading("MovieID", text="Movie ID")
+        tree.heading("MovieTitle", text="Title")
+        tree.heading("Genre", text="Genre")
+        tree.heading("TicketsSold", text="Tickets Sold")
+        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.heading("AttendanceRate", text="Attendance Rate")
+
+        tree.column("MovieID", width=80, anchor="center")
+        tree.column("MovieTitle", width=200, anchor="center")
+        tree.column("Genre", width=100, anchor="center")
+        tree.column("TicketsSold", width=100, anchor="center")
+        tree.column("TotalRevenue", width=150, anchor="center")
+        tree.column("AttendanceRate", width=150, anchor="center")
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        tree.pack(fill="both", expand=True)
+
+        for row in data:
+            movie_id, title, genre, tickets, revenue, attendance = row
+            formatted_revenue = "{:,.0f} ₫".format(revenue).replace(",", ".")
+            formatted_attendance = f"{attendance * 100:.2f}%"
+            tree.insert("", "end", values=(movie_id, title, genre, tickets, formatted_revenue, formatted_attendance))
+    def display_movie60(self):
+        for widget in self.graph_frame2.winfo_children():
+            widget.destroy()
+
+        cursor = self.main.mydb.cursor()
+        query = "SELECT MovieID, MovieTitle, Genre, TicketsSold, TotalRevenue, AttendanceRate FROM movie_60days"
+        cursor.execute(query)
+        data = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame2)
+        table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        columns = ("MovieID", "MovieTitle", "Genre", "TicketsSold", "TotalRevenue", "AttendanceRate")
+        tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
+
+        tree.heading("MovieID", text="Movie ID")
+        tree.heading("MovieTitle", text="Title")
+        tree.heading("Genre", text="Genre")
+        tree.heading("TicketsSold", text="Tickets Sold")
+        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.heading("AttendanceRate", text="Attendance Rate")
+
+        tree.column("MovieID", width=80, anchor="center")
+        tree.column("MovieTitle", width=200, anchor="center")
+        tree.column("Genre", width=100, anchor="center")
+        tree.column("TicketsSold", width=100, anchor="center")
+        tree.column("TotalRevenue", width=150, anchor="center")
+        tree.column("AttendanceRate", width=150, anchor="center")
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        tree.pack(fill="both", expand=True)
+
+        for row in data:
+            movie_id, title, genre, tickets, revenue, attendance = row
+            formatted_revenue = "{:,.0f} ₫".format(revenue).replace(",", ".")
+            formatted_attendance = f"{attendance * 100:.2f}%"
+            tree.insert("", "end", values=(movie_id, title, genre, tickets, formatted_revenue, formatted_attendance))
+    #Occupation
+    def display_occupation(self):
+        for widget in self.graph_frame2.winfo_children():
+            widget.destroy()
+
+        cursor = self.main.mydb.cursor()
+        query = "SELECT Month, Tickets_Sold, Total_Screenings, TotalSeat, `Occupation Rate (%)` FROM occupation"
+        cursor.execute(query)
+        data = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame2)
+        table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        columns = ("Month", "Tickets_Sold", "Total_Screenings", "TotalSeat", "OccupationRate")
+        tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
+
+        tree.heading("Month", text="Month")
+        tree.heading("Tickets_Sold", text="Tickets Sold")
+        tree.heading("Total_Screenings", text="Total Screenings")
+        tree.heading("TotalSeat", text="Total Seats")
+        tree.heading("OccupationRate", text="Occupation Rate (%)")
+
+        tree.column("Month", width=100, anchor="center")
+        tree.column("Tickets_Sold", width=100, anchor="center")
+        tree.column("Total_Screenings", width=130, anchor="center")
+        tree.column("TotalSeat", width=100, anchor="center")
+        tree.column("OccupationRate", width=150, anchor="center")
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        tree.pack(fill="both", expand=True)
+
+        for row in data:
+            month, tickets_sold, total_screenings, total_seat, occupation_rate = row
+            formatted_occupation = f"{occupation_rate:.2f}%"
+            tree.insert("", "end", values=(month, tickets_sold, total_screenings, total_seat, formatted_occupation))
+
+        self.hide_button2()
+        self.show_occupation()
+    def display_occupation_table(self):
+        for widget in self.graph_frame2.winfo_children():
+            widget.destroy()
+
+        cursor = self.main.mydb.cursor()
+        query = "SELECT Month, Tickets_Sold, Total_Screenings, TotalSeat, `Occupation Rate (%)` FROM occupation"
+        cursor.execute(query)
+        data = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame2)
+        table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        columns = ("Month", "Tickets_Sold", "Total_Screenings", "TotalSeat", "OccupationRate")
+        tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
+
+        tree.heading("Month", text="Month")
+        tree.heading("Tickets_Sold", text="Tickets Sold")
+        tree.heading("Total_Screenings", text="Total Screenings")
+        tree.heading("TotalSeat", text="Total Seats")
+        tree.heading("OccupationRate", text="Occupation Rate (%)")
+
+        tree.column("Month", width=100, anchor="center")
+        tree.column("Tickets_Sold", width=100, anchor="center")
+        tree.column("Total_Screenings", width=130, anchor="center")
+        tree.column("TotalSeat", width=100, anchor="center")
+        tree.column("OccupationRate", width=150, anchor="center")
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        tree.pack(fill="both", expand=True)
+
+        for row in data:
+            month, tickets_sold, total_screenings, total_seat, occupation_rate = row
+            formatted_occupation = f"{occupation_rate:.2f}%"
+            tree.insert("", "end", values=(month, tickets_sold, total_screenings, total_seat, formatted_occupation))
+    def display_occupation_graph(self):
+        for widget in self.graph_frame2.winfo_children():
+            widget.destroy()
+
+        cursor = self.main.mydb.cursor()
+        query = "SELECT Month, Tickets_Sold, `Occupation Rate (%)` FROM occupation"
+        cursor.execute(query)
+        data = cursor.fetchall()
+        cursor.close()
+
+        data.sort(key=lambda row: row[0])
+        months = [row[0] for row in data]
+        tickets_sold = [row[1] for row in data]
+        occupation_rates = [row[2] for row in data]
+
+        fig, ax1 = plt.subplots(figsize=(11, 6), dpi=100)
+
+        ax1.bar(months, tickets_sold, color='skyblue', label='Tickets Sold')
+        ax1.set_xlabel('Date')
+        ax1.set_ylabel('Tickets Sold', color='skyblue')
+        ax1.tick_params(axis='y', labelcolor='skyblue')
+        ax1.yaxis.set_major_locator(MaxNLocator(integer=True))
+        ax1.set_xticks(range(0, len(months), 3))
+        ax1.set_xticklabels(months[::3], rotation=45, ha='right')
+
+        ax2 = ax1.twinx()
+        ax2.plot(months, occupation_rates, color='darkgreen', marker='o', label='Occupation Rate (%)')
+        ax2.set_ylabel('Occupation Rate (%)', color='darkgreen')
+        ax2.tick_params(axis='y', labelcolor='darkgreen')
+        ax2.set_ylim(0, max(occupation_rates) + 1)
+
+        plt.title('Monthly Tickets Sold and Occupation Rate')
+        fig.autofmt_xdate()
+        fig.tight_layout()
+        plt.grid(True, axis='y', linestyle='--', alpha=0.5)
+
+        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame2)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill="both", expand=True, padx=10, pady=10)
+        plt.close(fig)
+    #Screeningtime
+    def display_screeningtime(self):
+        for widget in self.graph_frame2.winfo_children():
+            widget.destroy()
+
+        cursor = self.main.mydb.cursor()
+        cursor.execute("SELECT ScreeningTime, TicketSold, OccupationRate, Revenue FROM screeningtime30")
+        records = cursor.fetchall()
+
+        table_frame = tk.Frame(self.graph_frame2)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("ScreeningTime", "TicketSold", "OccupationRate", "Revenue")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=20)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        tree.heading("ScreeningTime", text="Screening Time")
+        tree.heading("TicketSold", text="Tickets Sold")
+        tree.heading("OccupationRate", text="Occupation Rate")
+        tree.heading("Revenue", text="Revenue")
+
+        tree.column("ScreeningTime", width=120, anchor="center")
+        tree.column("TicketSold", width=100, anchor="center")
+        tree.column("OccupationRate", width=130, anchor="center")
+        tree.column("Revenue", width=140, anchor="center")
+
+        for row in records:
+            screening_time, tickets_sold, occupation_rate, revenue = row
+
+            formatted_occupation = f"{occupation_rate * 100:.1f}%"
+            formatted_revenue = f"{int(revenue):,} ₫"
+
+            tree.insert('', 'end', values=(
+                screening_time,
+                tickets_sold,
+                formatted_occupation,
+                formatted_revenue
+            ))
+
+        cursor.close()
+        self.hide_button2()
+        self.show_screening()
+    def display_screening30(self):
+        for widget in self.graph_frame2.winfo_children():
+            widget.destroy()
+
+        cursor = self.main.mydb.cursor()
+        cursor.execute("SELECT ScreeningTime, TicketSold, OccupationRate, Revenue FROM screeningtime30")
+        records = cursor.fetchall()
+
+        table_frame = tk.Frame(self.graph_frame2)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("ScreeningTime", "TicketSold", "OccupationRate", "Revenue")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=20)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        tree.heading("ScreeningTime", text="Screening Time")
+        tree.heading("TicketSold", text="Tickets Sold")
+        tree.heading("OccupationRate", text="Occupation Rate")
+        tree.heading("Revenue", text="Revenue")
+
+        tree.column("ScreeningTime", width=120, anchor="center")
+        tree.column("TicketSold", width=100, anchor="center")
+        tree.column("OccupationRate", width=130, anchor="center")
+        tree.column("Revenue", width=140, anchor="center")
+
+        for row in records:
+            screening_time, tickets_sold, occupation_rate, revenue = row
+
+            formatted_occupation = f"{occupation_rate * 100:.1f}%"
+            formatted_revenue = f"{int(revenue):,} ₫"
+
+            tree.insert('', 'end', values=(
+                screening_time,
+                tickets_sold,
+                formatted_occupation,
+                formatted_revenue
+            ))
+
+        cursor.close()
+    def display_screening90(self):
+        for widget in self.graph_frame2.winfo_children():
+            widget.destroy()
+
+        cursor = self.main.mydb.cursor()
+        cursor.execute("SELECT ScreeningTime, TicketSold, OccupationRate, Revenue FROM screeningtime90")
+        records = cursor.fetchall()
+
+        table_frame = tk.Frame(self.graph_frame2)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("ScreeningTime", "TicketSold", "OccupationRate", "Revenue")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=20)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        tree.heading("ScreeningTime", text="Screening Time")
+        tree.heading("TicketSold", text="Tickets Sold")
+        tree.heading("OccupationRate", text="Occupation Rate")
+        tree.heading("Revenue", text="Revenue")
+
+        tree.column("ScreeningTime", width=120, anchor="center")
+        tree.column("TicketSold", width=100, anchor="center")
+        tree.column("OccupationRate", width=130, anchor="center")
+        tree.column("Revenue", width=140, anchor="center")
+
+        for row in records:
+            screening_time, tickets_sold, occupation_rate, revenue = row
+
+            formatted_occupation = f"{occupation_rate * 100:.1f}%"
+            formatted_revenue = f"{int(revenue):,} ₫"
+
+            tree.insert('', 'end', values=(
+                screening_time,
+                tickets_sold,
+                formatted_occupation,
+                formatted_revenue
+            ))
+
+        cursor.close()
+    def display_screening(self):
+        for widget in self.graph_frame2.winfo_children():
+            widget.destroy()
+
+        cursor = self.main.mydb.cursor()
+        cursor.execute("SELECT ScreeningTime, TicketSold, OccupationRate, Revenue FROM screeningtime")
+        records = cursor.fetchall()
+
+        table_frame = tk.Frame(self.graph_frame2)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("ScreeningTime", "TicketSold", "OccupationRate", "Revenue")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=20)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        tree.heading("ScreeningTime", text="Screening Time")
+        tree.heading("TicketSold", text="Tickets Sold")
+        tree.heading("OccupationRate", text="Occupation Rate")
+        tree.heading("Revenue", text="Revenue")
+
+        tree.column("ScreeningTime", width=120, anchor="center")
+        tree.column("TicketSold", width=100, anchor="center")
+        tree.column("OccupationRate", width=130, anchor="center")
+        tree.column("Revenue", width=140, anchor="center")
+
+        for row in records:
+            screening_time, tickets_sold, occupation_rate, revenue = row
+
+            formatted_occupation = f"{occupation_rate * 100:.1f}%"
+            formatted_revenue = f"{int(revenue):,} ₫"
+
+            tree.insert('', 'end', values=(
+                screening_time,
+                tickets_sold,
+                formatted_occupation,
+                formatted_revenue
+            ))
+
+        cursor.close()
+    #Day
+    def day_performance(self):
+        for widget in self.graph_frame2.winfo_children():
+            widget.destroy()
+        cursor = self.main.mydb.cursor()
+        cursor.execute("SELECT Day, TicketSold, MostPopularShowtime FROM day_performance30")
+        records = cursor.fetchall()
+        table_frame = tk.Frame(self.graph_frame2)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("Day", "TicketSold", "MostPopularShowtime")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        tree.heading("Day", text="Day")
+        tree.heading("TicketSold", text="Tickets Sold")
+        tree.heading("MostPopularShowtime", text="Most Popular Showtime")
+        tree.column("Day", width=120, anchor="center")
+        tree.column("TicketSold", width=100, anchor="center")
+        tree.column("MostPopularShowtime", width=150, anchor="center")
+
+        for row in records:
+            tree.insert('', 'end', values=row)
+
+        cursor.close()
+
+        self.hide_button2()
+        self.show_day_button()
+    def display_day30(self):
+        for widget in self.graph_frame2.winfo_children():
+            widget.destroy()
+        cursor = self.main.mydb.cursor()
+        cursor.execute("SELECT Day, TicketSold, MostPopularShowtime FROM day_performance30")
+        records = cursor.fetchall()
+        table_frame = tk.Frame(self.graph_frame2)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("Day", "TicketSold", "MostPopularShowtime")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        tree.heading("Day", text="Day")
+        tree.heading("TicketSold", text="Tickets Sold")
+        tree.heading("MostPopularShowtime", text="Most Popular Showtime")
+        tree.column("Day", width=120, anchor="center")
+        tree.column("TicketSold", width=100, anchor="center")
+        tree.column("MostPopularShowtime", width=150, anchor="center")
+
+        for row in records:
+            tree.insert('', 'end', values=row)
+
+        cursor.close()
+    def display_day90(self):
+        for widget in self.graph_frame2.winfo_children():
+            widget.destroy()
+        cursor = self.main.mydb.cursor()
+        cursor.execute("SELECT Day, TicketSold, MostPopularShowtime FROM day_performance90")
+        records = cursor.fetchall()
+        table_frame = tk.Frame(self.graph_frame2)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("Day", "TicketSold", "MostPopularShowtime")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        tree.heading("Day", text="Day")
+        tree.heading("TicketSold", text="Tickets Sold")
+        tree.heading("MostPopularShowtime", text="Most Popular Showtime")
+        tree.column("Day", width=120, anchor="center")
+        tree.column("TicketSold", width=100, anchor="center")
+        tree.column("MostPopularShowtime", width=150, anchor="center")
+
+        for row in records:
+            tree.insert('', 'end', values=row)
+
+        cursor.close()
+    def display_day_all(self):
+        for widget in self.graph_frame2.winfo_children():
+            widget.destroy()
+        cursor = self.main.mydb.cursor()
+        cursor.execute("SELECT Day, TicketSold, MostPopularShowtime FROM day_performancealltime")
+        records = cursor.fetchall()
+        table_frame = tk.Frame(self.graph_frame2)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("Day", "TicketSold", "MostPopularShowtime")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        tree.heading("Day", text="Day")
+        tree.heading("TicketSold", text="Tickets Sold")
+        tree.heading("MostPopularShowtime", text="Most Popular Showtime")
+        tree.column("Day", width=120, anchor="center")
+        tree.column("TicketSold", width=100, anchor="center")
+        tree.column("MostPopularShowtime", width=150, anchor="center")
+
+        for row in records:
+            tree.insert('', 'end', values=row)
+
+        cursor.close()
 
 if __name__ == "__main__":
     app=Liemora()
