@@ -216,7 +216,7 @@ class Admin(tk.Toplevel):
         # Style configuration
         style = ttk.Style()
         style.theme_use('default')
-        fixed_width = 17
+        fixed_width = 20
         style.configure('TNotebook.Tab',width=fixed_width,padding=[0, 10],anchor='center',font=('Helvetica', 12, 'bold'))
 
         tab_control = ttk.Notebook(self)
@@ -226,7 +226,7 @@ class Admin(tk.Toplevel):
         self.tab3 = ttk.Frame(tab_control)
 
         tab_control.add(self.tab1, text='Sales Overview')
-        tab_control.add(self.tab2, text='Room Utilization')
+        tab_control.add(self.tab2, text='Performance Report')
         tab_control.add(self.tab3, text='Placeholder text')
 
         for tab in (self.tab1, self.tab2, self.tab3):
@@ -277,8 +277,8 @@ class Admin(tk.Toplevel):
 
             elif tab == self.tab2:
                 tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5,side="bottom")
-                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="Top Performing Movies", width=20, height=2, ).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="Occupation Rate", width=20, height=2, ).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
             elif tab == self.tab3:
@@ -288,7 +288,7 @@ class Admin(tk.Toplevel):
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
 
-    #DEF
+    #DEF TAB1
     def on_close(self):
         if self.main.mydb and self.main.mydb.is_connected():
             self.main.mydb.close()
@@ -1136,6 +1136,9 @@ class Admin(tk.Toplevel):
             year_month, total_revenue = row
             formatted_revenue = "{:,.0f}".format(total_revenue).replace(",", ".")
             tree.insert("", "end", values=(year_month, formatted_revenue))
+
+    #DEF TAB2
+
 
 if __name__ == "__main__":
     app=Liemora()
