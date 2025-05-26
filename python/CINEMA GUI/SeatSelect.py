@@ -3,23 +3,42 @@ from tkinter import *
 import mysql.connector
 from mysql.connector import Error
 
+
 class SeatBooking:
-    def __init__(self):
-        #root
-        self.root = tk.Tk()
-        self.root.geometry("1200x700")
-        self.root.title("Seat booking")
-        self.root.resizable("false","false")
-        
-        # Initialize data structures
+    def __init__(self, parent, db_connection, movie_title, screening_date, screening_time, room_id, movie_format):
+        self.parent = parent
+        self.mydb = db_connection
+        self.movie_title = movie_title
+        self.screening_date = screening_date
+        self.screening_time = screening_time
+        self.room_id = room_id
+        self.movie_format = movie_format
+
         self.selected_seats = {}
-        self.booked_seats = {}  #Query booked seat, example
-        self.seat_price = {}  # Query price per seat, example
-        self.room_id = {} #Catch screenid from previous tab (query room id from screen id)
-        
+        self.seat_price = 75000 if movie_format == "2D" else 100000
+        self.booked_seats = self.get_booked_seats()
+
+        self.root = tk.Toplevel()
+        self.root.geometry("1200x700")
+        self.root.title("Seat Booking")
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         self.main_interface()
         self.root.mainloop()
-        
+
+    def get_booked_seats(self):
+        cursor = self.mydb.cursor()
+        query = """
+            SELECT SeatCode FROM Tickets t
+            JOIN Screenings s ON t.ScreeningID = s.ScreeningID
+            WHERE s.MovieID = (SELECT MovieID FROM Movies WHERE MovieTitle = %s)
+              AND s.ScreeningDate = %s AND s.ScreeningTime = %s AND s.RoomID = %s
+        """
+        cursor.execute(query, (self.movie_title, self.screening_date, self.screening_time + ":00", self.room_id))
+        results = cursor.fetchall()
+        cursor.close()
+
+        return {row[0] for row in results}
+
     def main_interface(self):
         # Frames
         top_frame = tk.Frame(self.root, bd=3, relief="solid", bg="light grey")
@@ -39,9 +58,9 @@ class SeatBooking:
         
         #Main interface
         #TODO: back command
-        back_button = tk.Button(self.root, text="BACK", font=("Arial", 10), width=7, height=1, command="")
+        back_button = tk.Button(self.root, text="BACK", font=("Arial", 10), width=7, height=1, command=self.go_back)
         back_button.place(x=30, y=30)
-        
+
         # Continue button (initially disabled)
         self.continue_button = tk.Button(self.root, text="Payment", 
                                          font=("bold,14"), 
@@ -122,20 +141,18 @@ class SeatBooking:
             self.selected_seats[seat_number] = True
         # Update total selected seats and price
         self.update_totals()
-    
+
     def update_totals(self):
-       total_selected = len(self.selected_seats)
-       total_price = total_selected * self.seat_price
-       
-       self.total_seat.config(text=f"Total selected seats: {total_selected}")
-       self.est_price.config(text=f"Est. Price: {total_price} VND")
-        
-       if total_selected > 0:
-           self.continue_button.config(state="normal")
-       else:
-           self.continue_button.config(state="disabled")
-           
-           
-       
+        total_selected = len(self.selected_seats)
+        total_price = total_selected * self.seat_price
+
+        self.total_seat.config(text=f"Total selected seats: {total_selected}")
+        self.est_price.config(text=f"Est. Price: {total_price:,} VND")  # format tiền có dấu phẩy
+
+        if total_selected > 0:
+            self.continue_button.config(state="normal")
+        else:
+            self.continue_button.config(state="disabled")
+
 if __name__ == "__main__":
     app=SeatBooking()
