@@ -1747,9 +1747,6 @@ class Admin(tk.Toplevel):
 
         cursor.close()
 
-
-
-
 if __name__ == "__main__":
     app=Liemora()
     app.mainloop()
