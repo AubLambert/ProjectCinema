@@ -43,7 +43,7 @@ class ticket_searching:
         
         search_entry.bind('<FocusIn>', self.on_entry_click)
         search_entry.bind('<FocusOut>', self.on_focusout)
-        search_entry.bind('<KeyRelease>', self.on_search_change)
+        search_entry.bind('<Return>', lambda event: self.search_ticket())
         
         search_btn = tk.Button(
             self.root, text="Search", font=('Arial', 10), bg='#007bff', fg='white', relief='solid',
@@ -81,7 +81,7 @@ class ticket_searching:
         headings = ["Ticket ID", "Customer Name", "Phone", "Movie", "Room", "Date", "Seat", "Time", "Price", "Payment Time", "Action"]
         for col, title in enumerate(headings):
             lbl = tk.Label(self.heading_frame, text=title, font=('Arial', 10, 'bold'),
-                           borderwidth=1, relief='solid', width=15)
+                           borderwidth=1, relief='solid', width=17)
             lbl.grid(row=0, column=col, sticky='nsew')
         
         # Results frame
@@ -99,12 +99,7 @@ class ticket_searching:
         if self.search_var.get() == "":
             self.search_var.set("Type in phone number or ticketID")
             event.widget.config(fg='grey')
-
-    def on_search_change(self, event):
-        if self.search_var.get() and self.search_var.get() != "Type in phone number or ticketID":
-            self.search_ticket()
-        elif not self.search_var.get():
-            self.clear_rows()
+            
     def clear_rows(self):
         for widgets in self.rows:
             for w in widgets:
@@ -130,12 +125,10 @@ class ticket_searching:
             WHERE {}
             """
             if user_input.isdigit():
-                condition = "t.TicketID = %s"
-            else:
-                condition = "c.PhoneNumber = %s"
+                condition = "t.TicketID = %s OR c.PhoneNumber = %s"
             
             final_query = query.format(condition)
-            mycursor.execute(final_query, (user_input,))
+            mycursor.execute(final_query, (user_input, user_input))
             results = mycursor.fetchall()
             self.display_results(results)
         
@@ -172,7 +165,7 @@ class ticket_searching:
 
             for j, val in enumerate(values):
                 lbl = tk.Label(self.inner_frame, text=val, font=('Arial', 10), bg='white', 
-                             relief='solid', borderwidth=1, width=15)
+                             relief='solid', borderwidth=1, width=17)
                 lbl.grid(row=i, column=j, sticky='nsew')  # Fixed: use self.inner_frame
 
                 # Make Cancel button clickable
@@ -196,7 +189,6 @@ class ticket_searching:
             return False
 
     def handle_action_click(self, ticket_id):
-        """Handle cancel button click"""
         print(f"Cancel action clicked for ticket: {ticket_id}")
         # TODO
         result = tk.messagebox.askyesno("Confirm Cancellation", 
@@ -217,35 +209,8 @@ class ticket_searching:
     
             except Error as e:
                 messagebox.showerror("Database Error", f"An error occurred: {e}")
-"""        
-        self.clear_rows()
 
-        for i, row in enumerate(results):
-            widgets = []
-            ticket_id, customer_name, phone_number, movie, screen, seat_num, date, time, price, payment_time = row
-            values = [ticket_id, customer_name, phone_number, movie, screen, seat_num, date, time, price, payment_time, 'Cancel' if self.check_action_conditions(row) else '']
-
-            for j, val in enumerate(values):
-                lbl = tk.Label(self.inner_frame, text=val, font=('Arial', 10), bg='white', relief='solid', borderwidth=1, width=18)
-                lbl.grid(row=i+1, column=j, sticky='nsew')
-
-                if j == len(values)-1 and val == 'Cancel':
-                    lbl.bind("<Button-1>", lambda e, ticket_id=ticket_id: self.handle_action_click(ticket_id))
-                    lbl.config(fg='red', cursor='hand2')
-
-                widgets.append(lbl)
-            self.rows.append(widgets)
-
-    def check_action_conditions(self, ticket_data):
-        try:
-            ticket_date = datetime.strptime(ticket_data[6], '%Y-%m-%d').date()
-            today = datetime.now().date()
-            return ticket_date >= today
-        except ValueError:
-            return False
-
-    def handle_action_click(self, ticket_id):
-        print(f"Action clicked for ticket: {ticket_id}")
-"""
 if __name__ == "__main__":
     app=ticket_searching()
+    
+mydb.close()
