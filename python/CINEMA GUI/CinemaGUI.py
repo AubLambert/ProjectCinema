@@ -253,7 +253,7 @@ class SeatBooking:
         self.screening_id = screening_id
         self.room_name = room_name
         self.seat_price = seat_price
-        
+
         self.root = tk.Tk()
         self.root.geometry("1200x700")
         self.root.title("Seat booking")
@@ -278,7 +278,10 @@ class SeatBooking:
         self.booked_seats = set(row[0] for row in results)
         cursor.close()
 
-        
+    def log_out_2(self):
+        self.root.destroy()
+        self.parent.deiconify()
+
     def main_interface(self):
         # Frames
         top_frame = tk.Frame(self.root, bd=3, relief="solid", bg="light grey")
@@ -298,7 +301,7 @@ class SeatBooking:
         
         #Main interface
         #TODO: back command
-        back_button = tk.Button(self.root, text="BACK", font=("Arial", 10), width=7, height=1, command="")
+        back_button = tk.Button(self.root, text="BACK", font=("Arial", 10), width=7, height=1, command=self.log_out_2)
         back_button.place(x=30, y=30)
         
         # Continue button (initially disabled)
