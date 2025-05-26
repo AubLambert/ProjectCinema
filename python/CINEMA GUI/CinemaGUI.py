@@ -508,11 +508,38 @@ class Admin(tk.Toplevel):
                                              command=self.display_day_all)
 
             elif tab == self.tab3:
+                self.graph_frame3 = tk.Frame(right_frame)
+                self.graph_frame3.pack(fill="both", expand=True)
+                self.buttons_frame3 = tk.Frame(right_frame)
+                self.buttons_frame3.pack(fill="x", pady=10)
+
                 tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5,side="bottom")
+                tk.Button(left_frame, text="Age Distribution", width=20, height=2,command=self.display_age).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="Genre By Age", width=20, height=2,command=self.display_age_genre).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
+
+                #Age
+                self.age_90 = tk.Button(self.buttons_frame3, text="Last 90 days", width=20, height=2,
+                                        command=self.age90)
+                self.age_year = tk.Button(self.buttons_frame3, text="Last year", width=20, height=2,
+                                        command=self.ageyear)
+                self.age_all = tk.Button(self.buttons_frame3, text="All time", width=20, height=2,
+                                         command=self.ageall)
+                #Age-Genre
+                self.genre_17 = tk.Button(self.buttons_frame3, text="Age 12-17", width=20, height=2,
+                                        command=self.genre17)
+                self.genre_25 = tk.Button(self.buttons_frame3, text="Age 18-25", width=20, height=2,
+                                        command=self.genre25)
+                self.genre_40 = tk.Button(self.buttons_frame3, text="Age 26-40", width=20, height=2,
+                                        command=self.genre40)
+                self.genre_60 = tk.Button(self.buttons_frame3, text="Age 41-60", width=20, height=2,
+                                          command=self.genre60)
+                self.genre_above = tk.Button(self.buttons_frame3, text="Above 60+", width=20, height=2,
+                                          command=self.genre_above_60)
+                self.genre_screening = tk.Button(self.buttons_frame3, text="Genre Screening Count", width=20, height=2,
+                                             command=self.genre_screening_1)
+
 
     #DEF TAB1
     def on_close(self):
@@ -1332,6 +1359,7 @@ class Admin(tk.Toplevel):
 
 
     #DEF TAB2
+
     #Show/Hide button
     def hide_button2(self):
         self.hide_movie_button()
@@ -1368,7 +1396,6 @@ class Admin(tk.Toplevel):
         self.day_30.pack_forget()
         self.day_90.pack_forget()
         self.day_all.pack_forget()
-
 
     #Movie
     def display_movie(self):
@@ -1939,6 +1966,396 @@ class Admin(tk.Toplevel):
             tree.insert('', 'end', values=row)
 
         cursor.close()
+
+    #DEF TAB3
+
+    #Show/hide buttons
+    def hide_button3(self):
+        self.hide_age_button()
+        self.hide_age_genre_button()
+    def show_age_button(self):
+        self.age_90.pack(side="right", padx=10)
+        self.age_year.pack(side="right", padx=10)
+        self.age_all.pack(side="right", padx=10)
+    def hide_age_button(self):
+        self.age_90.pack_forget()
+        self.age_year.pack_forget()
+        self.age_all.pack_forget()
+    def show_age_genre_button(self):
+        self.genre_17.pack(side="right", padx=10)
+        self.genre_25.pack(side="right", padx=10)
+        self.genre_40.pack(side="right", padx=10)
+        self.genre_60.pack(side="right", padx=10)
+        self.genre_above.pack(side="right", padx=10)
+        self.genre_screening.pack(side="right", padx=10)
+    def hide_age_genre_button(self):
+        self.genre_17.pack_forget()
+        self.genre_25.pack_forget()
+        self.genre_40.pack_forget()
+        self.genre_60.pack_forget()
+        self.genre_above.pack_forget()
+        self.genre_screening.pack_forget()
+
+
+    #AGE
+    def display_age(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+
+        query = """
+                    SELECT 
+                        AgeRange, 
+                        CustomerCount 
+                    FROM 
+                        age90
+                    ORDER BY 
+                        AgeRange;
+                """
+
+        df = pd.read_sql(query, self.main.mydb)
+        fig = Figure(figsize=(11, 6), dpi=100)
+        ax = fig.add_subplot(111)
+
+        ax.bar(df['AgeRange'], df['CustomerCount'], color='green')
+
+        ax.set_title("Customer Distribution by Age Range")
+        ax.set_xlabel("Age Range")
+        ax.set_ylabel("Customer Count")
+        ax.ticklabel_format(style='plain', axis='y')
+        ax.set_xticks(range(len(df['AgeRange'])))
+        ax.set_xticklabels(df['AgeRange'], rotation=45)
+        fig.autofmt_xdate()
+        fig.tight_layout()
+
+        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame3)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+
+        self.hide_button3()
+        self.show_age_button()
+    def age90(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+
+        query = """
+                    SELECT 
+                        AgeRange, 
+                        CustomerCount 
+                    FROM 
+                        age90
+                    ORDER BY 
+                        AgeRange;
+                """
+
+        df = pd.read_sql(query, self.main.mydb)
+        fig = Figure(figsize=(11, 6), dpi=100)
+        ax = fig.add_subplot(111)
+
+        ax.bar(df['AgeRange'], df['CustomerCount'], color='green')
+
+        ax.set_title("Customer Distribution by Age Range")
+        ax.set_xlabel("Age Range")
+        ax.set_ylabel("Customer Count")
+        ax.ticklabel_format(style='plain', axis='y')
+        ax.set_xticks(range(len(df['AgeRange'])))
+        ax.set_xticklabels(df['AgeRange'], rotation=45)
+        fig.autofmt_xdate()
+        fig.tight_layout()
+
+        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame3)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+    def ageyear(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+
+        query = """
+                    SELECT 
+                        AgeRange, 
+                        CustomerCount 
+                    FROM 
+                        ageyear
+                    ORDER BY 
+                        AgeRange;
+                """
+
+        df = pd.read_sql(query, self.main.mydb)
+        fig = Figure(figsize=(11, 6), dpi=100)
+        ax = fig.add_subplot(111)
+
+        ax.bar(df['AgeRange'], df['CustomerCount'], color='green')
+
+        ax.set_title("Customer Distribution by Age Range")
+        ax.set_xlabel("Age Range")
+        ax.set_ylabel("Customer Count")
+        ax.ticklabel_format(style='plain', axis='y')
+        ax.set_xticks(range(len(df['AgeRange'])))
+        ax.set_xticklabels(df['AgeRange'], rotation=45)
+        fig.autofmt_xdate()
+        fig.tight_layout()
+
+        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame3)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+    def ageall(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+
+        query = """
+                    SELECT 
+                        AgeRange, 
+                        CustomerCount 
+                    FROM 
+                        age
+                    ORDER BY 
+                        AgeRange;
+                """
+
+        df = pd.read_sql(query, self.main.mydb)
+        fig = Figure(figsize=(11, 6), dpi=100)
+        ax = fig.add_subplot(111)
+
+        ax.bar(df['AgeRange'], df['CustomerCount'], color='green')
+
+        ax.set_title("Customer Distribution by Age Range")
+        ax.set_xlabel("Age Range")
+        ax.set_ylabel("Customer Count")
+        ax.ticklabel_format(style='plain', axis='y')
+        ax.set_xticks(range(len(df['AgeRange'])))
+        ax.set_xticklabels(df['AgeRange'], rotation=45)
+        fig.autofmt_xdate()
+        fig.tight_layout()
+
+        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame3)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+
+    #Genre-age
+    def display_age_genre(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+
+        query = """
+                    SELECT 
+                        Genre, 
+                        TicketsSold 
+                    FROM 
+                        age17
+                    ORDER BY 
+                        Genre;
+                """
+
+        df = pd.read_sql(query, self.main.mydb)
+        fig = Figure(figsize=(11, 6), dpi=100)
+        ax = fig.add_subplot(111)
+
+        ax.bar(df['Genre'], df['TicketsSold'], color='blue')
+
+        ax.set_title("Customer Distribution by Age Range")
+        ax.set_xlabel("Genre")
+        ax.set_ylabel("Customer Count")
+        ax.ticklabel_format(style='plain', axis='y')
+        ax.set_xticks(range(len(df['Genre'])))
+        ax.set_xticklabels(df['Genre'], rotation=45)
+        fig.autofmt_xdate()
+        fig.tight_layout()
+
+        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame3)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+
+        self.hide_button3()
+        self.show_age_genre_button()
+    def genre17(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+
+        query = """
+                    SELECT 
+                        Genre, 
+                        TicketsSold 
+                    FROM 
+                        age17
+                    ORDER BY 
+                        Genre;
+                """
+
+        df = pd.read_sql(query, self.main.mydb)
+        fig = Figure(figsize=(11, 6), dpi=100)
+        ax = fig.add_subplot(111)
+
+        ax.bar(df['Genre'], df['TicketsSold'], color='blue')
+
+        ax.set_title("Customer Distribution by Age Range")
+        ax.set_xlabel("Genre")
+        ax.set_ylabel("Customer Count")
+        ax.ticklabel_format(style='plain', axis='y')
+        ax.set_xticks(range(len(df['Genre'])))
+        ax.set_xticklabels(df['Genre'], rotation=45)
+        fig.autofmt_xdate()
+        fig.tight_layout()
+
+        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame3)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+    def genre25(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+
+        query = """
+                    SELECT 
+                        Genre, 
+                        TicketsSold 
+                    FROM 
+                        age25
+                    ORDER BY 
+                        Genre;
+                """
+
+        df = pd.read_sql(query, self.main.mydb)
+        fig = Figure(figsize=(11, 6), dpi=100)
+        ax = fig.add_subplot(111)
+
+        ax.bar(df['Genre'], df['TicketsSold'], color='blue')
+
+        ax.set_title("Customer Distribution by Age Range")
+        ax.set_xlabel("Genre")
+        ax.set_ylabel("Customer Count")
+        ax.ticklabel_format(style='plain', axis='y')
+        ax.set_xticks(range(len(df['Genre'])))
+        ax.set_xticklabels(df['Genre'], rotation=45)
+        fig.autofmt_xdate()
+        fig.tight_layout()
+
+        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame3)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+    def genre40(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+
+        query = """
+                    SELECT 
+                        Genre, 
+                        TicketsSold 
+                    FROM 
+                        age40
+                    ORDER BY 
+                        Genre;
+                """
+
+        df = pd.read_sql(query, self.main.mydb)
+        fig = Figure(figsize=(11, 6), dpi=100)
+        ax = fig.add_subplot(111)
+
+        ax.bar(df['Genre'], df['TicketsSold'], color='blue')
+
+        ax.set_title("Customer Distribution by Age Range")
+        ax.set_xlabel("Genre")
+        ax.set_ylabel("Customer Count")
+        ax.ticklabel_format(style='plain', axis='y')
+        ax.set_xticks(range(len(df['Genre'])))
+        ax.set_xticklabels(df['Genre'], rotation=45)
+        fig.autofmt_xdate()
+        fig.tight_layout()
+
+        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame3)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+    def genre60(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+
+        query = """
+                    SELECT 
+                        Genre, 
+                        TicketsSold 
+                    FROM 
+                        age60
+                    ORDER BY 
+                        Genre;
+                """
+
+        df = pd.read_sql(query, self.main.mydb)
+        fig = Figure(figsize=(11, 6), dpi=100)
+        ax = fig.add_subplot(111)
+
+        ax.bar(df['Genre'], df['TicketsSold'], color='blue')
+
+        ax.set_title("Customer Distribution by Age Range")
+        ax.set_xlabel("Genre")
+        ax.set_ylabel("Customer Count")
+        ax.ticklabel_format(style='plain', axis='y')
+        ax.set_xticks(range(len(df['Genre'])))
+        ax.set_xticklabels(df['Genre'], rotation=45)
+        fig.autofmt_xdate()
+        fig.tight_layout()
+
+        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame3)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+    def genre_above_60(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+
+        query = """
+                    SELECT 
+                        Genre, 
+                        TicketsSold 
+                    FROM 
+                        ageabove60
+                    ORDER BY 
+                        Genre;
+                """
+
+        df = pd.read_sql(query, self.main.mydb)
+        fig = Figure(figsize=(11, 6), dpi=100)
+        ax = fig.add_subplot(111)
+
+        ax.bar(df['Genre'], df['TicketsSold'], color='blue')
+
+        ax.set_title("Customer Distribution by Age Range")
+        ax.set_xlabel("Genre")
+        ax.set_ylabel("Customer Count")
+        ax.ticklabel_format(style='plain', axis='y')
+        ax.set_xticks(range(len(df['Genre'])))
+        ax.set_xticklabels(df['Genre'], rotation=45)
+        fig.autofmt_xdate()
+        fig.tight_layout()
+
+        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame3)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+    def genre_screening_1(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+
+        cursor = self.main.mydb.cursor()
+        cursor.execute("SELECT * FROM genre_screening")
+        records = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame3)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("Genre", "TotalScreenings")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        tree.heading("Genre", text="Genre")
+        tree.heading("TotalScreenings", text="Total Screenings")
+        tree.column("Genre", width=150, anchor="center")
+        tree.column("TotalScreenings", width=150, anchor="center")
+
+        for row in records:
+            tree.insert('', 'end', values=row)
+
+
+
 
 if __name__ == "__main__":
     app=Liemora()
