@@ -1136,8 +1136,6 @@ class Admin(tk.Toplevel):
             year_month, total_revenue = row
             formatted_revenue = "{:,.0f}".format(total_revenue).replace(",", ".")
             tree.insert("", "end", values=(year_month, formatted_revenue))
-
-
     #DEF TAB2
     #Show/Hide button
     def hide_button2(self):
