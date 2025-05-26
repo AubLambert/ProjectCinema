@@ -11,7 +11,9 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.dates as mdates
 from matplotlib.ticker import MaxNLocator
+import os
 
+base_dir = os.path.dirname(__file__)
 class Liemora(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -24,7 +26,8 @@ class Liemora(tk.Tk):
 
     def build_login_ui(self):
         #Đổi lại path của ảnh
-        bg_image = Image.open(r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\CINEMA GUI\Images\Cat.jpg").resize((700, 500), Image.LANCZOS)
+        img_path = os.path.join(base_dir, "Images", "Cat.jpg")
+        bg_image = Image.open(img_path).resize((700, 500), Image.LANCZOS)
         bg_photo = ImageTk.PhotoImage(bg_image)
         self.bg_photo = bg_photo
 
@@ -102,12 +105,14 @@ class Movie(tk.Toplevel):
         tk.Button(self, text="Logout", font=10, width=7, command=self.logout).grid(row=0, column=0, sticky="nw", padx=20, pady=20)
 
         titles = ["John Wick", "Edge of Tomorrow", "Interstellar", "Coco", "Parasite", "The Revenant"]
-        images = [r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Cat.jpg",
-                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Cat.jpg",
-                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Cat.jpg",
-                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Cat.jpg",
-                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Cat.jpg",
-                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Cat.jpg"]
+        images = [
+            os.path.join(base_dir, "Images", "Johnwick.jpg"),
+            os.path.join(base_dir, "Images", "EdgeOfTomorrow.jpg"),
+            os.path.join(base_dir, "Images", "Interstellar.jpg"),
+            os.path.join(base_dir, "Images", "Coco.jpg"),
+            os.path.join(base_dir, "Images", "Parasite.jpg"),
+            os.path.join(base_dir, "Images", "TheRevenant.jpg")
+        ]
 
         self.movie_image_map = dict(zip(titles, images))
 
@@ -1136,6 +1141,8 @@ class Admin(tk.Toplevel):
             year_month, total_revenue = row
             formatted_revenue = "{:,.0f}".format(total_revenue).replace(",", ".")
             tree.insert("", "end", values=(year_month, formatted_revenue))
+
+
     #DEF TAB2
     #Show/Hide button
     def hide_button2(self):
@@ -1744,9 +1751,6 @@ class Admin(tk.Toplevel):
             tree.insert('', 'end', values=row)
 
         cursor.close()
-
-
-
 
 if __name__ == "__main__":
     app=Liemora()
