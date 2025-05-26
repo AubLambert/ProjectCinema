@@ -25,6 +25,7 @@ class Liemora(tk.Tk):
 
     def build_login_ui(self):
         #Đổi lại path của ảnh
+<<<<<<< HEAD
         bg_image = Image.open(r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\CINEMA GUI\Images\Cat.jpg").resize((700, 500), Image.LANCZOS)
 =======
         img_path = os.path.join(base_dir, "Images", "Cat.jpg")
