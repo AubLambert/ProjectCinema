@@ -2,6 +2,14 @@ import tkinter as tk
 from tkinter import Label, Frame, Button, Toplevel, ttk
 from PIL import Image, ImageTk
 from datetime import datetime, timedelta
+import mysql.connector
+
+mydb = mysql.connector.connect(
+    host="localhost",
+    user="admin",
+    password="quang123",
+    database="cinema_management"
+)
 
 # ====== SETUP WINDOW ======
 root = tk.Tk()
@@ -15,7 +23,7 @@ back_button.grid(row=0, column=0, sticky="nw", padx=20, pady=20)
 
 # ====== MOVIE DATA ======
 movie_titles = [
-    "John Weed",
+    "John Wick",
     "Edge of Tomorrow",
     "Interstellar",
     "Coco",
@@ -107,22 +115,28 @@ def timeslot_gui(movie_title):
     tree.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
 
-    # Sample data: only future showtimes
+    # Import database:
     now = datetime.now()
-    demo_data = []
-    for i in range(15):
-        dt = now + timedelta(hours=i)
-        demo_data.append((
-            dt.strftime("%Y-%m-%d"),
-            dt.strftime("%H:%M"),
-            "2D" if i % 2 == 0 else "3D",
-            f"Room {i % 5 + 1}"
-        ))
+    cursor = mydb.cursor()
 
-    for row in demo_data:
-        show_datetime = datetime.strptime(f"{row[0]} {row[1]}", "%Y-%m-%d %H:%M")
-        if show_datetime > now:
-            tree.insert("", "end", values=row)
+    query = """
+        SELECT s.ScreeningDate, s.ScreeningTime, s.MovieFormat, r.RoomName
+        FROM Screenings s
+        JOIN Movies m ON s.MovieID = m.MovieID
+        JOIN CinemaRooms r ON s.RoomID = r.RoomID
+        WHERE m.MovieTitle = %s
+          AND s.ScreeningDate >= NOW()
+        ORDER BY s.ScreeningDate, s.ScreeningTime
+    """
+    cursor.execute(query, (movie_title,))
+    results = cursor.fetchall()
+
+    for row in results:
+        screening_date = row[0].strftime("%Y-%m-%d")
+        screening_time = f"{row[1].seconds // 3600:02}:{(row[1].seconds // 60) % 60:02}"
+        tree.insert("", "end", values=(screening_date, screening_time, row[2], row[3]))
+
+    cursor.close()
 
     # SELECT Button
     Button(timeslot_window, text="SELECT", font=("Helvetica", 12), width=14).place(
