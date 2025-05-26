@@ -1,4 +1,5 @@
-CREATE VIEW revenue_alltime AS
+-- REVENUE
+CREATE OR REPLACE VIEW revenue_alltime AS
 WITH MinMaxDates AS (
     SELECT 
         MIN(DATE(PayTime)) AS MinDate,
@@ -50,7 +51,7 @@ GROUP BY
 ORDER BY 
     vq.QuarterStart ASC;
     
-CREATE VIEW revenue_year AS
+CREATE OR REPLACE VIEW revenue_year AS
 WITH FullMonths AS (
     SELECT 
         DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m-01') AS MonthStart
@@ -81,7 +82,7 @@ ORDER BY
     fm.MonthStart ASC;
     
 
-CREATE VIEW revenue_6months AS
+CREATE OR REPLACE VIEW revenue_6months AS
 WITH RECURSIVE DateRange AS (
     SELECT DATE_SUB(CURDATE(), INTERVAL 180 DAY) AS PaymentDate
     UNION ALL
@@ -119,7 +120,7 @@ ORDER BY
     fg.PeriodStart ASC;
     
 
-CREATE VIEW revenue_30days AS
+CREATE OR REPLACE VIEW revenue_30days AS
 WITH RECURSIVE DateRange AS (
     SELECT DATE_SUB(CURDATE(), INTERVAL 30 DAY) AS PaymentDate
     UNION ALL
@@ -156,8 +157,8 @@ GROUP BY
 ORDER BY 
     fg.PeriodStart ASC;
     
-
-CREATE VIEW ticket_alltime AS
+-- TICKET
+CREATE OR REPLACE VIEW ticket_alltime AS
 WITH MinMaxDates AS (
     SELECT 
         MIN(s.ScreeningDate) AS MinDate,
@@ -215,7 +216,7 @@ ORDER BY
     vq.QuarterStart ASC;
     
 
-CREATE VIEW ticket_year AS
+CREATE OR REPLACE VIEW ticket_year AS
 WITH FullMonths AS (
     SELECT 
         DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m-01') AS MonthStart
@@ -246,7 +247,7 @@ ORDER BY
     fm.MonthStart ASC;
     
 
-CREATE VIEW ticket_6months AS
+CREATE OR REPLACE VIEW ticket_6months AS
 WITH RECURSIVE DateRange AS (
     SELECT DATE_SUB(CURDATE(), INTERVAL 180 DAY) AS PaymentDate
     UNION ALL
@@ -284,7 +285,7 @@ ORDER BY
     fg.PeriodStart ASC;
     
     
-CREATE VIEW ticket_30days AS
+CREATE OR REPLACE VIEW ticket_30days AS
 WITH RECURSIVE DateRange AS (
     SELECT DATE_SUB(CURDATE(), INTERVAL 30 DAY) AS PaymentDate
     UNION ALL
@@ -320,3 +321,336 @@ GROUP BY
     fg.PeriodGroup, fg.PeriodStart
 ORDER BY 
     fg.PeriodStart ASC;
+
+
+-- MOVIE
+CREATE OR REPLACE VIEW movie_14days AS
+SELECT 
+    m.MovieID,
+    m.MovieTitle,
+    m.Genre,
+    COUNT(t.TicketID) AS TicketsSold,
+    SUM(p.Amount) AS TotalRevenue,
+    COUNT(t.TicketID) * 1.0 / NULLIF(SUM(r.TotalSeats), 0) AS AttendanceRate
+FROM Movies m
+JOIN Screenings s ON m.MovieID = s.MovieID
+JOIN CinemaRooms cr ON s.RoomID = cr.RoomID
+JOIN (
+    SELECT RoomID, COUNT(*) AS TotalSeats
+    FROM Seats
+    GROUP BY RoomID
+) r ON cr.RoomID = r.RoomID
+LEFT JOIN Tickets t ON s.ScreeningID = t.ScreeningID
+LEFT JOIN Payments p ON t.TicketID = p.TicketID
+WHERE s.ScreeningDate >= CURDATE() - INTERVAL 14 DAY
+GROUP BY m.MovieID, m.MovieTitle, m.Genre
+ORDER BY 
+    TotalRevenue DESC,
+    TicketsSold DESC,
+    AttendanceRate DESC;
+
+-- MOVIE
+CREATE OR REPLACE VIEW movie_30days AS
+SELECT 
+    m.MovieID,
+    m.MovieTitle,
+    m.Genre,
+    COUNT(t.TicketID) AS TicketsSold,
+    SUM(p.Amount) AS TotalRevenue,
+    COUNT(t.TicketID) * 1.0 / NULLIF(SUM(r.TotalSeats), 0) AS AttendanceRate
+FROM Movies m
+JOIN Screenings s ON m.MovieID = s.MovieID
+JOIN CinemaRooms cr ON s.RoomID = cr.RoomID
+JOIN (
+    SELECT RoomID, COUNT(*) AS TotalSeats
+    FROM Seats
+    GROUP BY RoomID
+) r ON cr.RoomID = r.RoomID
+LEFT JOIN Tickets t ON s.ScreeningID = t.ScreeningID
+LEFT JOIN Payments p ON t.TicketID = p.TicketID
+WHERE s.ScreeningDate >= CURDATE() - INTERVAL 30 DAY
+GROUP BY m.MovieID, m.MovieTitle, m.Genre
+ORDER BY 
+    TotalRevenue DESC,
+    TicketsSold DESC,
+    AttendanceRate DESC;
+
+-- MOVIE
+CREATE OR REPLACE VIEW movie_60days AS
+SELECT 
+    m.MovieID,
+    m.MovieTitle,
+    m.Genre,
+    COUNT(t.TicketID) AS TicketsSold,
+    SUM(p.Amount) AS TotalRevenue,
+    COUNT(t.TicketID) * 1.0 / NULLIF(SUM(r.TotalSeats), 0) AS AttendanceRate
+FROM Movies m
+JOIN Screenings s ON m.MovieID = s.MovieID
+JOIN CinemaRooms cr ON s.RoomID = cr.RoomID
+JOIN (
+    SELECT RoomID, COUNT(*) AS TotalSeats
+    FROM Seats
+    GROUP BY RoomID
+) r ON cr.RoomID = r.RoomID
+LEFT JOIN Tickets t ON s.ScreeningID = t.ScreeningID
+LEFT JOIN Payments p ON t.TicketID = p.TicketID
+WHERE s.ScreeningDate >= CURDATE() - INTERVAL 60 DAY
+GROUP BY m.MovieID, m.MovieTitle, m.Genre
+ORDER BY 
+    TotalRevenue DESC,
+    TicketsSold DESC,
+    AttendanceRate DESC;
+
+-- OCCUPATION
+CREATE OR REPLACE VIEW occupation AS
+SELECT 
+    DATE_FORMAT(daily.RoomDate, '%Y-%m') AS Month,
+    SUM(daily.TicketsSold) AS Tickets_Sold,
+    SUM(daily.ScreeningsInRoom) AS Total_Screenings,
+    SUM(daily.SeatCount * daily.ScreeningsInRoom) AS TotalSeat,
+    ROUND((SUM(daily.TicketsSold) / SUM(daily.SeatCount * daily.ScreeningsInRoom)) * 100, 2) AS `Occupation Rate (%)`
+FROM (
+    SELECT 
+        s.ScreeningDate AS RoomDate,
+        s.RoomID,
+        COUNT(DISTINCT s.ScreeningID) AS ScreeningsInRoom,
+        COUNT(DISTINCT t.TicketID) AS TicketsSold,
+        seat_counts.SeatCount
+    FROM 
+        Screenings s
+    LEFT JOIN 
+        Tickets t ON s.ScreeningID = t.ScreeningID
+    JOIN (
+        SELECT 
+            RoomID, COUNT(*) AS SeatCount
+        FROM 
+            Seats
+        GROUP BY 
+            RoomID
+    ) AS seat_counts ON s.RoomID = seat_counts.RoomID
+    WHERE 
+        s.ScreeningDate <= CURDATE()
+    GROUP BY 
+        s.ScreeningDate, s.RoomID
+) AS daily
+GROUP BY 
+    DATE_FORMAT(daily.RoomDate, '%Y-%m')
+ORDER BY 
+    Month ASC;
+
+-- DAY PERFORMANCE
+CREATE OR REPLACE VIEW day_performance30 AS
+WITH TicketCounts AS (
+    SELECT 
+        DAYNAME(s.ScreeningDate) AS WeekDay,
+        s.ScreeningTime,
+        COUNT(t.TicketID) AS TicketsSold
+    FROM Tickets t
+    JOIN Screenings s ON t.ScreeningID = s.ScreeningID
+    WHERE s.ScreeningDate BETWEEN CURDATE() - INTERVAL 30 DAY AND CURDATE()
+    GROUP BY WeekDay, s.ScreeningTime
+),
+DailyTotals AS (
+    SELECT 
+        WeekDay,
+        SUM(TicketsSold) AS TicketSold
+    FROM TicketCounts
+    GROUP BY WeekDay
+),
+PopularShowtimes AS (
+    SELECT 
+        tc.WeekDay,
+        tc.ScreeningTime AS MostPopularShowtime
+    FROM TicketCounts tc
+    JOIN (
+        SELECT 
+            WeekDay,
+            MAX(TicketsSold) AS MaxSold
+        FROM TicketCounts
+        GROUP BY WeekDay
+    ) mx ON tc.WeekDay = mx.WeekDay AND tc.TicketsSold = mx.MaxSold
+)
+SELECT 
+    dt.WeekDay AS Day,
+    dt.TicketSold,
+    ps.MostPopularShowtime
+FROM DailyTotals dt
+JOIN PopularShowtimes ps ON dt.WeekDay = ps.WeekDay
+ORDER BY FIELD(dt.WeekDay, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday');
+
+-- DAY PERFORMANCE
+CREATE OR REPLACE VIEW day_performance90 AS
+WITH TicketCounts AS (
+    SELECT 
+        DAYNAME(s.ScreeningDate) AS WeekDay,
+        s.ScreeningTime,
+        COUNT(t.TicketID) AS TicketsSold
+    FROM Tickets t
+    JOIN Screenings s ON t.ScreeningID = s.ScreeningID
+    WHERE s.ScreeningDate BETWEEN CURDATE() - INTERVAL 90 DAY AND CURDATE()
+    GROUP BY WeekDay, s.ScreeningTime
+),
+DailyTotals AS (
+    SELECT 
+        WeekDay,
+        SUM(TicketsSold) AS TicketSold
+    FROM TicketCounts
+    GROUP BY WeekDay
+),
+PopularShowtimes AS (
+    SELECT 
+        tc.WeekDay,
+        tc.ScreeningTime AS MostPopularShowtime
+    FROM TicketCounts tc
+    JOIN (
+        SELECT 
+            WeekDay,
+            MAX(TicketsSold) AS MaxSold
+        FROM TicketCounts
+        GROUP BY WeekDay
+    ) mx ON tc.WeekDay = mx.WeekDay AND tc.TicketsSold = mx.MaxSold
+)
+SELECT 
+    dt.WeekDay AS Day,
+    dt.TicketSold,
+    ps.MostPopularShowtime
+FROM DailyTotals dt
+JOIN PopularShowtimes ps ON dt.WeekDay = ps.WeekDay
+ORDER BY FIELD(dt.WeekDay, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday');
+
+-- DAY PERFORMANCE
+CREATE OR REPLACE VIEW day_performancealltime AS
+WITH TicketCounts AS (
+    SELECT 
+        DAYNAME(s.ScreeningDate) AS WeekDay,
+        s.ScreeningTime,
+        COUNT(t.TicketID) AS TicketsSold
+    FROM Tickets t
+    JOIN Screenings s ON t.ScreeningID = s.ScreeningID
+    GROUP BY WeekDay, s.ScreeningTime
+),
+DailyTotals AS (
+    SELECT 
+        WeekDay,
+        SUM(TicketsSold) AS TicketSold
+    FROM TicketCounts
+    GROUP BY WeekDay
+),
+PopularShowtimes AS (
+    SELECT 
+        tc.WeekDay,
+        tc.ScreeningTime AS MostPopularShowtime
+    FROM TicketCounts tc
+    JOIN (
+        SELECT 
+            WeekDay,
+            MAX(TicketsSold) AS MaxSold
+        FROM TicketCounts
+        GROUP BY WeekDay
+    ) mx ON tc.WeekDay = mx.WeekDay AND tc.TicketsSold = mx.MaxSold
+)
+SELECT 
+    dt.WeekDay AS Day,
+    dt.TicketSold,
+    ps.MostPopularShowtime
+FROM DailyTotals dt
+JOIN PopularShowtimes ps ON dt.WeekDay = ps.WeekDay
+ORDER BY FIELD(dt.WeekDay, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday');
+
+-- Screeningtime 
+CREATE OR REPLACE VIEW screeningtime AS
+WITH ScreeningStats AS (
+    SELECT 
+        s.ScreeningID,
+        s.ScreeningTime,
+        COUNT(t.TicketID) AS TicketsSold,
+        cr.RoomID,
+        (SELECT COUNT(*) FROM Seats WHERE RoomID = s.RoomID) AS SeatsAvailable,
+        s.Price * COUNT(t.TicketID) AS Revenue
+    FROM Screenings s
+    LEFT JOIN Tickets t ON s.ScreeningID = t.ScreeningID
+    JOIN CinemaRooms cr ON s.RoomID = cr.RoomID
+    GROUP BY s.ScreeningID, s.ScreeningTime, cr.RoomID, s.Price
+),
+AggregatedStats AS (
+    SELECT 
+        ScreeningTime,
+        SUM(TicketsSold) AS TicketSold,
+        ROUND(SUM(TicketsSold) / SUM(SeatsAvailable), 2) AS OccupationRate,
+        SUM(Revenue) AS Revenue
+    FROM ScreeningStats
+    GROUP BY ScreeningTime
+)
+SELECT 
+    ScreeningTime,
+    TicketSold,
+    OccupationRate,
+    Revenue
+FROM AggregatedStats
+ORDER BY ScreeningTime;
+
+-- Screening Performance
+CREATE OR REPLACE VIEW screeningtime30 AS
+WITH ScreeningStats AS (
+    SELECT 
+        s.ScreeningID,
+        s.ScreeningTime,
+        COUNT(t.TicketID) AS TicketsSold,
+        cr.RoomID,
+        (SELECT COUNT(*) FROM Seats WHERE RoomID = s.RoomID) AS SeatsAvailable,
+        s.Price * COUNT(t.TicketID) AS Revenue
+    FROM Screenings s
+    LEFT JOIN Tickets t ON s.ScreeningID = t.ScreeningID
+    JOIN CinemaRooms cr ON s.RoomID = cr.RoomID
+    WHERE s.ScreeningDate BETWEEN CURDATE() - INTERVAL 30 DAY AND CURDATE()
+    GROUP BY s.ScreeningID, s.ScreeningTime, cr.RoomID, s.Price
+),
+AggregatedStats AS (
+    SELECT 
+        ScreeningTime,
+        SUM(TicketsSold) AS TicketSold,
+        ROUND(SUM(TicketsSold) / SUM(SeatsAvailable), 2) AS OccupationRate,
+        SUM(Revenue) AS Revenue
+    FROM ScreeningStats
+    GROUP BY ScreeningTime
+)
+SELECT 
+    ScreeningTime,
+    TicketSold,
+    OccupationRate,
+    Revenue
+FROM AggregatedStats
+ORDER BY ScreeningTime;
+
+-- Screening Performance
+CREATE OR REPLACE VIEW screeningtime90 AS
+WITH ScreeningStats AS (
+    SELECT 
+        s.ScreeningID,
+        s.ScreeningTime,
+        COUNT(t.TicketID) AS TicketsSold,
+        cr.RoomID,
+        (SELECT COUNT(*) FROM Seats WHERE RoomID = s.RoomID) AS SeatsAvailable,
+        s.Price * COUNT(t.TicketID) AS Revenue
+    FROM Screenings s
+    LEFT JOIN Tickets t ON s.ScreeningID = t.ScreeningID
+    JOIN CinemaRooms cr ON s.RoomID = cr.RoomID
+    WHERE s.ScreeningDate BETWEEN CURDATE() - INTERVAL 90 DAY AND CURDATE()
+    GROUP BY s.ScreeningID, s.ScreeningTime, cr.RoomID, s.Price
+),
+AggregatedStats AS (
+    SELECT 
+        ScreeningTime,
+        SUM(TicketsSold) AS TicketSold,
+        ROUND(SUM(TicketsSold) / SUM(SeatsAvailable), 2) AS OccupationRate,
+        SUM(Revenue) AS Revenue
+    FROM ScreeningStats
+    GROUP BY ScreeningTime
+)
+SELECT 
+    ScreeningTime,
+    TicketSold,
+    OccupationRate,
+    Revenue
+FROM AggregatedStats
+ORDER BY ScreeningTime;
