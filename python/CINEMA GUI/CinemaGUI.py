@@ -24,7 +24,7 @@ class Liemora(tk.Tk):
 
     def build_login_ui(self):
         #Đổi lại path của ảnh
-        bg_image = Image.open(r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Cat.jpg").resize((700, 500), Image.LANCZOS)
+        bg_image = Image.open(r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\CINEMA GUI\Images\Cat.jpg").resize((700, 500), Image.LANCZOS)
         bg_photo = ImageTk.PhotoImage(bg_image)
         self.bg_photo = bg_photo
 
@@ -1453,9 +1453,8 @@ class Admin(tk.Toplevel):
 
         canvas = FigureCanvasTkAgg(fig, master=self.graph_frame2)
         canvas.draw()
-        canvas.get_tk_widget().pack(pady=20)
+        canvas.get_tk_widget().pack(fill="both", expand=True, padx=10, pady=10)
         plt.close(fig)
-
 
 if __name__ == "__main__":
     app=Liemora()
