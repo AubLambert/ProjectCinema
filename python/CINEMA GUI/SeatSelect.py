@@ -13,9 +13,9 @@ class SeatBooking:
         
         # Initialize data structures
         self.selected_seats = {}
-        self.booked_seats = {"A3", "B5", "C2", "D7"}  #Query booked seat, example
-        self.seat_price = 75000  # Query price per seat, example
-        self.room_id = 1 #Catch screenid from previous tab (query room id from screen id)
+        self.booked_seats = {}  #Query booked seat, example
+        self.seat_price = {}  # Query price per seat, example
+        self.room_id = {} #Catch screenid from previous tab (query room id from screen id)
         
         self.main_interface()
         self.root.mainloop()
@@ -38,6 +38,7 @@ class SeatBooking:
         left_frame.place(x=100,y=350, anchor="w")
         
         #Main interface
+        #TODO: back command
         back_button = tk.Button(self.root, text="BACK", font=("Arial", 10), width=7, height=1, command="")
         back_button.place(x=30, y=30)
         
@@ -47,7 +48,7 @@ class SeatBooking:
                                          bg="#4CAF50", fg="white",
                                          width=10, height=1,
                                          state="disabled",
-                                         command="") #Transition to payment screen
+                                         command="") #Transition to payment screen #TODO: continue command
         self.continue_button.place(x=1050,y=350)
         ###Screen label
         screen_label = tk.Label(top_frame, text = "Screen", width=30, font = ("Bold",30), justify = "center", bg = "light grey")
@@ -85,14 +86,6 @@ class SeatBooking:
         
         #Seat layout
         self.seat_buttons = {}
-        ''' thich cai nao hon thi chon
-        for col in range(8):
-            col_label = tk.Label(seat_frame, text=str(col + 1), font=("Arial", 12, "bold"))
-            col_label.grid(row=0, column=col + 1, padx=15, pady=10)
-        for row in range(5):
-            row_label_right = tk.Label(seat_frame, text=chr(65 + row), font=("Arial", 12, "bold"))
-            row_label_right.grid(column=9, padx=(20, 0), pady=20)
-        '''
         for row in range(5):
             for col in range(8):
                 seat_number = f"{chr(65+row)}{col+1}"  # A1, A2, ...

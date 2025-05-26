@@ -10,7 +10,9 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.dates as mdates
+import os
 
+base_dir = os.path.dirname(__file__)
 class Liemora(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -23,7 +25,8 @@ class Liemora(tk.Tk):
 
     def build_login_ui(self):
         #Đổi lại path của ảnh
-        bg_image = Image.open(r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\Cat.jpg").resize((700, 500), Image.LANCZOS)
+        img_path = os.path.join(base_dir, "Images", "Cat.jpg")
+        bg_image = Image.open(img_path).resize((700, 500), Image.LANCZOS)
         bg_photo = ImageTk.PhotoImage(bg_image)
         self.bg_photo = bg_photo
 
@@ -101,12 +104,14 @@ class Movie(tk.Toplevel):
         tk.Button(self, text="Logout", font=10, width=7, command=self.logout).grid(row=0, column=0, sticky="nw", padx=20, pady=20)
 
         titles = ["John Wick", "Edge of Tomorrow", "Interstellar", "Coco", "Parasite", "The Revenant"]
-        images = [r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\Johnwick.jpg",
-                  r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\EdgeOfTomorrow.jpg",
-                  r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\Interstellar.jpg",
-                  r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\Coco.jpg",
-                  r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\Parasite.jpg",
-                  r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\TheRevenant.jpg"]
+        images = images = [
+                        os.path.join(base_dir, "Images", "Johnwick.jpg"),
+                        os.path.join(base_dir, "Images", "EdgeOfTomorrow.jpg"),
+                        os.path.join(base_dir, "Images", "Interstellar.jpg"),
+                        os.path.join(base_dir, "Images", "Coco.jpg"),
+                        os.path.join(base_dir, "Images", "Parasite.jpg"),
+                        os.path.join(base_dir, "Images", "TheRevenant.jpg")
+        ]
 
         self.movie_image_map = dict(zip(titles, images))
 
@@ -216,7 +221,7 @@ class Admin(tk.Toplevel):
         # Style configuration
         style = ttk.Style()
         style.theme_use('default')
-        fixed_width = 17
+        fixed_width = 20
         style.configure('TNotebook.Tab',width=fixed_width,padding=[0, 10],anchor='center',font=('Helvetica', 12, 'bold'))
 
         tab_control = ttk.Notebook(self)
@@ -226,7 +231,7 @@ class Admin(tk.Toplevel):
         self.tab3 = ttk.Frame(tab_control)
 
         tab_control.add(self.tab1, text='Sales Overview')
-        tab_control.add(self.tab2, text='Room Utilization')
+        tab_control.add(self.tab2, text='Performance Report')
         tab_control.add(self.tab3, text='Placeholder text')
 
         for tab in (self.tab1, self.tab2, self.tab3):
@@ -277,8 +282,8 @@ class Admin(tk.Toplevel):
 
             elif tab == self.tab2:
                 tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5,side="bottom")
-                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="Top Performing Movies", width=20, height=2, ).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="Occupation Rate", width=20, height=2, ).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
             elif tab == self.tab3:
@@ -288,7 +293,7 @@ class Admin(tk.Toplevel):
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
 
-    #DEF
+    #DEF TAB1
     def on_close(self):
         if self.main.mydb and self.main.mydb.is_connected():
             self.main.mydb.close()
@@ -1136,6 +1141,9 @@ class Admin(tk.Toplevel):
             year_month, total_revenue = row
             formatted_revenue = "{:,.0f}".format(total_revenue).replace(",", ".")
             tree.insert("", "end", values=(year_month, formatted_revenue))
+
+    #DEF TAB2
+
 
 if __name__ == "__main__":
     app=Liemora()
