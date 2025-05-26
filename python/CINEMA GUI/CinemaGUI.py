@@ -12,7 +12,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.dates as mdates
 from matplotlib.ticker import MaxNLocator
 import os
-
+from Payment import CustomerFormApp
 
 base_dir = os.path.dirname(__file__)
 class Liemora(tk.Tk):
@@ -264,6 +264,7 @@ class SeatBooking:
         self.booked_seats = set()  #Query booked seat
         self.room_id = self.room_name #Catch screenid from previous tab (query room id from screen id)
         
+        self.query_booked_seats()
         self.main_interface()
         self.root.mainloop()
         
@@ -307,7 +308,7 @@ class SeatBooking:
                                          bg="#4CAF50", fg="white",
                                          width=10, height=1,
                                          state="disabled",
-                                         command="") #Transition to payment screen #TODO: continue command
+                                         command=self.go_to_payment()) #Transition to payment screen #TODO: continue command
         self.continue_button.place(x=1050,y=350)
         ###Screen label
         screen_label = tk.Label(top_frame, text = "Screen", width=30, font = ("Bold",30), justify = "center", bg = "light grey")
@@ -393,7 +394,12 @@ class SeatBooking:
            self.continue_button.config(state="normal")
        else:
            self.continue_button.config(state="disabled")
-
+    
+    def go_to_payment(self):
+        self.root.destroy()
+        CustomerFormApp(self.db, self.selected_seats, self.screening_id, self.total_price)
+    
+       
 class Admin(tk.Toplevel):
     def __init__(self, main):
         super().__init__(main)

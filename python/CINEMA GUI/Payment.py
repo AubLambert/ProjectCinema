@@ -6,26 +6,16 @@ import mysql.connector
 from mysql.connector import Error
 
 class CustomerFormApp(tk.Tk):
-    def __init__(self):
+    def __init__(self, db_connection, screening_id, selected_seats, total_price):
         super().__init__()
         self.title("Customer Form")
         self.geometry("800x500")
-        self.mydb = self.connect_db()
+        self.mydb = db_connection
+        self.selected_seats = selected_seats
+        self.total_price = total_price
         self.amount_due_var = StringVar(value="0.00")
         self.create_widgets()
 
-    def connect_db(self):
-        try:
-            return mysql.connector.connect(
-                host="localhost",
-                port = 3307,
-                user="ticket_clerk",
-                password="dat123",
-                database="cinema_management"
-            )
-        except mysql.connector.Error as err:
-            messagebox.showerror("Database Connection Error", f"Error: {err}")
-            return None
 
 #wot da hell
     def validate_day_input(self, text):
@@ -63,8 +53,8 @@ class CustomerFormApp(tk.Tk):
         month = self.month_entry.get().strip()
         year = self.year_entry.get().strip()
         dob = f"{year}-{month.zfill(2)}-{day.zfill(2)}" if day and month and year else None
-        seat_number = self.seat_entry.get().strip()
-        screening_id = int(self.screening_id_entry.get().strip())
+        seat_number = {}
+        screening_id = self.screening_id
         amount_due = float(self.amount_due_var.get())
 
         self.book_ticket_and_insert_payment(customer_name, phone, screening_id, seat_number, amount_due)
@@ -194,12 +184,11 @@ class CustomerFormApp(tk.Tk):
         self.year_entry.place(x=320, y=200)
         Label(self, text="Seat Number:").place(x=80, y=250)
         self.seat_entry = tk.Entry(self, width=20, state="readonly")
+        self.seat_entry.insert(0, self.seat_numbers)
         self.seat_entry.place(x=250, y=250)
-        Label(self, text="Screening ID:").place(x=80, y=300)
-        self.screening_id_entry = tk.Entry(self, width=20, state="readonly")
-        self.screening_id_entry.place(x=250, y=300)
         Label(self, text="Price (VND):").place(x=500, y=260)
         self.price_entry = tk.Entry(self, width=20, state="readonly")
+        self.price_entry.insert(0, self.total_price)
         self.price_entry.place(x=600, y=260)
 
         Label(self, text="Discount (%):").place(x=500, y=300)
