@@ -10,7 +10,9 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.dates as mdates
+import os
 
+base_dir = os.path.dirname(__file__)
 class Liemora(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -23,7 +25,8 @@ class Liemora(tk.Tk):
 
     def build_login_ui(self):
         #Đổi lại path của ảnh
-        bg_image = Image.open(r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\Cat.jpg").resize((700, 500), Image.LANCZOS)
+        img_path = os.path.join(base_dir, "Images", "Cat.jpg")
+        bg_image = Image.open(img_path).resize((700, 500), Image.LANCZOS)
         bg_photo = ImageTk.PhotoImage(bg_image)
         self.bg_photo = bg_photo
 
@@ -101,12 +104,14 @@ class Movie(tk.Toplevel):
         tk.Button(self, text="Logout", font=10, width=7, command=self.logout).grid(row=0, column=0, sticky="nw", padx=20, pady=20)
 
         titles = ["John Wick", "Edge of Tomorrow", "Interstellar", "Coco", "Parasite", "The Revenant"]
-        images = [r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\Johnwick.jpg",
-                  r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\EdgeOfTomorrow.jpg",
-                  r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\Interstellar.jpg",
-                  r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\Coco.jpg",
-                  r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\Parasite.jpg",
-                  r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\TheRevenant.jpg"]
+        images = images = [
+                        os.path.join(base_dir, "Images", "Johnwick.jpg"),
+                        os.path.join(base_dir, "Images", "EdgeOfTomorrow.jpg"),
+                        os.path.join(base_dir, "Images", "Interstellar.jpg"),
+                        os.path.join(base_dir, "Images", "Coco.jpg"),
+                        os.path.join(base_dir, "Images", "Parasite.jpg"),
+                        os.path.join(base_dir, "Images", "TheRevenant.jpg")
+        ]
 
         self.movie_image_map = dict(zip(titles, images))
 
