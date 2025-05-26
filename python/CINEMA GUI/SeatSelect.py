@@ -13,9 +13,9 @@ class SeatBooking:
         
         # Initialize data structures
         self.selected_seats = {}
-        self.booked_seats = {"A3", "B5", "C2", "D7"}  #Query booked seat, example
-        self.seat_price = 75000  # Query price per seat, example
-        self.room_id = 1 #Catch screenid from previous tab (query room id from screen id)
+        self.booked_seats = {}  #Query booked seat, example
+        self.seat_price = {}  # Query price per seat, example
+        self.room_id = {} #Catch screenid from previous tab (query room id from screen id)
         
         self.main_interface()
         self.root.mainloop()
