@@ -34,7 +34,7 @@ CREATE TABLE Customers
   CustomerID INT NOT NULL AUTO_INCREMENT,
   CustomerName VARCHAR(100) NOT NULL,
   DOB DATE NULL,
-  PhoneNumber VARCHAR(100) NOT NULL UNIQUE,
+  PhoneNumber VARCHAR(100) NULL UNIQUE,
   PRIMARY KEY (CustomerID)
 );
 
@@ -71,7 +71,7 @@ CREATE TABLE Payments
   ScreeningID INT NOT NULL,
   TicketID INT NOT NULL,
   Amount FLOAT NOT NULL,
-  PayTime DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PayTime DATETIME,
   PRIMARY KEY (PaymentID),
   FOREIGN KEY (CustomerID) REFERENCES customers(CustomerID),
   FOREIGN KEY (ScreeningID) REFERENCES Screenings(ScreeningID),
