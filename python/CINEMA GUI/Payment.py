@@ -88,20 +88,10 @@ class CustomerFormApp(tk.Tk):
 
     def check_auto_discount(self, event=None):
         try:
-            day_str = self.day_entry.get()
-            month_str = self.month_entry.get()
-            year_str = self.year_entry.get()
+            day = int(self.day_entry.get())
+            month = int(self.month_entry.get())
+            year = int(self.year_entry.get())
 
-            if not day_str or not month_str or not year_str:
-                self.discount_entry.config(state="normal")
-                self.discount_entry.delete(0, tk.END)
-                self.discount_entry.config(state="readonly")
-                self.calculate_amount_due()
-                return
-
-            day = int(day_str)
-            month = int(month_str)
-            year = int(year_str)
             today = datetime.today()
             dob = datetime(year, month, day)
 
@@ -119,11 +109,13 @@ class CustomerFormApp(tk.Tk):
             else:
                 discount = None
 
-            self.discount_entry.config(state="normal")
-            self.discount_entry.delete(0, tk.END)
             if discount is not None:
+                self.discount_entry.config(state="normal")
+                self.discount_entry.delete(0, tk.END)
                 self.discount_entry.insert(0, str(discount))
-            self.discount_entry.config(state="readonly")
+                self.discount_entry.config(state="readonly")
+            else:
+                self.discount_entry.config(state="readonly")
 
             self.calculate_amount_due()
 
@@ -231,7 +223,7 @@ class CustomerFormApp(tk.Tk):
 
         self.day_entry.bind('<FocusOut>', self.check_auto_discount)
         self.month_entry.bind('<FocusOut>', self.check_auto_discount)
-        self.year_entry.bind('<KeyRelease>', self.check_auto_discount)
+        self.year_entry.bind('<FocusOut>', self.check_auto_discount)
 
 if __name__ == "__main__":
     app=CustomerFormApp()
