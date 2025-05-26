@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox, font, Label, Frame, Button, Toplevel
 from PIL import Image, ImageTk
+from datetime import datetime
 from tkinter import ttk
 import mysql.connector
 from mysql.connector import Error
@@ -22,7 +23,7 @@ class Liemora(tk.Tk):
 
     def build_login_ui(self):
         #Đổi lại path của ảnh
-        bg_image = Image.open(r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Cat.jpg").resize((700, 500), Image.LANCZOS)
+        bg_image = Image.open(r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\Cat.jpg").resize((700, 500), Image.LANCZOS)
         bg_photo = ImageTk.PhotoImage(bg_image)
         self.bg_photo = bg_photo
 
@@ -78,8 +79,9 @@ class Movie(tk.Toplevel):
         self.configure(bg="white")
         self.main = main
         self.username = username
-        self.movie_ui()
+        self.movie_image_map = {}
         self.protocol("WM_DELETE_WINDOW", self.on_close)
+        self.movie_ui()
 
     def on_close(self):
         if self.main.mydb.is_connected():
@@ -87,48 +89,119 @@ class Movie(tk.Toplevel):
         self.destroy()
         self.main.destroy()
 
-    def movie_ui(self):
-        tk.Button(self, text="Logout", font=10, width=7, command=self.logout).grid(row=0, column=0, sticky="nw",
-                                                                                   padx=20, pady=20)
-
-        grid_frame = tk.Frame(self, bg="white")
-        grid_frame.place(relx=0.5, rely=0.55, anchor="center")
-
-        titles = ["John Weed", "Edge of Tomorrow", "Interstellar", "Coco", "Parasite", "The Revenant"]
-        images = [r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Interstellar.jpg",
-                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg",
-                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Johnwick.jpg"] # Đổi lại path của ảnh
-
-        for i, (title, img_path) in enumerate(zip(titles, images)):
-            img = Image.open(img_path).resize((180, 230))
-            img = ImageTk.PhotoImage(img)
-
-            btn = tk.Button(grid_frame, image=img, width=180, height=230,
-                            command=lambda t=title: self.show_timeslots(t))
-            btn.image = img
-            btn.grid(row=(i // 3) * 2, column=i % 3, padx=20, pady=10)
-
-            tk.Label(grid_frame, text=title, bg="white").grid(row=(i // 3) * 2 + 1, column=i % 3, pady=10)
-
-    def show_timeslots(self, movie_title):
-        ts_window = tk.Toplevel(self)
-        ts_window.title(f"Timeslots for {movie_title}")
-        ts_window.geometry("500x400")
-        tk.Label(ts_window, text=f"Timeslots for '{movie_title}'", font=14).pack(pady=20)
-        for time in ["8:00 AM", "14:00 PM", "20:00 PM"]:
-            tk.Button(ts_window, text=time, width=15).pack(pady=5)
-        ts_window.transient(self)
-        ts_window.grab_set()
-
     def logout(self):
-        self.main.mydb.close()
+        if self.main.mydb.is_connected():
+            self.main.mydb.close()
         self.destroy()
         self.main.account_entry.delete(0, tk.END)
         self.main.password_entry.delete(0, tk.END)
         self.main.deiconify()
+
+    def movie_ui(self):
+        tk.Button(self, text="Logout", font=10, width=7, command=self.logout).grid(row=0, column=0, sticky="nw", padx=20, pady=20)
+
+        titles = ["John Wick", "Edge of Tomorrow", "Interstellar", "Coco", "Parasite", "The Revenant"]
+        images = [r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\Johnwick.jpg",
+                  r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\EdgeOfTomorrow.jpg",
+                  r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\Interstellar.jpg",
+                  r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\Coco.jpg",
+                  r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\Parasite.jpg",
+                  r"C:\Users\Admin\Downloads\MySQL\Github\ProjectCinema\python\Images\TheRevenant.jpg"]
+
+        self.movie_image_map = dict(zip(titles, images))
+
+        grid_frame = tk.Frame(self, bg="white")
+        grid_frame.place(relx=0.5, rely=0.55, anchor="center")
+
+        for i, (title, img_path) in enumerate(zip(titles, images)):
+            try:
+                img = Image.open(img_path).resize((180, 230))
+                img = ImageTk.PhotoImage(img)
+            except Exception as e:
+                img = None
+
+            btn = tk.Button(grid_frame, image=img, width=180, height=230,
+                            command=lambda t=title: self.show_timeslots(t), bg="white", relief="solid", borderwidth=1)
+            btn.image = img
+            btn.grid(row=(i // 3) * 2, column=i % 3, padx=20, pady=10)
+
+            tk.Label(grid_frame, text=title, bg="white", font=("Helvetica", 12)).grid(row=(i // 3) * 2 + 1, column=i % 3, pady=10)
+
+    def show_timeslots(self, movie_title):
+        if hasattr(self, 'timeslot_window') and self.timeslot_window.winfo_exists():
+            self.timeslot_window.destroy()
+
+        self.timeslot_window = tk.Toplevel(self)
+        self.timeslot_window.title(f"Select Timeslot - {movie_title}")
+
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        win_width = int(screen_width * 2 / 3)
+        win_height = int(screen_height * 2 / 3)
+        x_pos = int((screen_width - win_width) / 2)
+        y_pos = int((screen_height - win_height) / 2)
+        self.timeslot_window.geometry(f"{win_width}x{win_height}+{x_pos}+{y_pos}")
+        self.timeslot_window.configure(bg="white")
+
+        tk.Button(self.timeslot_window, text="BACK", command=self.timeslot_window.destroy).place(x=15, y=15)
+
+        try:
+            img_path = self.movie_image_map[movie_title]
+            img = Image.open(img_path).resize((200, 280))
+            poster_img = ImageTk.PhotoImage(img)
+            poster = tk.Label(self.timeslot_window, image=poster_img, relief="solid", borderwidth=1)
+            poster.image = poster_img
+            poster.place(x=40, y=80)
+        except:
+            poster = tk.Label(self.timeslot_window, text="No\nImage", width=20, height=10, bg="lightgray", relief="solid")
+            poster.place(x=40, y=80)
+
+        tk.Label(self.timeslot_window, text=f"Movie schedule for '{movie_title}'", font=("Helvetica", 18, "bold"), bg="white").place(x=280, y=90)
+
+        table_frame = tk.Frame(self.timeslot_window, bg="white")
+        table_frame.place(x=270, y=150, width=win_width - 320, height=win_height - 230)
+
+        columns = ("Date", "Time", "Format", "Room")
+        tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=10)
+
+        style = ttk.Style()
+        style.configure("Treeview.Heading", font=("Helvetica", 13, "bold"))
+        style.configure("Treeview", font=("Helvetica", 12), rowheight=36)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, anchor="center", width=150)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        tree.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        now = datetime.now()
+        cursor = self.main.mydb.cursor()
+
+        query = """
+            SELECT s.ScreeningDate, s.ScreeningTime, s.MovieFormat, r.RoomName
+            FROM Screenings s
+            JOIN Movies m ON s.MovieID = m.MovieID
+            JOIN CinemaRooms r ON s.RoomID = r.RoomID
+            WHERE m.MovieTitle = %s AND s.ScreeningDate >= NOW()
+            ORDER BY s.ScreeningDate, s.ScreeningTime
+        """
+        cursor.execute(query, (movie_title,))
+        results = cursor.fetchall()
+
+        for row in results:
+            screening_date = row[0].strftime("%Y-%m-%d")
+            screening_time = f"{row[1].seconds // 3600:02}:{(row[1].seconds // 60) % 60:02}"
+            tree.insert("", "end", values=(screening_date, screening_time, row[2], row[3]))
+
+        cursor.close()
+
+        tk.Button(self.timeslot_window, text="SELECT", font=("Helvetica", 12), width=14).place(relx=0.5, rely=0.92, anchor="center")
+
+        self.timeslot_window.transient(self)
+        self.timeslot_window.grab_set()
 
 class Admin(tk.Toplevel):
     def __init__(self, main):
@@ -173,31 +246,43 @@ class Admin(tk.Toplevel):
                 self.buttons_frame = tk.Frame(right_frame)
                 self.buttons_frame.pack(fill="x", pady=10)
 
-                tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5)
-                tk.Button(left_frame, width=20, height=2, text="Total Revenue",
-                          command=self.display_total_revenue).pack(pady=3, padx=5)
+                #Left buttons
+                tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5,side="bottom")
+                tk.Button(left_frame, width=20, height=2, text="Total Revenue",command=self.display_total_revenue).pack(pady=3, padx=5)
                 tk.Button(left_frame,width=20,height=2, text="Revenue Trends", command=self.display_revenue_sales_chart).pack(pady=3,padx=5)
+                tk.Button(left_frame, text="Ticket Sold", width=20, height=2, command=self.display_ticket).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="Tickets Sold Trend", width=20, height=2,command=self.display_ticket_chart).pack(pady=3, padx=5)
-                self.all_time_btn = tk.Button(self.buttons_frame, text="All time", width=20, height=2,state="disabled",
+
+                #Revenue and ticket trend buttons
+                self.all_time_btn = tk.Button(self.buttons_frame, text="All time", width=20, height=2,
                                               command=lambda: self.update_chart_by_range("all"))
-                self.last_year_btn = tk.Button(self.buttons_frame, text="Last year", width=20, height=2,state="disabled",
+                self.last_year_btn = tk.Button(self.buttons_frame, text="Last year", width=20, height=2,
                                                command=lambda: self.update_chart_by_range("year"))
-                self.last_6_months_btn = tk.Button(self.buttons_frame, text="Last 6 months", width=20, height=2,state="disabled",
+                self.last_6_months_btn = tk.Button(self.buttons_frame, text="Last 6 months", width=20, height=2,
                                                    command=lambda: self.update_chart_by_range("6m"))
-                self.last_30_days_btn = tk.Button(self.buttons_frame, text="Last 30 days", width=20, height=2, state="disabled",
+                self.last_30_days_btn = tk.Button(self.buttons_frame, text="Last 30 days", width=20, height=2,
                                                   command=lambda: self.update_chart_by_range("30"))
-                self.last_30_days_btn.pack(side="right", padx=10)
-                self.last_6_months_btn.pack(side="right", padx=10)
-                self.last_year_btn.pack(side="right", padx=10)
-                self.all_time_btn.pack(side="right", padx=10)
+
+                #Revenue
+                self.revenue_daily_btn = tk.Button(self.buttons_frame, text="Daily",width=20,height=2,command=self.revenue_daily)
+                self.revenue_monthly_btn = tk.Button(self.buttons_frame, text="Monthly", width=20, height=2,command=self.revenue_monthly)
+                self.revenue_quarterly_btn = tk.Button(self.buttons_frame, text="Quarterly", width=20, height=2,command=self.revenue_quarterly)
+                self.revenue_yearly_btn = tk.Button(self.buttons_frame, text="Yearly", width=20, height=2,command=self.revenue_yearly)
+
+                #Ticket
+                self.ticket_daily_btn = tk.Button(self.buttons_frame, text="Daily", width=20, height=2,command=self.ticket_daily)
+                self.ticket_monthly_btn = tk.Button(self.buttons_frame, text="Monthly", width=20, height=2,command=self.ticket_monthly)
+                self.ticket_quarterly_btn = tk.Button(self.buttons_frame, text="Quarterly", width=20, height=2,command=self.ticket_quarterly)
+                self.ticket_yearly_btn = tk.Button(self.buttons_frame, text="Yearly", width=20, height=2,command=self.ticket_yearly)
+
             elif tab == self.tab2:
-                tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5)
+                tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5,side="bottom")
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
             elif tab == self.tab3:
-                tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5)
+                tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5,side="bottom")
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
@@ -216,6 +301,43 @@ class Admin(tk.Toplevel):
         self.main.account_entry.delete(0, tk.END)
         self.main.password_entry.delete(0, tk.END)
         self.main.deiconify()
+
+    #DEF Show/hide buttons
+    def hide_time_range_totalrevenue(self):
+        self.revenue_daily_btn.pack_forget()
+        self.revenue_monthly_btn.pack_forget()
+        self.revenue_quarterly_btn.pack_forget()
+        self.revenue_yearly_btn.pack_forget()
+
+    def show_time_range_totalrevenue(self):
+        self.revenue_daily_btn.pack(side="right", padx=10)
+        self.revenue_monthly_btn.pack(side="right", padx=10)
+        self.revenue_quarterly_btn.pack(side="right", padx=10)
+        self.revenue_yearly_btn.pack(side="right", padx=10)
+
+    def hide_time_range_buttons(self):
+        self.all_time_btn.pack_forget()
+        self.last_year_btn.pack_forget()
+        self.last_6_months_btn.pack_forget()
+        self.last_30_days_btn.pack_forget()
+
+    def show_time_range_button(self):
+        self.last_30_days_btn.pack(side="right", padx=10)
+        self.last_6_months_btn.pack(side="right", padx=10)
+        self.last_year_btn.pack(side="right", padx=10)
+        self.all_time_btn.pack(side="right", padx=10)
+
+    def show_time_range_ticket(self):
+        self.ticket_daily_btn.pack(side="right", padx=10)
+        self.ticket_monthly_btn.pack(side="right", padx=10)
+        self.ticket_quarterly_btn.pack(side="right", padx=10)
+        self.ticket_yearly_btn.pack(side="right", padx=10)
+
+    def hide_time_range_ticket(self):
+        self.ticket_daily_btn.pack_forget()
+        self.ticket_monthly_btn.pack_forget()
+        self.ticket_quarterly_btn.pack_forget()
+        self.ticket_yearly_btn.pack_forget()
 
     def update_chart_by_range(self, range_type):
         if self.chart_mode == "revenue":
@@ -237,6 +359,7 @@ class Admin(tk.Toplevel):
             elif range_type == "all":
                 self.display_ticket_alltime()
 
+    #Revenue trend
     def display_revenue_sales_chart(self):
         query = """
                 SELECT 
@@ -270,10 +393,9 @@ class Admin(tk.Toplevel):
             canvas.get_tk_widget().pack(pady=20)
         except Exception as e:
             print(f"Error generating chart: {e}")
-        self.last_6_months_btn.config(state="normal")
-        self.last_year_btn.config(state="normal")
-        self.all_time_btn.config(state="normal")
-        self.last_30_days_btn.config(state="normal")
+        self.hide_time_range_ticket()
+        self.hide_time_range_totalrevenue()
+        self.show_time_range_button()
         self.chart_mode = "revenue"
         self.update_chart_by_range("30")
 
@@ -419,6 +541,7 @@ class Admin(tk.Toplevel):
         except Exception as e:
             print(f"Error generating all-time chart: {e}")
 
+    #ticket trend
     def display_ticket_chart(self):
         query = """
             SELECT 
@@ -458,10 +581,9 @@ class Admin(tk.Toplevel):
         except Exception as e:
             messagebox.showerror("Error", f"Could not load ticket sales chart.\n{str(e)}")
 
-        self.last_6_months_btn.config(state="normal")
-        self.last_year_btn.config(state="normal")
-        self.all_time_btn.config(state="normal")
-        self.last_30_days_btn.config(state="normal")
+        self.hide_time_range_ticket()
+        self.hide_time_range_totalrevenue()
+        self.show_time_range_button()
         self.chart_mode = "ticket"
         self.update_chart_by_range("30")
 
@@ -624,6 +746,7 @@ class Admin(tk.Toplevel):
         except Exception as e:
             print(f"Error generating all-time chart: {e}")
 
+    #Revenue
     def display_total_revenue(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
@@ -645,7 +768,7 @@ class Admin(tk.Toplevel):
 
         columns = ("YearMonth", "TotalRevenue")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
-        tree.heading("YearMonth", text="Year-Month")
+        tree.heading("YearMonth", text="Date")
         tree.heading("TotalRevenue", text="Total Revenue")
         tree.column("YearMonth", width=150, anchor="center")
         tree.column("TotalRevenue", width=200, anchor="center")
@@ -657,12 +780,362 @@ class Admin(tk.Toplevel):
 
         for row in data:
             year_month, total_revenue = row
-            tree.insert("", "end", values=(year_month, total_revenue))
+            formatted_revenue = "{:,.0f} ₫".format(total_revenue).replace(",", ".")
+            tree.insert("", "end", values=(year_month, formatted_revenue))
 
-        self.last_6_months_btn.config(state="disabled")
-        self.last_year_btn.config(state="disabled")
-        self.all_time_btn.config(state="disabled")
-        self.last_30_days_btn.config(state="disabled")
+        self.hide_time_range_buttons()
+        self.hide_time_range_ticket()
+        self.show_time_range_totalrevenue()
+
+    def revenue_daily(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        cursor = self.main.mydb.cursor()
+        query = """
+                SELECT
+                    DATE(PayTime) AS PayDate,
+                    SUM(Amount) AS TotalRevenue
+                FROM Payments
+                GROUP BY PayDate
+                ORDER BY PayDate DESC;
+                """
+        cursor.execute(query)
+        data = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame)
+        table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        columns = ("YearMonth", "TotalRevenue")
+        tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
+        tree.heading("YearMonth", text="Date")
+        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.column("YearMonth", width=150, anchor="center")
+        tree.column("TotalRevenue", width=200, anchor="center")
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        tree.pack(fill="both", expand=True)
+
+        for row in data:
+            year_month, total_revenue = row
+            formatted_revenue = "{:,.0f} ₫".format(total_revenue).replace(",", ".")
+            tree.insert("", "end", values=(year_month, formatted_revenue))
+
+    def revenue_monthly(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        cursor = self.main.mydb.cursor()
+        query = """
+                SELECT
+                   DATE_FORMAT(PayTime, '%Y-%m') AS YearMonth,
+                   SUM(Amount) AS TotalRevenue
+                FROM Payments
+                GROUP BY YearMonth
+                ORDER BY YearMonth DESC;
+                """
+        cursor.execute(query)
+        data = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame)
+        table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        columns = ("YearMonth", "TotalRevenue")
+        tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
+        tree.heading("YearMonth", text="Date")
+        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.column("YearMonth", width=150, anchor="center")
+        tree.column("TotalRevenue", width=200, anchor="center")
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        tree.pack(fill="both", expand=True)
+
+        for row in data:
+            year_month, total_revenue = row
+            formatted_revenue = "{:,.0f} ₫".format(total_revenue).replace(",", ".")
+            tree.insert("", "end", values=(year_month, formatted_revenue))
+
+    def revenue_quarterly(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        cursor = self.main.mydb.cursor()
+        query = """
+                SELECT
+                      CONCAT(Year, '-Q', Quarter) AS YearQuarter,
+                      SUM(Total) AS TotalRevenue
+                FROM (
+                    SELECT 
+                        YEAR(PayTime) AS Year,
+                        QUARTER(PayTime) AS Quarter,
+                        Amount AS Total
+                    FROM Payments
+                ) AS sub
+                GROUP BY Year, Quarter
+                ORDER BY Year DESC, Quarter DESC;
+                """
+        cursor.execute(query)
+        data = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame)
+        table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        columns = ("YearMonth", "TotalRevenue")
+        tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
+        tree.heading("YearMonth", text="Date")
+        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.column("YearMonth", width=150, anchor="center")
+        tree.column("TotalRevenue", width=200, anchor="center")
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        tree.pack(fill="both", expand=True)
+
+        for row in data:
+            year_month, total_revenue = row
+            formatted_revenue = "{:,.0f} ₫".format(total_revenue).replace(",", ".")
+            tree.insert("", "end", values=(year_month, formatted_revenue))
+
+    def revenue_yearly(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        cursor = self.main.mydb.cursor()
+        query = """
+                SELECT
+                  Year,
+                  SUM(Total) AS TotalRevenue
+                FROM (
+                  SELECT 
+                    YEAR(PayTime) AS Year,
+                    Amount AS Total
+                  FROM Payments
+                ) AS sub
+                GROUP BY Year
+                ORDER BY Year desc;
+                """
+        cursor.execute(query)
+        data = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame)
+        table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        columns = ("YearMonth", "TotalRevenue")
+        tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
+        tree.heading("YearMonth", text="Date")
+        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.column("YearMonth", width=150, anchor="center")
+        tree.column("TotalRevenue", width=200, anchor="center")
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        tree.pack(fill="both", expand=True)
+
+        for row in data:
+            year_month, total_revenue = row
+            formatted_revenue = "{:,.0f} ₫".format(total_revenue).replace(",", ".")
+            tree.insert("", "end", values=(year_month, formatted_revenue))
+
+    #Ticket
+    def display_ticket(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        cursor = self.main.mydb.cursor()
+        query = """
+                SELECT
+                  DATE(PayTime) AS SaleDate,
+                  COUNT(TicketID) AS TotalTicketsSold
+                FROM Payments
+                GROUP BY DATE(PayTime)
+                ORDER BY SaleDate desc;
+                """
+        cursor.execute(query)
+        data = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame)
+        table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        columns = ("YearMonth", "TotalRevenue")
+        tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
+        tree.heading("YearMonth", text="Date")
+        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.column("YearMonth", width=150, anchor="center")
+        tree.column("TotalRevenue", width=200, anchor="center")
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        tree.pack(fill="both", expand=True)
+
+        for row in data:
+            year_month, total_revenue = row
+            formatted_revenue = "{:,.0f}".format(total_revenue).replace(",", ".")
+            tree.insert("", "end", values=(year_month, formatted_revenue))
+
+        self.hide_time_range_buttons()
+        self.hide_time_range_totalrevenue()
+        self.show_time_range_ticket()
+
+    def ticket_daily(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        cursor = self.main.mydb.cursor()
+        query = """
+                SELECT
+                  DATE(PayTime) AS SaleDate,
+                  COUNT(TicketID) AS TotalTicketsSold
+                FROM Payments
+                GROUP BY DATE(PayTime)
+                ORDER BY SaleDate desc;
+                """
+        cursor.execute(query)
+        data = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame)
+        table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        columns = ("YearMonth", "TotalRevenue")
+        tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
+        tree.heading("YearMonth", text="Date")
+        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.column("YearMonth", width=150, anchor="center")
+        tree.column("TotalRevenue", width=200, anchor="center")
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        tree.pack(fill="both", expand=True)
+
+        for row in data:
+            year_month, total_revenue = row
+            formatted_revenue = "{:,.0f}".format(total_revenue).replace(",", ".")
+            tree.insert("", "end", values=(year_month, formatted_revenue))
+
+    def ticket_monthly(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        cursor = self.main.mydb.cursor()
+        query = """
+                SELECT
+                  DATE_FORMAT(PayTime, '%Y-%m') AS YearMonth,
+                  COUNT(TicketID) AS TotalTicketsSold
+                FROM Payments
+                GROUP BY YearMonth
+                ORDER BY YearMonth desc;
+                """
+        cursor.execute(query)
+        data = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame)
+        table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        columns = ("YearMonth", "TotalRevenue")
+        tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
+        tree.heading("YearMonth", text="Date")
+        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.column("YearMonth", width=150, anchor="center")
+        tree.column("TotalRevenue", width=200, anchor="center")
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        tree.pack(fill="both", expand=True)
+
+        for row in data:
+            year_month, total_revenue = row
+            formatted_revenue = "{:,.0f}".format(total_revenue).replace(",", ".")
+            tree.insert("", "end", values=(year_month, formatted_revenue))
+
+    def ticket_quarterly(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        cursor = self.main.mydb.cursor()
+        query = """
+                SELECT
+                  CONCAT(Year, '-Q', Quarter) AS YearQuarter,
+                  COUNT(*) AS TotalTicketsSold
+                FROM (
+                  SELECT 
+                    TicketID,
+                    YEAR(PayTime) AS Year,
+                    QUARTER(PayTime) AS Quarter
+                  FROM Payments
+                ) AS sub
+                GROUP BY Year, Quarter
+                ORDER BY Year desc, Quarter desc;
+                """
+        cursor.execute(query)
+        data = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame)
+        table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        columns = ("YearMonth", "TotalRevenue")
+        tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
+        tree.heading("YearMonth", text="Date")
+        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.column("YearMonth", width=150, anchor="center")
+        tree.column("TotalRevenue", width=200, anchor="center")
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        tree.pack(fill="both", expand=True)
+
+        for row in data:
+            year_month, total_revenue = row
+            formatted_revenue = "{:,.0f}".format(total_revenue).replace(",", ".")
+            tree.insert("", "end", values=(year_month, formatted_revenue))
+
+    def ticket_yearly(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        cursor = self.main.mydb.cursor()
+        query = """
+                SELECT
+                  Year,
+                  COUNT(*) AS TotalTicketsSold
+                FROM (
+                  SELECT 
+                    TicketID,
+                    YEAR(PayTime) AS Year
+                  FROM Payments
+                ) AS sub
+                GROUP BY Year
+                ORDER BY Year DESC;
+                """
+        cursor.execute(query)
+        data = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame)
+        table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        columns = ("YearMonth", "TotalRevenue")
+        tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
+        tree.heading("YearMonth", text="Date")
+        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.column("YearMonth", width=150, anchor="center")
+        tree.column("TotalRevenue", width=200, anchor="center")
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        tree.pack(fill="both", expand=True)
+
+        for row in data:
+            year_month, total_revenue = row
+            formatted_revenue = "{:,.0f}".format(total_revenue).replace(",", ".")
+            tree.insert("", "end", values=(year_month, formatted_revenue))
 
 if __name__ == "__main__":
     app=Liemora()
