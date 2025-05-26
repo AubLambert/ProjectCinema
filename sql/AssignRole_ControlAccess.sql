@@ -15,6 +15,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON cinema_management.movies TO 'manager'@'l
 GRANT SELECT, INSERT, UPDATE, DELETE ON cinema_management.screenings TO 'manager'@'localhost';
 GRANT SELECT, UPDATE, INSERT, DELETE ON cinema_management.customers TO 'manager'@'localhost';
 GRANT SELECT, INSERT, UPDATE, DELETE ON cinema_management.tickets TO 'manager'@'localhost';
+GRANT SELECT, INSERT, UPDATE, DELETE ON cinema_management.cinemarooms TO 'manager'@'localhost';
 
 -- Ticket_clerk 
 GRANT SELECT ON cinema_management.movies TO 'ticket_clerk'@'localhost';
