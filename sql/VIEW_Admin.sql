@@ -447,7 +447,7 @@ WITH TicketCounts AS (
         COUNT(t.TicketID) AS TicketsSold
     FROM Tickets t
     JOIN Screenings s ON t.ScreeningID = s.ScreeningID
-    WHERE s.ScreeningDate BETWEEN CURDATE() - INTERVAL 30 DAY AND CURDATE()
+    WHERE s.ScreeningDate >= CURDATE() - INTERVAL 30 DAY
     GROUP BY WeekDay, s.ScreeningTime
 ),
 DailyTotals AS (
@@ -487,7 +487,7 @@ WITH TicketCounts AS (
         COUNT(t.TicketID) AS TicketsSold
     FROM Tickets t
     JOIN Screenings s ON t.ScreeningID = s.ScreeningID
-    WHERE s.ScreeningDate BETWEEN CURDATE() - INTERVAL 90 DAY AND CURDATE()
+    WHERE s.ScreeningDate >= CURDATE() - INTERVAL 90 DAY
     GROUP BY WeekDay, s.ScreeningTime
 ),
 DailyTotals AS (
@@ -602,7 +602,7 @@ WITH ScreeningStats AS (
     FROM Screenings s
     LEFT JOIN Tickets t ON s.ScreeningID = t.ScreeningID
     JOIN CinemaRooms cr ON s.RoomID = cr.RoomID
-    WHERE s.ScreeningDate BETWEEN CURDATE() - INTERVAL 30 DAY AND CURDATE()
+    WHERE s.ScreeningDate >= CURDATE() - INTERVAL 30 DAY
     GROUP BY s.ScreeningID, s.ScreeningTime, cr.RoomID, s.Price
 ),
 AggregatedStats AS (
@@ -635,7 +635,7 @@ WITH ScreeningStats AS (
     FROM Screenings s
     LEFT JOIN Tickets t ON s.ScreeningID = t.ScreeningID
     JOIN CinemaRooms cr ON s.RoomID = cr.RoomID
-    WHERE s.ScreeningDate BETWEEN CURDATE() - INTERVAL 90 DAY AND CURDATE()
+    WHERE s.ScreeningDate >= CURDATE() - INTERVAL 90 DAY
     GROUP BY s.ScreeningID, s.ScreeningTime, cr.RoomID, s.Price
 ),
 AggregatedStats AS (
