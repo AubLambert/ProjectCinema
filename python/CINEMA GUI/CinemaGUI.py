@@ -10,9 +10,8 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.dates as mdates
-import os
+from matplotlib.ticker import MaxNLocator
 
-base_dir = os.path.dirname(__file__)
 class Liemora(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -25,12 +24,7 @@ class Liemora(tk.Tk):
 
     def build_login_ui(self):
         #Đổi lại path của ảnh
-<<<<<<< HEAD
         bg_image = Image.open(r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\CINEMA GUI\Images\Cat.jpg").resize((700, 500), Image.LANCZOS)
-=======
-        img_path = os.path.join(base_dir, "Images", "Cat.jpg")
-        bg_image = Image.open(img_path).resize((700, 500), Image.LANCZOS)
->>>>>>> main
         bg_photo = ImageTk.PhotoImage(bg_image)
         self.bg_photo = bg_photo
 
@@ -108,14 +102,12 @@ class Movie(tk.Toplevel):
         tk.Button(self, text="Logout", font=10, width=7, command=self.logout).grid(row=0, column=0, sticky="nw", padx=20, pady=20)
 
         titles = ["John Wick", "Edge of Tomorrow", "Interstellar", "Coco", "Parasite", "The Revenant"]
-        images = images = [
-                        os.path.join(base_dir, "Images", "Johnwick.jpg"),
-                        os.path.join(base_dir, "Images", "EdgeOfTomorrow.jpg"),
-                        os.path.join(base_dir, "Images", "Interstellar.jpg"),
-                        os.path.join(base_dir, "Images", "Coco.jpg"),
-                        os.path.join(base_dir, "Images", "Parasite.jpg"),
-                        os.path.join(base_dir, "Images", "TheRevenant.jpg")
-        ]
+        images = [r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Cat.jpg",
+                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Cat.jpg",
+                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Cat.jpg",
+                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Cat.jpg",
+                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Cat.jpg",
+                  r"C:\Users\HACOM\Documents\GitHub\ProjectCinema\python\Images\Cat.jpg"]
 
         self.movie_image_map = dict(zip(titles, images))
 
@@ -285,8 +277,12 @@ class Admin(tk.Toplevel):
                 self.ticket_yearly_btn = tk.Button(self.buttons_frame, text="Yearly", width=20, height=2,command=self.ticket_yearly)
 
             elif tab == self.tab2:
+                self.graph_frame2 = tk.Frame(right_frame)
+                self.graph_frame2.pack(fill="both", expand=True)
+                self.buttons_frame2 = tk.Frame(right_frame)
+                self.buttons_frame2.pack(fill="x", pady=10)
+
                 tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5,side="bottom")
-<<<<<<< HEAD
                 tk.Button(left_frame, text="Movie Performance", width=20, height=2,command=self.display_movie).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="Occupation Rate", width=20, height=2, command=self.display_occupation).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="Screening Time", width=20, height=2,command=self.display_screeningtime).pack(pady=3, padx=5)
@@ -318,12 +314,6 @@ class Admin(tk.Toplevel):
                 self.day_all = tk.Button(self.buttons_frame2, text="All time", width=20, height=2,
                                              command=self.display_day_all)
 
-=======
-                tk.Button(left_frame, text="Top Performing Movies", width=20, height=2, ).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="Occupation Rate", width=20, height=2, ).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
->>>>>>> main
             elif tab == self.tab3:
                 tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5,side="bottom")
                 tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
@@ -983,7 +973,7 @@ class Admin(tk.Toplevel):
         columns = ("YearMonth", "TotalRevenue")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
         tree.heading("YearMonth", text="Date")
-        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.heading("TotalRevenue", text="Total Ticket Sold")
         tree.column("YearMonth", width=150, anchor="center")
         tree.column("TotalRevenue", width=200, anchor="center")
 
@@ -1022,7 +1012,7 @@ class Admin(tk.Toplevel):
         columns = ("YearMonth", "TotalRevenue")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
         tree.heading("YearMonth", text="Date")
-        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.heading("TotalRevenue", text="Total Ticket Sold")
         tree.column("YearMonth", width=150, anchor="center")
         tree.column("TotalRevenue", width=200, anchor="center")
 
@@ -1057,7 +1047,7 @@ class Admin(tk.Toplevel):
         columns = ("YearMonth", "TotalRevenue")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
         tree.heading("YearMonth", text="Date")
-        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.heading("TotalRevenue", text="Total Ticket Sold")
         tree.column("YearMonth", width=150, anchor="center")
         tree.column("TotalRevenue", width=200, anchor="center")
 
@@ -1098,7 +1088,7 @@ class Admin(tk.Toplevel):
         columns = ("YearMonth", "TotalRevenue")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
         tree.heading("YearMonth", text="Date")
-        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.heading("TotalRevenue", text="Total Ticket Sold")
         tree.column("YearMonth", width=150, anchor="center")
         tree.column("TotalRevenue", width=200, anchor="center")
 
@@ -1117,14 +1107,9 @@ class Admin(tk.Toplevel):
         cursor = self.main.mydb.cursor()
         query = """
                 SELECT
-                  Year,
-                  COUNT(*) AS TotalTicketsSold
-                FROM (
-                  SELECT 
-                    TicketID,
-                    YEAR(PayTime) AS Year
-                  FROM Payments
-                ) AS sub
+                    DATE_FORMAT(PayTime, '%Y') AS Year,
+                    COUNT(TicketID) AS TotalTicketsSold
+                FROM Payments
                 GROUP BY Year
                 ORDER BY Year DESC;
                 """
@@ -1138,7 +1123,7 @@ class Admin(tk.Toplevel):
         columns = ("YearMonth", "TotalRevenue")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
         tree.heading("YearMonth", text="Date")
-        tree.heading("TotalRevenue", text="Total Revenue")
+        tree.heading("TotalRevenue", text="Total Ticket Sold")
         tree.column("YearMonth", width=150, anchor="center")
         tree.column("TotalRevenue", width=200, anchor="center")
 
@@ -1154,7 +1139,6 @@ class Admin(tk.Toplevel):
 
 
     #DEF TAB2
-<<<<<<< HEAD
     #Show/Hide button
     def hide_button2(self):
         self.hide_movie_button()
@@ -1764,8 +1748,6 @@ class Admin(tk.Toplevel):
         cursor.close()
 
 
-=======
->>>>>>> main
 
 
 if __name__ == "__main__":
