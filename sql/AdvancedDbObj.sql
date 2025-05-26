@@ -138,7 +138,7 @@ BEGIN
         -- Check seat availability
         SELECT SeatID FROM seats s JOIN screenings sc ON s.RoomID = sc.RoomID
         WHERE ScreeningID = screening_id
-			AND s.SeatID NOT IN (SELECT t.SeatID FROM tickets t WHERE t.ScreeningID = screening_id);
+			AND s.SeatStatus = "Available";
 END //
 DELIMITER ;
 

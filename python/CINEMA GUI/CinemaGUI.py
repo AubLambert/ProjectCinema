@@ -11,6 +11,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.dates as mdates
 import os
+from SeatSelect import SeatBooking
 
 base_dir = os.path.dirname(__file__)
 class Liemora(tk.Tk):
@@ -203,10 +204,47 @@ class Movie(tk.Toplevel):
 
         cursor.close()
 
-        tk.Button(self.timeslot_window, text="SELECT", font=("Helvetica", 12), width=14).place(relx=0.5, rely=0.92, anchor="center")
+        tk.Button(
+            self.timeslot_window,
+            text="SELECT",
+            font=("Helvetica", 12),
+            width=14,
+            command=lambda: self.open_seat_booking(tree, movie_title)
+        ).place(relx=0.5, rely=0.92, anchor="center")
 
-        self.timeslot_window.transient(self)
-        self.timeslot_window.grab_set()
+    def open_seat_booking(self, tree, movie_title):
+        selected_item = tree.focus()
+        if not selected_item:
+            messagebox.showwarning("No selection", "Please select a timeslot.")
+            return
+
+        values = tree.item(selected_item, 'values')
+        screening_date, screening_time, movie_format, room_name = values
+
+        # Truy vấn RoomID từ room_name
+        query = """
+                SELECT s.ScreeningID, s.Price, r.RoomID
+                FROM Screenings s
+                JOIN CinemaRooms r ON s.RoomID = r.RoomID
+                JOIN Movies m ON s.MovieID = m.MovieID
+                WHERE m.MovieTitle = %s AND s.ScreeningDate = %s AND s.ScreeningTime = %s AND r.RoomName = %s
+            """
+        cursor = self.main.mydb.cursor()
+        cursor.execute(query, (movie_title, screening_date, screening_time, room_name))
+        result = cursor.fetchone()
+        cursor.close()
+        if not result:
+            messagebox.showerror("Error", "Screening not found.")
+            return
+
+        screening_id, price, room_id = result
+
+        # Gọi GUI SeatBooking và truyền dữ liệu
+        self.withdraw()
+        self.timeslot_window.destroy()
+        SeatBooking(self, self.main.mydb,screening_id, room_name, price)
+    
+
 
 class Admin(tk.Toplevel):
     def __init__(self, main):

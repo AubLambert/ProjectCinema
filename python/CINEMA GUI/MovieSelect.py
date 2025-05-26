@@ -177,3 +177,5 @@ class Movie(tk.Toplevel):
         self.withdraw()
         self.timeslot_window.destroy()
         SeatBooking(self, self.main.mydb, movie_title, screening_date, screening_time, room_id)
+if __name__ == "__main__":
+    app=Movie()
