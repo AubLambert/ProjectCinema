@@ -198,7 +198,7 @@ class CustomerFormApp(tk.Tk):
         Label(self, text="Screening ID:").place(x=80, y=300)
         self.screening_id_entry = tk.Entry(self, width=20, state="readonly")
         self.screening_id_entry.place(x=250, y=300)
-        Label(self, text="Price ($):").place(x=500, y=260)
+        Label(self, text="Price (VND):").place(x=500, y=260)
         self.price_entry = tk.Entry(self, width=20, state="readonly")
         self.price_entry.place(x=600, y=260)
 
