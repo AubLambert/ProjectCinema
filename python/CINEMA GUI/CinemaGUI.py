@@ -14,6 +14,9 @@ from matplotlib.ticker import MaxNLocator
 from tkinter import filedialog
 import os
 import warnings
+import ttkbootstrap as tb
+from ttkbootstrap.constants import *
+
 
 base_dir = os.path.dirname(__file__)
 warnings.filterwarnings("ignore", message="pandas only supports SQLAlchemy")
@@ -378,10 +381,10 @@ class SeatBooking:
         # Check if the seat is already selected
         if seat_number in self.selected_seats:
         # Deselect the seat
-            self.seat_buttons[seat_number].config(bg="white", fg = "black")  # Reset to default color
+            self.seat_buttons[seat_number].config(bg="white", fg = "black")
             del self.selected_seats[seat_number]
         else:
-            # Select the seat
+
             self.seat_buttons[seat_number].config(bg="blue", fg = "white")
             self.selected_seats[seat_number] = True
         # Update total selected seats and price
@@ -399,11 +402,11 @@ class SeatBooking:
        else:
            self.continue_button.config(state="disabled")
 
-class Admin(tk.Toplevel):
+class Admin(tb.Window):
     def __init__(self, main):
-        super().__init__(main)
+        super().__init__(themename="litera")
         self.title("Liemora's Report")
-        self.geometry("1350x750")
+        self.geometry("1600x900")
         self.resizable(False, False)
         self.configure(bg="white")
         self.main = main
@@ -417,174 +420,190 @@ class Admin(tk.Toplevel):
         self.current_figure2 = None
         self.current_figure3 = None
 
-        style = ttk.Style()
-        style.theme_use('default')
-        fixed_width = 20
-        style.configure('TNotebook.Tab',width=fixed_width,padding=[0, 10],anchor='center',font=('Helvetica', 12, 'bold'))
 
-        tab_control = ttk.Notebook(self)
-        tab_control.pack(expand=True, fill='both')
-        self.tab1 = ttk.Frame(tab_control)
-        self.tab2 = ttk.Frame(tab_control)
-        self.tab3 = ttk.Frame(tab_control)
 
-        tab_control.add(self.tab1, text='Sales Overview')
-        tab_control.add(self.tab2, text='Performance Report')
-        tab_control.add(self.tab3, text='Customer Insight')
+        self.tab_control = tb.Notebook(self)
+        self.tab_control.pack(expand=True, fill='both', padx=20, pady=20)
+        self.tab1 = tb.Frame(self.tab_control)
+        self.tab2 = tb.Frame(self.tab_control)
+        self.tab3 = tb.Frame(self.tab_control)
+
+        self.tab_control.add(self.tab1, text='📊 Sales Overview')
+        self.tab_control.add(self.tab2, text='📈 Performance Report')
+        self.tab_control.add(self.tab3, text='👥 Customer Insight')
+
+        self.tab_control.bind("<<NotebookTabChanged>>", self.on_tab_changed)
+
 
         for tab in (self.tab1, self.tab2, self.tab3):
-            main_frame = tk.Frame(tab)
+            main_frame = tb.Frame(tab)
             main_frame.pack(fill="both", expand=True)
 
-            left_frame = tk.Frame(main_frame, width=160, bg="lightgrey")
+            left_frame = tb.Frame(main_frame, width=180)
             left_frame.pack(side="left", fill="y")
 
-            right_frame = tk.Frame(main_frame)
+            right_frame = tb.Frame(main_frame)
             right_frame.pack(side="right", fill="both", expand=True)
 
             #Button
             if tab == self.tab1:
-                self.graph_frame = tk.Frame(right_frame)
+                self.graph_frame = tb.Frame(right_frame)
                 self.graph_frame.pack(fill="both", expand=True)
-                self.buttons_frame = tk.Frame(right_frame)
+                self.buttons_frame = tb.Frame(right_frame)
                 self.buttons_frame.pack(fill="x", pady=10)
 
                 #Left buttons
-                tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5,side="bottom")
-                tk.Button(left_frame, text="Export as Excel\n(With PNG if available)", width=20, height=4,command=self.excel_export).pack(pady=3,padx=5,side="bottom")
-                tk.Button(left_frame, width=20, height=2, text="Total Revenue",command=self.display_total_revenue).pack(pady=3, padx=5)
-                tk.Button(left_frame,width=20,height=2, text="Revenue Trends", command=self.display_revenue_sales_chart).pack(pady=3,padx=5)
-                tk.Button(left_frame, text="Total Ticket Sold", width=20, height=2, command=self.display_ticket).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="Tickets Sold Trend", width=20, height=2,command=self.display_ticket_chart).pack(pady=3, padx=5)
+                tb.Button(left_frame, text="Logout",width=20, command=self.logout).pack(pady=3,padx=5,side="bottom",ipady=10)
+                tb.Button(left_frame, text="Export as Excel\n(With PNG if available)", width=20, command=self.excel_export).pack(pady=3,padx=5,side="bottom",ipady=10)
+                tb.Button(left_frame, width=20,  text="Total Revenue",command=self.display_total_revenue).pack(pady=3, padx=5,ipady=10)
+                tb.Button(left_frame,width=20, text="Revenue Trends", command=self.display_revenue_sales_chart).pack(pady=3,padx=5,ipady=10)
+                tb.Button(left_frame, text="Total Ticket Sold", width=20,  command=self.display_ticket).pack(pady=3, padx=5,ipady=10)
+                tb.Button(left_frame, text="Tickets Sold Trend", width=20, command=self.display_ticket_chart).pack(pady=3, padx=5,ipady=10)
 
                 #Revenue and ticket trend buttons
-                self.all_time_btn = tk.Button(self.buttons_frame, text="All time", width=20, height=2,
+                self.all_time_btn = tb.Button(self.buttons_frame, text="All time", width=20,
                                               command=lambda: self.update_chart_by_range("all"))
-                self.last_year_btn = tk.Button(self.buttons_frame, text="Last year", width=20, height=2,
+                self.last_year_btn = tb.Button(self.buttons_frame, text="Last year", width=20,
                                                command=lambda: self.update_chart_by_range("year"))
-                self.last_6_months_btn = tk.Button(self.buttons_frame, text="Last 6 months", width=20, height=2,
+                self.last_6_months_btn = tb.Button(self.buttons_frame, text="Last 6 months", width=20,
                                                    command=lambda: self.update_chart_by_range("6m"))
-                self.last_30_days_btn = tk.Button(self.buttons_frame, text="Last 30 days", width=20, height=2,
+                self.last_30_days_btn = tb.Button(self.buttons_frame, text="Last 30 days", width=20,
                                                   command=lambda: self.update_chart_by_range("30"))
 
                 #Revenue
-                self.revenue_daily_btn = tk.Button(self.buttons_frame, text="Daily",width=20,height=2,command=self.revenue_daily)
-                self.revenue_monthly_btn = tk.Button(self.buttons_frame, text="Monthly", width=20, height=2,command=self.revenue_monthly)
-                self.revenue_quarterly_btn = tk.Button(self.buttons_frame, text="Quarterly", width=20, height=2,command=self.revenue_quarterly)
-                self.revenue_yearly_btn = tk.Button(self.buttons_frame, text="Yearly", width=20, height=2,command=self.revenue_yearly)
+                self.revenue_daily_btn = tb.Button(self.buttons_frame, text="Daily",width=20,command=self.revenue_daily)
+                self.revenue_monthly_btn = tb.Button(self.buttons_frame, text="Monthly", width=20, command=self.revenue_monthly)
+                self.revenue_quarterly_btn = tb.Button(self.buttons_frame, text="Quarterly", width=20, command=self.revenue_quarterly)
+                self.revenue_yearly_btn = tb.Button(self.buttons_frame, text="Yearly", width=20, command=self.revenue_yearly)
 
                 #Ticket
-                self.ticket_daily_btn = tk.Button(self.buttons_frame, text="Daily", width=20, height=2,command=self.ticket_daily)
-                self.ticket_monthly_btn = tk.Button(self.buttons_frame, text="Monthly", width=20, height=2,command=self.ticket_monthly)
-                self.ticket_quarterly_btn = tk.Button(self.buttons_frame, text="Quarterly", width=20, height=2,command=self.ticket_quarterly)
-                self.ticket_yearly_btn = tk.Button(self.buttons_frame, text="Yearly", width=20, height=2,command=self.ticket_yearly)
+                self.ticket_daily_btn = tb.Button(self.buttons_frame, text="Daily", width=20, command=self.ticket_daily)
+                self.ticket_monthly_btn = tb.Button(self.buttons_frame, text="Monthly", width=20,command=self.ticket_monthly)
+                self.ticket_quarterly_btn = tb.Button(self.buttons_frame, text="Quarterly", width=20, command=self.ticket_quarterly)
+                self.ticket_yearly_btn = tb.Button(self.buttons_frame, text="Yearly", width=20, command=self.ticket_yearly)
 
             elif tab == self.tab2:
-                self.graph_frame2 = tk.Frame(right_frame)
+                self.graph_frame2 = tb.Frame(right_frame)
                 self.graph_frame2.pack(fill="both", expand=True)
-                self.buttons_frame2 = tk.Frame(right_frame)
+                self.buttons_frame2 = tb.Frame(right_frame)
                 self.buttons_frame2.pack(fill="x", pady=10)
 
-                tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5,side="bottom")
-                tk.Button(left_frame, text="Movie Performance", width=20, height=2,command=self.display_movie).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="Occupation Rate", width=20, height=2, command=self.display_occupation).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="Screening Time", width=20, height=2,command=self.display_screening_time).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="Weekday Performance", width=20, height=2,command=self.day_performance).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="Movie Format", width=20, height=2,
-                          command=self.format_performance).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="Export as Excel\n(With PNG if available)", width=20, height=4,
-                                              command=self.excel_export2).pack(pady=3, padx=5, side="bottom")
+                tb.Button(left_frame, text="Logout",width=20,command=self.logout).pack(pady=3, padx=5,ipady=10,side="bottom",)
+                tb.Button(left_frame, text="Movie Performance", width=20, command=self.display_movie).pack(pady=3, padx=5,ipady=10)
+                tb.Button(left_frame, text="Occupation Rate", width=20,  command=self.display_occupation).pack(pady=3, padx=5,ipady=10)
+                tb.Button(left_frame, text="Screening Time", width=20, command=self.display_screening_time).pack(pady=3, padx=5,ipady=10)
+                tb.Button(left_frame, text="Weekday Performance", width=20, command=self.day_performance).pack(pady=3, padx=5,ipady=10)
+                tb.Button(left_frame, text="Movie Format", width=20,
+                          command=self.format_performance).pack(pady=3, padx=5,ipady=10)
+                tb.Button(left_frame, text="Export as Excel\n(With PNG if available)", width=20,
+                                              command=self.excel_export2).pack(pady=3, padx=5,ipady=10, side="bottom")
 
                 #Movies
-                self.last_14days = tk.Button(self.buttons_frame2, text="Last 14 days", width=20, height=2,command=self.display_movie14)
-                self.last_30days = tk.Button(self.buttons_frame2, text="Last 30 days", width=20, height=2,command=self.display_movie30)
-                self.last_60days = tk.Button(self.buttons_frame2, text="Last 60 days", width=20, height=2,command=self.display_movie60)
+                self.last_14days = tb.Button(self.buttons_frame2, text="Last 14 days", width=20,command=self.display_movie14)
+                self.last_30days = tb.Button(self.buttons_frame2, text="Last 30 days", width=20, command=self.display_movie30)
+                self.last_60days = tb.Button(self.buttons_frame2, text="Last 60 days", width=20, command=self.display_movie60)
 
                 #Occupation
-                self.Occupation_table = tk.Button(self.buttons_frame2, text="Table", width=20, height=2,
+                self.Occupation_table = tb.Button(self.buttons_frame2, text="Table", width=20,
                                              command=self.display_occupation_table)
-                self.Occupation_graph = tk.Button(self.buttons_frame2, text="Graph", width=20, height=2,
+                self.Occupation_graph = tb.Button(self.buttons_frame2, text="Graph", width=20,
                                                   command=self.display_occupation_graph)
 
                 #Screening
-                self.screening30 = tk.Button(self.buttons_frame2, text="Last 30 days", width=20, height=2,
+                self.screening30 = tb.Button(self.buttons_frame2, text="Last 30 days", width=20,
                                              command=self.display_screening30)
-                self.screening90 = tk.Button(self.buttons_frame2, text="Last 90 days", width=20, height=2,
+                self.screening90 = tb.Button(self.buttons_frame2, text="Last 90 days", width=20,
                                            command=self.display_screening90)
-                self.screening = tk.Button(self.buttons_frame2, text="All time", width=20, height=2,
+                self.screening = tb.Button(self.buttons_frame2, text="All time", width=20,
                                            command=self.display_screening)
                 #Day Performance
-                self.day_30 = tk.Button(self.buttons_frame2, text="Last 30 days", width=20, height=2,
+                self.day_30 = tb.Button(self.buttons_frame2, text="Last 30 days", width=20,
                                              command=self.display_day30)
-                self.day_90 = tk.Button(self.buttons_frame2, text="Last 90 days", width=20, height=2,
+                self.day_90 = tb.Button(self.buttons_frame2, text="Last 90 days", width=20,
                                              command=self.display_day90)
-                self.day_all = tk.Button(self.buttons_frame2, text="All time", width=20, height=2,
+                self.day_all = tb.Button(self.buttons_frame2, text="All time", width=20,
                                              command=self.display_day_all)
                 #Format Performance
-                self.format_30_bt = tk.Button(self.buttons_frame2, text="Last 30 days", width=20, height=2,
+                self.format_30_bt = tb.Button(self.buttons_frame2, text="Last 30 days", width=20,
                                          command=self.format_30)
-                self.format_90_bt = tk.Button(self.buttons_frame2, text="Last 90 days", width=20, height=2,
+                self.format_90_bt = tb.Button(self.buttons_frame2, text="Last 90 days", width=20,
                                          command=self.format_90)
-                self.format_year_bt = tk.Button(self.buttons_frame2, text="Last year", width=20, height=2,
+                self.format_year_bt = tb.Button(self.buttons_frame2, text="Last year", width=20,
                                          command=self.format_year)
-                self.format_all_bt = tk.Button(self.buttons_frame2, text="All time", width=20, height=2,
+                self.format_all_bt = tb.Button(self.buttons_frame2, text="All time", width=20,
                                          command=self.format_all)
 
             elif tab == self.tab3:
-                self.graph_frame3 = tk.Frame(right_frame)
+                self.graph_frame3 = tb.Frame(right_frame)
                 self.graph_frame3.pack(fill="both", expand=True)
-                self.buttons_frame3 = tk.Frame(right_frame)
+                self.buttons_frame3 = tb.Frame(right_frame)
                 self.buttons_frame3.pack(fill="x", pady=10)
 
-                tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5,side="bottom")
-                tk.Button(left_frame, text="Age Distribution", width=20, height=2,command=self.display_age).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="Genre By Age", width=20, height=2,command=self.display_age_genre).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="Time Preference By Age", width=20, height=2,command=self.display_time_age).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="Format Preference By Age", width=20, height=2,command=self.display_format_age).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="Export as Excel\n(With PNG if available)", width=20, height=4,
-                                               command=self.excel_export3).pack(pady=3, padx=5, side="bottom")
+                tb.Button(left_frame, text="Logout",width=20, command=self.logout).pack(pady=3, padx=5,ipady=10,side="bottom")
+                tb.Button(left_frame, text="Age Distribution", width=20, command=self.display_age).pack(pady=3, padx=5,ipady=10)
+                tb.Button(left_frame, text="Genre By Age", width=20, command=self.display_age_genre).pack(pady=3, padx=5,ipady=10)
+                tb.Button(left_frame, text="Time Preference By Age", width=20,command=self.display_time_age).pack(pady=3, padx=5,ipady=10)
+                tb.Button(left_frame, text="Format Preference By Age", width=20,command=self.display_format_age).pack(pady=3, padx=5,ipady=10)
+                tb.Button(left_frame, text="Export as Excel\n(With PNG if available)", width=20,
+                                               command=self.excel_export3).pack(pady=3, padx=5,ipady=10, side="bottom")
 
                 #Age
-                self.age_90 = tk.Button(self.buttons_frame3, text="Last 90 days", width=20, height=2,
+                self.age_90 = tb.Button(self.buttons_frame3, text="Last 90 days", width=20,
                                         command=self.age90)
-                self.age_year = tk.Button(self.buttons_frame3, text="Last year", width=20, height=2,
+                self.age_year = tb.Button(self.buttons_frame3, text="Last year", width=20,
                                         command=self.ageyear)
-                self.age_all = tk.Button(self.buttons_frame3, text="All time", width=20, height=2,
+                self.age_all = tb.Button(self.buttons_frame3, text="All time", width=20,
                                          command=self.ageall)
                 #Age-Genre
-                self.genre_17 = tk.Button(self.buttons_frame3, text="Age 12-17", width=20, height=2,
+                self.genre_17 = tb.Button(self.buttons_frame3, text="Age 12-17", width=20,
                                         command=self.genre17)
-                self.genre_25 = tk.Button(self.buttons_frame3, text="Age 18-25", width=20, height=2,
+                self.genre_25 = tb.Button(self.buttons_frame3, text="Age 18-25", width=20,
                                         command=self.genre25)
-                self.genre_40 = tk.Button(self.buttons_frame3, text="Age 26-40", width=20, height=2,
+                self.genre_40 = tb.Button(self.buttons_frame3, text="Age 26-40", width=20,
                                         command=self.genre40)
-                self.genre_60 = tk.Button(self.buttons_frame3, text="Age 41-60", width=20, height=2,
+                self.genre_60 = tb.Button(self.buttons_frame3, text="Age 41-60", width=20,
                                           command=self.genre60)
-                self.genre_above = tk.Button(self.buttons_frame3, text="Above 60+", width=20, height=2,
+                self.genre_above = tb.Button(self.buttons_frame3, text="Above 60+", width=20,
                                           command=self.genre_above_60)
-                self.genre_screening = tk.Button(self.buttons_frame3, text="Genre Screening Count", width=20, height=2,
+                self.genre_screening = tb.Button(self.buttons_frame3, text="Genre Screening Count", width=20,
                                              command=self.genre_screening_1)
 
                 #Age-ScreeningTime
-                self.age_time_30_bt = tk.Button(self.buttons_frame3, text="Last 30 days", width=20, height=2,
+                self.age_time_30_bt = tb.Button(self.buttons_frame3, text="Last 30 days", width=20,
                                           command=self.age_time_30)
-                self.age_time_90_bt = tk.Button(self.buttons_frame3, text="Last 90 days", width=20, height=2,
+                self.age_time_90_bt = tb.Button(self.buttons_frame3, text="Last 90 days", width=20,
                                           command=self.age_time_90)
-                self.age_time_year_bt = tk.Button(self.buttons_frame3, text="Last year", width=20, height=2,
+                self.age_time_year_bt = tb.Button(self.buttons_frame3, text="Last year", width=20,
                                           command=self.age_time_year)
-                self.age_time_all_bt = tk.Button(self.buttons_frame3, text="All time", width=20, height=2,
+                self.age_time_all_bt = tb.Button(self.buttons_frame3, text="All time", width=20,
                                           command=self.age_time_all)
                 #Age-Format
-                self.age_format_30_bt = tk.Button(self.buttons_frame3, text="Last 30 days", width=20, height=2,
+                self.age_format_30_bt = tb.Button(self.buttons_frame3, text="Last 30 days", width=20,
                                                  command=self.age_format_30)
-                self.age_format_90_bt = tk.Button(self.buttons_frame3, text="Last 90 days", width=20, height=2,
+                self.age_format_90_bt = tb.Button(self.buttons_frame3, text="Last 90 days", width=20,
                                                  command=self.age_format_90)
-                self.age_format_year_bt = tk.Button(self.buttons_frame3, text="Last year", width=20, height=2,
+                self.age_format_year_bt = tb.Button(self.buttons_frame3, text="Last year", width=20,
                                                  command=self.age_format_year)
-                self.age_format_all_bt = tk.Button(self.buttons_frame3, text="All time", width=20, height=2,
+                self.age_format_all_bt = tb.Button(self.buttons_frame3, text="All time", width=20,
                                                  command=self.age_format_all)
 
+    def on_tab_changed(self, event):
+        selected_tab = self.tab_control.select()
+        tab_index = self.tab_control.index(selected_tab)
 
+        if tab_index == 0:
+            for widget in self.graph_frame.winfo_children():
+                widget.destroy()
+            self.graph_frame.update_idletasks()
+        elif tab_index == 1:
+            for widget in self.graph_frame2.winfo_children():
+                widget.destroy()
+            self.graph_frame2.update_idletasks()
+        elif tab_index == 2:
+            for widget in self.graph_frame3.winfo_children():
+                widget.destroy()
+            self.graph_frame3.update_idletasks()
+        self.update_idletasks()
     def excel_export(self):
         if self.current_dataframe is None:
             return
@@ -709,6 +728,10 @@ class Admin(tk.Toplevel):
                 self.display_ticket_alltime()
     #Revenue trend
     def display_revenue_sales_chart(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        self.graph_frame.update_idletasks()
+
         query = """
                 SELECT 
                     Date, 
@@ -725,7 +748,7 @@ class Admin(tk.Toplevel):
                 raise ValueError("No data found for chart.")
             df['Date'] = pd.to_datetime(df['Date'])
 
-            fig = Figure(figsize=(11, 6), dpi=100)
+            fig = Figure(figsize=(11,6), dpi=100)
             self.current_figure = fig
             ax = fig.add_subplot(111)
             ax.plot(df['Date'], df['TotalRevenue'], marker='o', linestyle='-', color='green')
@@ -736,11 +759,9 @@ class Admin(tk.Toplevel):
             fig.autofmt_xdate()
             fig.tight_layout()
 
-            for widget in self.graph_frame.winfo_children():
-                widget.destroy()
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
             canvas.draw()
-            canvas.get_tk_widget().pack(pady=20)
+            canvas.get_tk_widget().pack(fill='both', expand=True)
         except Exception as e:
             print(f"Error generating chart: {e}")
         self.hide_time_range_ticket()
@@ -749,6 +770,9 @@ class Admin(tk.Toplevel):
         self.chart_mode = "revenue"
         self.update_chart_by_range("30")
     def display_30_days_revenue(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        self.graph_frame.update_idletasks()
         query = """
                 SELECT 
                     Date, 
@@ -776,14 +800,16 @@ class Admin(tk.Toplevel):
             fig.autofmt_xdate()
             fig.tight_layout()
 
-            for widget in self.graph_frame.winfo_children():
-                widget.destroy()
+
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
             canvas.draw()
             canvas.get_tk_widget().pack(pady=20)
         except Exception as e:
             print(f"Error generating chart: {e}")
     def display_6_months_revenue(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        self.graph_frame.update_idletasks()
         query = """
             SELECT 
                 Date, 
@@ -811,14 +837,15 @@ class Admin(tk.Toplevel):
             fig.autofmt_xdate()
             fig.tight_layout()
 
-            for widget in self.graph_frame.winfo_children():
-                widget.destroy()
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
             canvas.draw()
             canvas.get_tk_widget().pack(pady=20)
         except Exception as e:
             print(f"Error generating 6-month chart: {e}")
     def display_year_revenue(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        self.graph_frame.update_idletasks()
         query = """
             SELECT 
                 Date, 
@@ -847,14 +874,15 @@ class Admin(tk.Toplevel):
             fig.tight_layout()
 
 
-            for widget in self.graph_frame.winfo_children():
-                widget.destroy()
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
             canvas.draw()
             canvas.get_tk_widget().pack(pady=20)
         except Exception as e:
             print(f"Error generating yearly chart: {e}")
     def display_alltime_revenue(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        self.graph_frame.update_idletasks()
         query = """
             SELECT 
                 Date, 
@@ -887,8 +915,7 @@ class Admin(tk.Toplevel):
             fig.tight_layout()
 
 
-            for widget in self.graph_frame.winfo_children():
-                widget.destroy()
+
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
             canvas.draw()
             canvas.get_tk_widget().pack(pady=20)
@@ -896,6 +923,9 @@ class Admin(tk.Toplevel):
             print(f"Error generating all-time chart: {e}")
     #ticket trend
     def display_ticket_chart(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        self.graph_frame.update_idletasks()
         query = """
             SELECT 
                 Date, 
@@ -926,9 +956,6 @@ class Admin(tk.Toplevel):
             fig.autofmt_xdate()
             fig.tight_layout()
 
-            for widget in self.graph_frame.winfo_children():
-                widget.destroy()
-
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
             canvas.draw()
             canvas.get_tk_widget().pack(pady=20)
@@ -942,6 +969,9 @@ class Admin(tk.Toplevel):
         self.chart_mode = "ticket"
         self.update_chart_by_range("30")
     def display_ticket_30days(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        self.graph_frame.update_idletasks()
         query = """
                     SELECT 
                         Date, 
@@ -973,9 +1003,6 @@ class Admin(tk.Toplevel):
             fig.tight_layout()
 
 
-            for widget in self.graph_frame.winfo_children():
-                widget.destroy()
-
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
             canvas.draw()
             canvas.get_tk_widget().pack(pady=20)
@@ -983,6 +1010,9 @@ class Admin(tk.Toplevel):
         except Exception as e:
             messagebox.showerror("Error", f"Could not load ticket sales chart.\n{str(e)}")
     def display_ticket_6months(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        self.graph_frame.update_idletasks()
         query = """
                     SELECT 
                         Date, 
@@ -1014,8 +1044,6 @@ class Admin(tk.Toplevel):
             fig.tight_layout()
 
 
-            for widget in self.graph_frame.winfo_children():
-                widget.destroy()
 
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
             canvas.draw()
@@ -1024,6 +1052,9 @@ class Admin(tk.Toplevel):
         except Exception as e:
             messagebox.showerror("Error", f"Could not load ticket sales chart.\n{str(e)}")
     def display_ticket_year(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        self.graph_frame.update_idletasks()
         query = """
                             SELECT 
                                 Date, 
@@ -1055,9 +1086,6 @@ class Admin(tk.Toplevel):
             fig.tight_layout()
 
 
-            for widget in self.graph_frame.winfo_children():
-                widget.destroy()
-
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
             canvas.draw()
             canvas.get_tk_widget().pack(pady=20)
@@ -1065,6 +1093,10 @@ class Admin(tk.Toplevel):
         except Exception as e:
             messagebox.showerror("Error", f"Could not load ticket sales chart.\n{str(e)}")
     def display_ticket_alltime(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        self.graph_frame.update_idletasks()
+
         query = """
              SELECT 
                  Date, 
@@ -1097,8 +1129,6 @@ class Admin(tk.Toplevel):
             fig.tight_layout()
 
 
-            for widget in self.graph_frame.winfo_children():
-                widget.destroy()
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
             canvas.draw()
             canvas.get_tk_widget().pack(pady=20)
@@ -1108,6 +1138,7 @@ class Admin(tk.Toplevel):
     def display_total_revenue(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
+        self.graph_frame.update_idletasks()
 
         cursor = self.main.mydb.cursor()
         query = """
@@ -1163,6 +1194,7 @@ class Admin(tk.Toplevel):
     def revenue_daily(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
+        self.graph_frame.update_idletasks()
         cursor = self.main.mydb.cursor()
         query = """
                 SELECT
@@ -1200,6 +1232,7 @@ class Admin(tk.Toplevel):
     def revenue_monthly(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
+        self.graph_frame.update_idletasks()
 
         cursor = self.main.mydb.cursor()
         query = """
@@ -1252,6 +1285,7 @@ class Admin(tk.Toplevel):
     def revenue_quarterly(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
+        self.graph_frame.update_idletasks()
         cursor = self.main.mydb.cursor()
         query = """
                 SELECT
@@ -1310,6 +1344,7 @@ class Admin(tk.Toplevel):
     def revenue_yearly(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
+        self.graph_frame.update_idletasks()
         cursor = self.main.mydb.cursor()
         query = """
                 SELECT
@@ -1369,6 +1404,7 @@ class Admin(tk.Toplevel):
     def display_ticket(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
+        self.graph_frame.update_idletasks()
 
         cursor = self.main.mydb.cursor()
         query = """
@@ -1430,6 +1466,7 @@ class Admin(tk.Toplevel):
     def ticket_daily(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
+        self.graph_frame.update_idletasks()
         cursor = self.main.mydb.cursor()
         query = """
                 SELECT
@@ -1486,6 +1523,7 @@ class Admin(tk.Toplevel):
     def ticket_monthly(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
+        self.graph_frame.update_idletasks()
         cursor = self.main.mydb.cursor()
         query = """
                 SELECT
@@ -1542,6 +1580,7 @@ class Admin(tk.Toplevel):
     def ticket_quarterly(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
+        self.graph_frame.update_idletasks()
         cursor = self.main.mydb.cursor()
         query = """
                 SELECT
@@ -1604,6 +1643,7 @@ class Admin(tk.Toplevel):
     def ticket_yearly(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
+        self.graph_frame.update_idletasks()
         cursor = self.main.mydb.cursor()
         query = """
                 SELECT
@@ -1711,6 +1751,7 @@ class Admin(tk.Toplevel):
     def display_movie(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
 
         self.sort_states = {}
 
@@ -1794,6 +1835,7 @@ class Admin(tk.Toplevel):
     def display_movie14(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
 
         self.sort_states = {}
 
@@ -1873,6 +1915,7 @@ class Admin(tk.Toplevel):
     def display_movie30(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
 
         self.sort_states = {}
 
@@ -1952,6 +1995,7 @@ class Admin(tk.Toplevel):
     def display_movie60(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
 
         self.sort_states = {}
 
@@ -2032,6 +2076,7 @@ class Admin(tk.Toplevel):
     def display_occupation(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
         self.sort_states = {}
         def sort_column(treeview, col, col_type):
             def clean_value(val):
@@ -2100,6 +2145,7 @@ class Admin(tk.Toplevel):
     def display_occupation_table(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
         self.sort_states = {}
 
         def sort_column(treeview, col, col_type):
@@ -2166,6 +2212,7 @@ class Admin(tk.Toplevel):
     def display_occupation_graph(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
 
         cursor = self.main.mydb.cursor()
         query = "SELECT Month, Tickets_Sold, `Occupation Rate (%)` FROM occupation"
@@ -2209,6 +2256,7 @@ class Admin(tk.Toplevel):
     def display_screening_time(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
         self.sort_states = {}
         def sort_column(treeview, col, col_type):
             def clean_value(val):
@@ -2282,6 +2330,7 @@ class Admin(tk.Toplevel):
     def display_screening30(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
         self.sort_states = {}
 
         def sort_column(treeview, col, col_type):
@@ -2353,6 +2402,7 @@ class Admin(tk.Toplevel):
     def display_screening90(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
         self.sort_states = {}
 
         def sort_column(treeview, col, col_type):
@@ -2424,6 +2474,7 @@ class Admin(tk.Toplevel):
     def display_screening(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
         self.sort_states = {}
 
         def sort_column(treeview, col, col_type):
@@ -2495,6 +2546,7 @@ class Admin(tk.Toplevel):
     def day_performance(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
 
         self.sort_states = {}
 
@@ -2555,6 +2607,7 @@ class Admin(tk.Toplevel):
     def display_day30(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
 
         self.sort_states = {}
 
@@ -2612,6 +2665,7 @@ class Admin(tk.Toplevel):
     def display_day90(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
 
         self.sort_states = {}
 
@@ -2669,6 +2723,7 @@ class Admin(tk.Toplevel):
     def display_day_all(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
 
         self.sort_states = {}
 
@@ -2727,6 +2782,7 @@ class Admin(tk.Toplevel):
     def format_performance(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
 
         self.sort_states = {}
 
@@ -2794,6 +2850,7 @@ class Admin(tk.Toplevel):
     def format_30(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
 
         self.sort_states = {}
 
@@ -2858,6 +2915,7 @@ class Admin(tk.Toplevel):
     def format_90(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
 
         self.sort_states = {}
 
@@ -2921,6 +2979,7 @@ class Admin(tk.Toplevel):
     def format_year(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
 
         self.sort_states = {}
 
@@ -2984,6 +3043,7 @@ class Admin(tk.Toplevel):
     def format_all(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
 
         self.sort_states = {}
 
@@ -3098,6 +3158,7 @@ class Admin(tk.Toplevel):
     def display_age(self):
         for widget in self.graph_frame3.winfo_children():
             widget.destroy()
+        self.graph_frame3.update_idletasks()
 
         query = """
                     SELECT 
@@ -3136,6 +3197,7 @@ class Admin(tk.Toplevel):
     def age90(self):
         for widget in self.graph_frame3.winfo_children():
             widget.destroy()
+        self.graph_frame3.update_idletasks()
 
         query = """
                     SELECT 
@@ -3170,6 +3232,7 @@ class Admin(tk.Toplevel):
     def ageyear(self):
         for widget in self.graph_frame3.winfo_children():
             widget.destroy()
+        self.graph_frame3.update_idletasks()
 
         query = """
                     SELECT 
@@ -3204,6 +3267,7 @@ class Admin(tk.Toplevel):
     def ageall(self):
         for widget in self.graph_frame3.winfo_children():
             widget.destroy()
+        self.graph_frame3.update_idletasks()
 
         query = """
                     SELECT 
@@ -3239,6 +3303,7 @@ class Admin(tk.Toplevel):
     def display_age_genre(self):
         for widget in self.graph_frame3.winfo_children():
             widget.destroy()
+        self.graph_frame3.update_idletasks()
 
         query = """
                     SELECT 
@@ -3276,6 +3341,7 @@ class Admin(tk.Toplevel):
     def genre17(self):
         for widget in self.graph_frame3.winfo_children():
             widget.destroy()
+        self.graph_frame3.update_idletasks()
 
         query = """
                     SELECT 
@@ -3310,6 +3376,7 @@ class Admin(tk.Toplevel):
     def genre25(self):
         for widget in self.graph_frame3.winfo_children():
             widget.destroy()
+        self.graph_frame3.update_idletasks()
 
         query = """
                     SELECT 
@@ -3344,6 +3411,7 @@ class Admin(tk.Toplevel):
     def genre40(self):
         for widget in self.graph_frame3.winfo_children():
             widget.destroy()
+        self.graph_frame3.update_idletasks()
 
         query = """
                     SELECT 
@@ -3378,6 +3446,7 @@ class Admin(tk.Toplevel):
     def genre60(self):
         for widget in self.graph_frame3.winfo_children():
             widget.destroy()
+        self.graph_frame3.update_idletasks()
 
         query = """
                     SELECT 
@@ -3412,6 +3481,7 @@ class Admin(tk.Toplevel):
     def genre_above_60(self):
         for widget in self.graph_frame3.winfo_children():
             widget.destroy()
+        self.graph_frame3.update_idletasks()
 
         query = """
                     SELECT 
@@ -3446,6 +3516,7 @@ class Admin(tk.Toplevel):
     def genre_screening_1(self):
         for widget in self.graph_frame3.winfo_children():
             widget.destroy()
+        self.graph_frame3.update_idletasks()
 
         cursor = self.main.mydb.cursor()
         query="SELECT * FROM genre_screening"
@@ -3477,6 +3548,7 @@ class Admin(tk.Toplevel):
     def display_time_age(self):
         for widget in self.graph_frame3.winfo_children():
             widget.destroy()
+        self.graph_frame3.update_idletasks()
 
         cursor = self.main.mydb.cursor()
         query = "SELECT * FROM age_time_30"
@@ -3529,6 +3601,7 @@ class Admin(tk.Toplevel):
     def age_time_30(self):
         for widget in self.graph_frame3.winfo_children():
             widget.destroy()
+        self.graph_frame3.update_idletasks()
 
         cursor = self.main.mydb.cursor()
         query = "SELECT * FROM age_time_30"
@@ -3578,6 +3651,7 @@ class Admin(tk.Toplevel):
     def age_time_90(self):
         for widget in self.graph_frame3.winfo_children():
             widget.destroy()
+        self.graph_frame3.update_idletasks()
 
         cursor = self.main.mydb.cursor()
         query = "SELECT * FROM age_time_90"
@@ -3627,6 +3701,7 @@ class Admin(tk.Toplevel):
     def age_time_year(self):
         for widget in self.graph_frame3.winfo_children():
             widget.destroy()
+        self.graph_frame3.update_idletasks()
 
         cursor = self.main.mydb.cursor()
         query = "SELECT * FROM age_time_year"
@@ -3676,6 +3751,7 @@ class Admin(tk.Toplevel):
     def age_time_all(self):
         for widget in self.graph_frame3.winfo_children():
             widget.destroy()
+        self.graph_frame3.update_idletasks()
 
         cursor = self.main.mydb.cursor()
         query="SELECT * FROM age_time_all"
@@ -3726,6 +3802,7 @@ class Admin(tk.Toplevel):
     def display_format_age(self):
         for widget in self.graph_frame3.winfo_children():
             widget.destroy()
+        self.graph_frame3.update_idletasks()
 
         cursor = self.main.mydb.cursor()
         query = "SELECT * FROM age_format_30"
@@ -3778,6 +3855,7 @@ class Admin(tk.Toplevel):
     def age_format_30(self):
         for widget in self.graph_frame3.winfo_children():
             widget.destroy()
+        self.graph_frame3.update_idletasks()
 
         cursor = self.main.mydb.cursor()
         query = "SELECT * FROM age_format_30"
@@ -3827,6 +3905,7 @@ class Admin(tk.Toplevel):
     def age_format_90(self):
         for widget in self.graph_frame3.winfo_children():
             widget.destroy()
+        self.graph_frame3.update_idletasks()
 
         cursor = self.main.mydb.cursor()
         query = "SELECT * FROM age_format_90"
@@ -3876,6 +3955,7 @@ class Admin(tk.Toplevel):
     def age_format_year(self):
         for widget in self.graph_frame3.winfo_children():
             widget.destroy()
+        self.graph_frame3.update_idletasks()
 
         cursor = self.main.mydb.cursor()
         query = "SELECT * FROM age_format_year"
@@ -3925,6 +4005,7 @@ class Admin(tk.Toplevel):
     def age_format_all(self):
         for widget in self.graph_frame3.winfo_children():
             widget.destroy()
+        self.graph_frame3.update_idletasks()
 
         cursor = self.main.mydb.cursor()
         query="SELECT * FROM age_format_all"
