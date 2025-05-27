@@ -439,8 +439,8 @@ class Admin(tb.Window):
             main_frame = tb.Frame(tab)
             main_frame.pack(fill="both", expand=True)
 
-            left_frame = tb.Frame(main_frame, width=180)
-            left_frame.pack(side="left", fill="y")
+            self.left_frame = tb.Frame(main_frame, width=180)
+            self.left_frame.pack(side="left", fill="y")
 
             right_frame = tb.Frame(main_frame)
             right_frame.pack(side="right", fill="both", expand=True)
@@ -453,12 +453,12 @@ class Admin(tb.Window):
                 self.buttons_frame.pack(fill="x", pady=10)
 
                 #Left buttons
-                tb.Button(left_frame, text="Logout",width=20, command=self.logout).pack(pady=3,padx=5,side="bottom",ipady=10)
-                tb.Button(left_frame, text="Export as Excel\n(With PNG if available)", width=20, command=self.excel_export).pack(pady=3,padx=5,side="bottom",ipady=10)
-                tb.Button(left_frame, width=20,  text="Total Revenue",command=self.display_total_revenue).pack(pady=3, padx=5,ipady=10)
-                tb.Button(left_frame,width=20, text="Revenue Trends", command=self.display_revenue_sales_chart).pack(pady=3,padx=5,ipady=10)
-                tb.Button(left_frame, text="Total Ticket Sold", width=20,  command=self.display_ticket).pack(pady=3, padx=5,ipady=10)
-                tb.Button(left_frame, text="Tickets Sold Trend", width=20, command=self.display_ticket_chart).pack(pady=3, padx=5,ipady=10)
+                tb.Button(self.left_frame, text="Logout",width=20, command=self.logout).pack(pady=3,padx=5,side="bottom",ipady=10)
+                tb.Button(self.left_frame, text="Export as Excel\n(With PNG if available)", width=20, command=self.excel_export).pack(pady=3,padx=5,side="bottom",ipady=10)
+                tb.Button(self.left_frame, width=20,  text="Total Revenue",command=self.display_total_revenue).pack(pady=3, padx=5,ipady=10)
+                tb.Button(self.left_frame,width=20, text="Revenue Trends", command=self.display_revenue_sales_chart).pack(pady=3,padx=5,ipady=10)
+                tb.Button(self.left_frame, text="Total Ticket Sold", width=20,  command=self.display_ticket).pack(pady=3, padx=5,ipady=10)
+                tb.Button(self.left_frame, text="Tickets Sold Trend", width=20, command=self.display_ticket_chart).pack(pady=3, padx=5,ipady=10)
 
                 #Revenue and ticket trend buttons
                 self.all_time_btn = tb.Button(self.buttons_frame, text="All time", width=20,
@@ -488,14 +488,14 @@ class Admin(tb.Window):
                 self.buttons_frame2 = tb.Frame(right_frame)
                 self.buttons_frame2.pack(fill="x", pady=10)
 
-                tb.Button(left_frame, text="Logout",width=20,command=self.logout).pack(pady=3, padx=5,ipady=10,side="bottom",)
-                tb.Button(left_frame, text="Movie Performance", width=20, command=self.display_movie).pack(pady=3, padx=5,ipady=10)
-                tb.Button(left_frame, text="Occupation Rate", width=20,  command=self.display_occupation).pack(pady=3, padx=5,ipady=10)
-                tb.Button(left_frame, text="Screening Time", width=20, command=self.display_screening_time).pack(pady=3, padx=5,ipady=10)
-                tb.Button(left_frame, text="Weekday Performance", width=20, command=self.day_performance).pack(pady=3, padx=5,ipady=10)
-                tb.Button(left_frame, text="Movie Format", width=20,
+                tb.Button(self.left_frame, text="Logout",width=20,command=self.logout).pack(pady=3, padx=5,ipady=10,side="bottom",)
+                tb.Button(self.left_frame, text="Movie Performance", width=20, command=self.display_movie).pack(pady=3, padx=5,ipady=10)
+                tb.Button(self.left_frame, text="Occupation Rate", width=20,  command=self.display_occupation).pack(pady=3, padx=5,ipady=10)
+                tb.Button(self.left_frame, text="Screening Time", width=20, command=self.display_screening_time).pack(pady=3, padx=5,ipady=10)
+                tb.Button(self.left_frame, text="Weekday Performance", width=20, command=self.day_performance).pack(pady=3, padx=5,ipady=10)
+                tb.Button(self.left_frame, text="Movie Format", width=20,
                           command=self.format_performance).pack(pady=3, padx=5,ipady=10)
-                tb.Button(left_frame, text="Export as Excel\n(With PNG if available)", width=20,
+                tb.Button(self.left_frame, text="Export as Excel\n(With PNG if available)", width=20,
                                               command=self.excel_export2).pack(pady=3, padx=5,ipady=10, side="bottom")
 
                 #Movies
@@ -539,12 +539,12 @@ class Admin(tb.Window):
                 self.buttons_frame3 = tb.Frame(right_frame)
                 self.buttons_frame3.pack(fill="x", pady=10)
 
-                tb.Button(left_frame, text="Logout",width=20, command=self.logout).pack(pady=3, padx=5,ipady=10,side="bottom")
-                tb.Button(left_frame, text="Age Distribution", width=20, command=self.display_age).pack(pady=3, padx=5,ipady=10)
-                tb.Button(left_frame, text="Genre By Age", width=20, command=self.display_age_genre).pack(pady=3, padx=5,ipady=10)
-                tb.Button(left_frame, text="Time Preference By Age", width=20,command=self.display_time_age).pack(pady=3, padx=5,ipady=10)
-                tb.Button(left_frame, text="Format Preference By Age", width=20,command=self.display_format_age).pack(pady=3, padx=5,ipady=10)
-                tb.Button(left_frame, text="Export as Excel\n(With PNG if available)", width=20,
+                tb.Button(self.left_frame, text="Logout",width=20, command=self.logout).pack(pady=3, padx=5,ipady=10,side="bottom")
+                tb.Button(self.left_frame, text="Age Distribution", width=20, command=self.display_age).pack(pady=3, padx=5,ipady=10)
+                tb.Button(self.left_frame, text="Genre By Age", width=20, command=self.display_age_genre).pack(pady=3, padx=5,ipady=10)
+                tb.Button(self.left_frame, text="Time Preference By Age", width=20,command=self.display_time_age).pack(pady=3, padx=5,ipady=10)
+                tb.Button(self.left_frame, text="Format Preference By Age", width=20,command=self.display_format_age).pack(pady=3, padx=5,ipady=10)
+                tb.Button(self.left_frame, text="Export as Excel\n(With PNG if available)", width=20,
                                                command=self.excel_export3).pack(pady=3, padx=5,ipady=10, side="bottom")
 
                 #Age
@@ -603,6 +603,10 @@ class Admin(tb.Window):
             for widget in self.graph_frame3.winfo_children():
                 widget.destroy()
             self.graph_frame3.update_idletasks()
+
+        self.left_frame.update()
+        self.left_frame.update_idletasks()
+        self.tab_control.update()
         self.update_idletasks()
     def excel_export(self):
         if self.current_dataframe is None:
