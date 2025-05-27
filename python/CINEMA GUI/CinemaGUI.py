@@ -516,8 +516,8 @@ class Admin(tk.Toplevel):
                 tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5,side="bottom")
                 tk.Button(left_frame, text="Age Distribution", width=20, height=2,command=self.display_age).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="Genre By Age", width=20, height=2,command=self.display_age_genre).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="Time Preference By Age", width=20, height=2,command=self.display_time_age).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="Format Preference By Age", width=20, height=2,command=self.display_format_age).pack(pady=3, padx=5)
 
                 #Age
                 self.age_90 = tk.Button(self.buttons_frame3, text="Last 90 days", width=20, height=2,
@@ -539,6 +539,25 @@ class Admin(tk.Toplevel):
                                           command=self.genre_above_60)
                 self.genre_screening = tk.Button(self.buttons_frame3, text="Genre Screening Count", width=20, height=2,
                                              command=self.genre_screening_1)
+
+                #Age-ScreeningTime
+                self.age_time_30_bt = tk.Button(self.buttons_frame3, text="Last 30 days", width=20, height=2,
+                                          command=self.age_time_30)
+                self.age_time_90_bt = tk.Button(self.buttons_frame3, text="Last 90 days", width=20, height=2,
+                                          command=self.age_time_90)
+                self.age_time_year_bt = tk.Button(self.buttons_frame3, text="Last year", width=20, height=2,
+                                          command=self.age_time_year)
+                self.age_time_all_bt = tk.Button(self.buttons_frame3, text="All time", width=20, height=2,
+                                          command=self.age_time_all)
+                #Age-Format
+                self.age_format_30_bt = tk.Button(self.buttons_frame3, text="Last 30 days", width=20, height=2,
+                                                 command=self.age_format_30)
+                self.age_format_90_bt = tk.Button(self.buttons_frame3, text="Last 90 days", width=20, height=2,
+                                                 command=self.age_format_90)
+                self.age_format_year_bt = tk.Button(self.buttons_frame3, text="Last year", width=20, height=2,
+                                                 command=self.age_format_year)
+                self.age_format_all_bt = tk.Button(self.buttons_frame3, text="All time", width=20, height=2,
+                                                 command=self.age_format_all)
 
 
     #DEF TAB1
@@ -1973,6 +1992,8 @@ class Admin(tk.Toplevel):
     def hide_button3(self):
         self.hide_age_button()
         self.hide_age_genre_button()
+        self.hide_age_time_button()
+        self.hide_age_format_button()
     def show_age_button(self):
         self.age_90.pack(side="right", padx=10)
         self.age_year.pack(side="right", padx=10)
@@ -1995,6 +2016,26 @@ class Admin(tk.Toplevel):
         self.genre_60.pack_forget()
         self.genre_above.pack_forget()
         self.genre_screening.pack_forget()
+    def show_age_time_button(self):
+        self.age_time_30_bt.pack(side="right", padx=10)
+        self.age_time_90_bt.pack(side="right", padx=10)
+        self.age_time_year_bt.pack(side="right", padx=10)
+        self.age_time_all_bt.pack(side="right", padx=10)
+    def hide_age_time_button(self):
+        self.age_time_30_bt.pack_forget()
+        self.age_time_90_bt.pack_forget()
+        self.age_time_year_bt.pack_forget()
+        self.age_time_all_bt.pack_forget()
+    def show_age_format_button(self):
+        self.age_format_30_bt.pack(side="right", padx=10)
+        self.age_format_90_bt.pack(side="right", padx=10)
+        self.age_format_year_bt.pack(side="right", padx=10)
+        self.age_format_all_bt.pack(side="right", padx=10)
+    def hide_age_format_button(self):
+        self.age_format_30_bt.pack_forget()
+        self.age_format_90_bt.pack_forget()
+        self.age_format_year_bt.pack_forget()
+        self.age_format_all_bt.pack_forget()
 
 
     #AGE
@@ -2354,8 +2395,475 @@ class Admin(tk.Toplevel):
         for row in records:
             tree.insert('', 'end', values=row)
 
+    #ScreeningTime-Age
+    def display_time_age(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
 
+        cursor = self.main.mydb.cursor()
+        cursor.execute("SELECT * FROM age_time_30")
+        records = cursor.fetchall()
+        cursor.close()
 
+        table_frame = tk.Frame(self.graph_frame3)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("AgeGroup", "ScreeningTime", "TicketCount")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        self.sort_orders = {col: False for col in columns}
+
+        def sort_by_column(col):
+            descending = self.sort_orders[col]
+            self.sort_orders[col] = not descending
+
+            sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
+
+            for row in tree.get_children():
+                tree.delete(row)
+            for row in sorted_records:
+                tree.insert('', 'end', values=row)
+
+        tree.heading("AgeGroup", text="Age Group")
+        tree.heading("ScreeningTime", text="Screening Time")
+        tree.heading("TicketCount", text="Customer Count")
+        tree.column("AgeGroup", width=100, anchor="center")
+        tree.column("ScreeningTime", width=120, anchor="center")
+        tree.column("TicketCount", width=100, anchor="center")
+
+        for col in columns:
+            tree.heading(col, text=col, command=lambda c=col: sort_by_column(c))
+            tree.column(col, anchor="center", width=120)
+
+        for row in records:
+            tree.insert('', 'end', values=row)
+
+        self.hide_button3()
+        self.show_age_time_button()
+    def age_time_30(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+
+        cursor = self.main.mydb.cursor()
+        cursor.execute("SELECT * FROM age_time_30")
+        records = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame3)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("AgeGroup", "ScreeningTime", "TicketCount")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        self.sort_orders = {col: False for col in columns}
+
+        def sort_by_column(col):
+            descending = self.sort_orders[col]
+            self.sort_orders[col] = not descending
+
+            sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
+
+            for row in tree.get_children():
+                tree.delete(row)
+            for row in sorted_records:
+                tree.insert('', 'end', values=row)
+
+        tree.heading("AgeGroup", text="Age Group")
+        tree.heading("ScreeningTime", text="Screening Time")
+        tree.heading("TicketCount", text="Customer Count")
+        tree.column("AgeGroup", width=100, anchor="center")
+        tree.column("ScreeningTime", width=120, anchor="center")
+        tree.column("TicketCount", width=100, anchor="center")
+
+        for col in columns:
+            tree.heading(col, text=col, command=lambda c=col: sort_by_column(c))
+            tree.column(col, anchor="center", width=120)
+
+        for row in records:
+            tree.insert('', 'end', values=row)
+    def age_time_90(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+
+        cursor = self.main.mydb.cursor()
+        cursor.execute("SELECT * FROM age_time_90")
+        records = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame3)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("AgeGroup", "ScreeningTime", "TicketCount")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        self.sort_orders = {col: False for col in columns}
+
+        def sort_by_column(col):
+            descending = self.sort_orders[col]
+            self.sort_orders[col] = not descending
+
+            sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
+
+            for row in tree.get_children():
+                tree.delete(row)
+            for row in sorted_records:
+                tree.insert('', 'end', values=row)
+
+        tree.heading("AgeGroup", text="Age Group")
+        tree.heading("ScreeningTime", text="Screening Time")
+        tree.heading("TicketCount", text="Customer Count")
+        tree.column("AgeGroup", width=100, anchor="center")
+        tree.column("ScreeningTime", width=120, anchor="center")
+        tree.column("TicketCount", width=100, anchor="center")
+
+        for col in columns:
+            tree.heading(col, text=col, command=lambda c=col: sort_by_column(c))
+            tree.column(col, anchor="center", width=120)
+
+        for row in records:
+            tree.insert('', 'end', values=row)
+    def age_time_year(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+
+        cursor = self.main.mydb.cursor()
+        cursor.execute("SELECT * FROM age_time_year")
+        records = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame3)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("AgeGroup", "ScreeningTime", "TicketCount")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        self.sort_orders = {col: False for col in columns}
+
+        def sort_by_column(col):
+            descending = self.sort_orders[col]
+            self.sort_orders[col] = not descending
+
+            sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
+
+            for row in tree.get_children():
+                tree.delete(row)
+            for row in sorted_records:
+                tree.insert('', 'end', values=row)
+
+        tree.heading("AgeGroup", text="Age Group")
+        tree.heading("ScreeningTime", text="Screening Time")
+        tree.heading("TicketCount", text="Customer Count")
+        tree.column("AgeGroup", width=100, anchor="center")
+        tree.column("ScreeningTime", width=120, anchor="center")
+        tree.column("TicketCount", width=100, anchor="center")
+
+        for col in columns:
+            tree.heading(col, text=col, command=lambda c=col: sort_by_column(c))
+            tree.column(col, anchor="center", width=120)
+
+        for row in records:
+            tree.insert('', 'end', values=row)
+    def age_time_all(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+
+        cursor = self.main.mydb.cursor()
+        cursor.execute("SELECT * FROM age_time_all")
+        records = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame3)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("AgeGroup", "ScreeningTime", "TicketCount")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        self.sort_orders = {col: False for col in columns}
+
+        def sort_by_column(col):
+            descending = self.sort_orders[col]
+            self.sort_orders[col] = not descending
+
+            sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
+
+            for row in tree.get_children():
+                tree.delete(row)
+            for row in sorted_records:
+                tree.insert('', 'end', values=row)
+
+        tree.heading("AgeGroup", text="Age Group")
+        tree.heading("ScreeningTime", text="Screening Time")
+        tree.heading("TicketCount", text="Customer Count")
+        tree.column("AgeGroup", width=100, anchor="center")
+        tree.column("ScreeningTime", width=120, anchor="center")
+        tree.column("TicketCount", width=100, anchor="center")
+
+        for col in columns:
+            tree.heading(col, text=col, command=lambda c=col: sort_by_column(c))
+            tree.column(col, anchor="center", width=120)
+
+        for row in records:
+            tree.insert('', 'end', values=row)
+
+    #Format-Age
+    def display_format_age(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+
+        cursor = self.main.mydb.cursor()
+        cursor.execute("SELECT * FROM age_format_30")
+        records = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame3)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("AgeGroup", "MovieFormat", "TicketsSold")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        self.sort_orders = {col: False for col in columns}
+
+        def sort_by_column(col):
+            descending = self.sort_orders[col]
+            self.sort_orders[col] = not descending
+
+            sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
+
+            for row in tree.get_children():
+                tree.delete(row)
+            for row in sorted_records:
+                tree.insert('', 'end', values=row)
+
+        tree.heading("AgeGroup", text="Age Group")
+        tree.heading("MovieFormat", text="Movie Format")
+        tree.heading("TicketsSold", text="Customer Count")
+        tree.column("AgeGroup", width=100, anchor="center")
+        tree.column("MovieFormat", width=120, anchor="center")
+        tree.column("TicketsSold", width=100, anchor="center")
+
+        for col in columns:
+            tree.heading(col, text=col, command=lambda c=col: sort_by_column(c))
+            tree.column(col, anchor="center", width=120)
+
+        for row in records:
+            tree.insert('', 'end', values=row)
+
+        self.hide_button3()
+        self.show_age_format_button()
+    def age_format_30(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+
+        cursor = self.main.mydb.cursor()
+        cursor.execute("SELECT * FROM age_format_30")
+        records = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame3)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("AgeGroup", "MovieFormat", "TicketsSold")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        self.sort_orders = {col: False for col in columns}
+
+        def sort_by_column(col):
+            descending = self.sort_orders[col]
+            self.sort_orders[col] = not descending
+
+            sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
+
+            for row in tree.get_children():
+                tree.delete(row)
+            for row in sorted_records:
+                tree.insert('', 'end', values=row)
+
+        tree.heading("AgeGroup", text="Age Group")
+        tree.heading("MovieFormat", text="Movie Format")
+        tree.heading("TicketsSold", text="Customer Count")
+        tree.column("AgeGroup", width=100, anchor="center")
+        tree.column("MovieFormat", width=120, anchor="center")
+        tree.column("TicketsSold", width=100, anchor="center")
+
+        for col in columns:
+            tree.heading(col, text=col, command=lambda c=col: sort_by_column(c))
+            tree.column(col, anchor="center", width=120)
+
+        for row in records:
+            tree.insert('', 'end', values=row)
+    def age_format_90(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+
+        cursor = self.main.mydb.cursor()
+        cursor.execute("SELECT * FROM age_format_90")
+        records = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame3)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("AgeGroup", "MovieFormat", "TicketsSold")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        self.sort_orders = {col: False for col in columns}
+
+        def sort_by_column(col):
+            descending = self.sort_orders[col]
+            self.sort_orders[col] = not descending
+
+            sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
+
+            for row in tree.get_children():
+                tree.delete(row)
+            for row in sorted_records:
+                tree.insert('', 'end', values=row)
+
+        tree.heading("AgeGroup", text="Age Group")
+        tree.heading("MovieFormat", text="Movie Format")
+        tree.heading("TicketsSold", text="Customer Count")
+        tree.column("AgeGroup", width=100, anchor="center")
+        tree.column("MovieFormat", width=120, anchor="center")
+        tree.column("TicketsSold", width=100, anchor="center")
+
+        for col in columns:
+            tree.heading(col, text=col, command=lambda c=col: sort_by_column(c))
+            tree.column(col, anchor="center", width=120)
+
+        for row in records:
+            tree.insert('', 'end', values=row)
+    def age_format_year(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+
+        cursor = self.main.mydb.cursor()
+        cursor.execute("SELECT * FROM age_format_year")
+        records = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame3)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("AgeGroup", "MovieFormat", "TicketsSold")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        self.sort_orders = {col: False for col in columns}
+
+        def sort_by_column(col):
+            descending = self.sort_orders[col]
+            self.sort_orders[col] = not descending
+
+            sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
+
+            for row in tree.get_children():
+                tree.delete(row)
+            for row in sorted_records:
+                tree.insert('', 'end', values=row)
+
+        tree.heading("AgeGroup", text="Age Group")
+        tree.heading("MovieFormat", text="Movie Format")
+        tree.heading("TicketsSold", text="Customer Count")
+        tree.column("AgeGroup", width=100, anchor="center")
+        tree.column("MovieFormat", width=120, anchor="center")
+        tree.column("TicketsSold", width=100, anchor="center")
+
+        for col in columns:
+            tree.heading(col, text=col, command=lambda c=col: sort_by_column(c))
+            tree.column(col, anchor="center", width=120)
+
+        for row in records:
+            tree.insert('', 'end', values=row)
+    def age_format_all(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+
+        cursor = self.main.mydb.cursor()
+        cursor.execute("SELECT * FROM age_format_all")
+        records = cursor.fetchall()
+        cursor.close()
+
+        table_frame = tk.Frame(self.graph_frame3)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("AgeGroup", "MovieFormat", "TicketsSold")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        self.sort_orders = {col: False for col in columns}
+
+        def sort_by_column(col):
+            descending = self.sort_orders[col]
+            self.sort_orders[col] = not descending
+
+            sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
+
+            for row in tree.get_children():
+                tree.delete(row)
+            for row in sorted_records:
+                tree.insert('', 'end', values=row)
+
+        tree.heading("AgeGroup", text="Age Group")
+        tree.heading("MovieFormat", text="Movie Format")
+        tree.heading("TicketsSold", text="Customer Count")
+        tree.column("AgeGroup", width=100, anchor="center")
+        tree.column("MovieFormat", width=120, anchor="center")
+        tree.column("TicketsSold", width=100, anchor="center")
+
+        for col in columns:
+            tree.heading(col, text=col, command=lambda c=col: sort_by_column(c))
+            tree.column(col, anchor="center", width=120)
+
+        for row in records:
+            tree.insert('', 'end', values=row)
 
 if __name__ == "__main__":
     app=Liemora()
