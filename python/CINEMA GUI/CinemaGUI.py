@@ -11,10 +11,12 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.dates as mdates
 from matplotlib.ticker import MaxNLocator
+from tkinter import filedialog
 import os
-
+import warnings
 
 base_dir = os.path.dirname(__file__)
+warnings.filterwarnings("ignore", message="pandas only supports SQLAlchemy")
 class Liemora(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -408,9 +410,13 @@ class Admin(tk.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.on_close)
         self.sort_orders = {}
         self.sort_states = {}
+        self.current_dataframe = None
+        self.current_dataframe2 = None
+        self.current_dataframe3 = None
+        self.current_figure = None
+        self.current_figure2 = None
+        self.current_figure3 = None
 
-
-        # Style configuration
         style = ttk.Style()
         style.theme_use('default')
         fixed_width = 20
@@ -445,6 +451,7 @@ class Admin(tk.Toplevel):
 
                 #Left buttons
                 tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5,side="bottom")
+                tk.Button(left_frame, text="Export as Excel\n(With PNG if available)", width=20, height=4,command=self.excel_export).pack(pady=3,padx=5,side="bottom")
                 tk.Button(left_frame, width=20, height=2, text="Total Revenue",command=self.display_total_revenue).pack(pady=3, padx=5)
                 tk.Button(left_frame,width=20,height=2, text="Revenue Trends", command=self.display_revenue_sales_chart).pack(pady=3,padx=5)
                 tk.Button(left_frame, text="Total Ticket Sold", width=20, height=2, command=self.display_ticket).pack(pady=3, padx=5)
@@ -481,10 +488,12 @@ class Admin(tk.Toplevel):
                 tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5,side="bottom")
                 tk.Button(left_frame, text="Movie Performance", width=20, height=2,command=self.display_movie).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="Occupation Rate", width=20, height=2, command=self.display_occupation).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="Screening Time", width=20, height=2,command=self.display_screeningtime).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="Screening Time", width=20, height=2,command=self.display_screening_time).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="Weekday Performance", width=20, height=2,command=self.day_performance).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="Movie Format", width=20, height=2,
                           command=self.format_performance).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="Export as Excel\n(With PNG if available)", width=20, height=4,
+                                              command=self.excel_export2).pack(pady=3, padx=5, side="bottom")
 
                 #Movies
                 self.last_14days = tk.Button(self.buttons_frame2, text="Last 14 days", width=20, height=2,command=self.display_movie14)
@@ -532,6 +541,8 @@ class Admin(tk.Toplevel):
                 tk.Button(left_frame, text="Genre By Age", width=20, height=2,command=self.display_age_genre).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="Time Preference By Age", width=20, height=2,command=self.display_time_age).pack(pady=3, padx=5)
                 tk.Button(left_frame, text="Format Preference By Age", width=20, height=2,command=self.display_format_age).pack(pady=3, padx=5)
+                tk.Button(left_frame, text="Export as Excel\n(With PNG if available)", width=20, height=4,
+                                               command=self.excel_export3).pack(pady=3, padx=5, side="bottom")
 
                 #Age
                 self.age_90 = tk.Button(self.buttons_frame3, text="Last 90 days", width=20, height=2,
@@ -574,6 +585,67 @@ class Admin(tk.Toplevel):
                                                  command=self.age_format_all)
 
 
+    def excel_export(self):
+        if self.current_dataframe is None:
+            return
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".xlsx",
+            filetypes=[("Excel files", "*.xlsx")],
+            title="Save as Excel"
+        )
+        if file_path:
+            try:
+
+                self.current_dataframe.to_excel(file_path, index=False)
+
+
+                if hasattr(self, 'current_figure') and self.current_figure:
+                    image_path = os.path.splitext(file_path)[0] + ".png"
+                    self.current_figure.savefig(image_path, dpi=300)
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to export:\n{e}")
+    def excel_export2(self):
+        if self.current_dataframe2 is None:
+            return
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".xlsx",
+            filetypes=[("Excel files", "*.xlsx")],
+            title="Save as Excel"
+        )
+        if file_path:
+            try:
+
+                self.current_dataframe2.to_excel(file_path, index=False)
+
+                if hasattr(self, 'current_figure') and self.current_figure2:
+                    image_path = os.path.splitext(file_path)[0] + ".png"
+                    self.current_figure2.savefig(image_path, dpi=300)
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to export:\n{e}")
+    def excel_export3(self):
+        if self.current_dataframe3 is None:
+            return
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".xlsx",
+            filetypes=[("Excel files", "*.xlsx")],
+            title="Save as Excel"
+        )
+        if file_path:
+            try:
+
+                self.current_dataframe3.to_excel(file_path, index=False)
+
+                if hasattr(self, 'current_figure') and self.current_figure3:
+                    image_path = os.path.splitext(file_path)[0] + ".png"
+                    self.current_figure3.savefig(image_path, dpi=300)
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to export:\n{e}")
     #DEF TAB1
     def on_close(self):
         if self.main.mydb and self.main.mydb.is_connected():
@@ -586,7 +658,6 @@ class Admin(tk.Toplevel):
         self.main.account_entry.delete(0, tk.END)
         self.main.password_entry.delete(0, tk.END)
         self.main.deiconify()
-    #DEF Show/hide buttons
     def hide_time_range_totalrevenue(self):
         self.revenue_daily_btn.pack_forget()
         self.revenue_monthly_btn.pack_forget()
@@ -649,11 +720,13 @@ class Admin(tk.Toplevel):
             """
         try:
             df = pd.read_sql(query, self.main.mydb)
+            self.current_dataframe = df.copy()
             if df.empty:
                 raise ValueError("No data found for chart.")
             df['Date'] = pd.to_datetime(df['Date'])
 
             fig = Figure(figsize=(11, 6), dpi=100)
+            self.current_figure = fig
             ax = fig.add_subplot(111)
             ax.plot(df['Date'], df['TotalRevenue'], marker='o', linestyle='-', color='green')
             ax.set_title("Revenue Over Last 30 Days")
@@ -687,11 +760,13 @@ class Admin(tk.Toplevel):
             """
         try:
             df = pd.read_sql(query, self.main.mydb)
+            self.current_dataframe = df.copy()
             if df.empty:
                 raise ValueError("No data found for chart.")
             df['Date'] = pd.to_datetime(df['Date'])
 
             fig = Figure(figsize=(11, 6), dpi=100)
+            self.current_figure = fig
             ax = fig.add_subplot(111)
             ax.plot(df['Date'], df['TotalRevenue'], marker='o', linestyle='-', color='green')
             ax.set_title("Revenue Over Last 30 Days")
@@ -720,11 +795,13 @@ class Admin(tk.Toplevel):
         """
         try:
             df = pd.read_sql(query, self.main.mydb)
+            self.current_dataframe = df.copy()
             if df.empty:
                 raise ValueError("No data found for 6-month revenue.")
             df['Date'] = pd.to_datetime(df['Date'])
 
             fig = Figure(figsize=(11, 6), dpi=100)
+            self.current_figure = fig
             ax = fig.add_subplot(111)
             ax.plot(df['Date'], df['TotalRevenue'], marker='o', linestyle='-', color='green')
             ax.set_title("Revenue Over Last 6 Months")
@@ -753,11 +830,13 @@ class Admin(tk.Toplevel):
         """
         try:
             df = pd.read_sql(query, self.main.mydb)
+            self.current_dataframe = df.copy()
             if df.empty:
                 raise ValueError("No data found for yearly revenue.")
             df['Date'] = pd.to_datetime(df['Date'])
 
             fig = Figure(figsize=(11, 6), dpi=100)
+            self.current_figure = fig
             ax = fig.add_subplot(111)
             ax.plot(df['Date'], df['TotalRevenue'], marker='o', linestyle='-', color='green')
             ax.set_title("Revenue Over Last Year")
@@ -787,10 +866,12 @@ class Admin(tk.Toplevel):
         """
         try:
             df = pd.read_sql(query, self.main.mydb)
+            self.current_dataframe = df.copy()
             if df.empty:
                 raise ValueError("No data found for all-time revenue.")
 
             fig = Figure(figsize=(11, 6), dpi=100)
+            self.current_figure = fig
             ax = fig.add_subplot(111)
 
 
@@ -826,10 +907,12 @@ class Admin(tk.Toplevel):
         """
         try:
             df = pd.read_sql(query, self.main.mydb)
+            self.current_dataframe = df.copy()
             if df.empty:
                 raise ValueError("No data found for ticket sales.")
 
             fig = Figure(figsize=(11, 6), dpi=100)
+            self.current_figure = fig
             ax = fig.add_subplot(111)
 
 
@@ -870,10 +953,12 @@ class Admin(tk.Toplevel):
                 """
         try:
             df = pd.read_sql(query, self.main.mydb)
+            self.current_dataframe = df.copy()
             if df.empty:
                 raise ValueError("No data found for ticket sales.")
 
             fig = Figure(figsize=(11, 6), dpi=100)
+            self.current_figure = fig
             ax = fig.add_subplot(111)
 
 
@@ -909,10 +994,12 @@ class Admin(tk.Toplevel):
                 """
         try:
             df = pd.read_sql(query, self.main.mydb)
+            self.current_dataframe = df.copy()
             if df.empty:
                 raise ValueError("No data found for ticket sales.")
 
             fig = Figure(figsize=(11, 6), dpi=100)
+            self.current_figure = fig
             ax = fig.add_subplot(111)
 
 
@@ -948,10 +1035,12 @@ class Admin(tk.Toplevel):
                         """
         try:
             df = pd.read_sql(query, self.main.mydb)
+            self.current_dataframe = df.copy()
             if df.empty:
                 raise ValueError("No data found for ticket sales.")
 
             fig = Figure(figsize=(11, 6), dpi=100)
+            self.current_figure = fig
             ax = fig.add_subplot(111)
 
 
@@ -987,10 +1076,12 @@ class Admin(tk.Toplevel):
          """
         try:
             df = pd.read_sql(query, self.main.mydb)
+            self.current_dataframe = df.copy()
             if df.empty:
                 raise ValueError("No data found for all-time ticket sold.")
 
             fig = Figure(figsize=(11, 6), dpi=100)
+            self.current_figure = fig
             ax = fig.add_subplot(111)
 
 
@@ -1030,6 +1121,11 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         data = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe = df.copy()
+
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe = df.copy()
 
         table_frame = tk.Frame(self.graph_frame)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -1079,6 +1175,8 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         data = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe = df.copy()
 
         table_frame = tk.Frame(self.graph_frame)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -1115,6 +1213,8 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         data = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe = df.copy()
 
         table_frame = tk.Frame(self.graph_frame)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -1170,6 +1270,8 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         data = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe = df.copy()
 
         table_frame = tk.Frame(self.graph_frame)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -1225,6 +1327,8 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         data = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe = df.copy()
 
         table_frame = tk.Frame(self.graph_frame)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -1278,6 +1382,8 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         data = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe = df.copy()
 
         table_frame = tk.Frame(self.graph_frame)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -1336,6 +1442,8 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         data = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe = df.copy()
 
         table_frame = tk.Frame(self.graph_frame)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -1390,6 +1498,8 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         data = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe = df.copy()
 
         table_frame = tk.Frame(self.graph_frame)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -1450,6 +1560,8 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         data = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe = df.copy()
 
         table_frame = tk.Frame(self.graph_frame)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -1504,6 +1616,8 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         data = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe = df.copy()
 
         table_frame = tk.Frame(self.graph_frame)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -1546,7 +1660,6 @@ class Admin(tk.Toplevel):
 
 
     #DEF TAB2
-
     #Show/Hide button
     def hide_button2(self):
         self.hide_movie_button()
@@ -1634,6 +1747,8 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
 
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -1715,7 +1830,8 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
-
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
@@ -1793,7 +1909,8 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
-
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
@@ -1871,7 +1988,8 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
-
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
@@ -1943,7 +2061,8 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
-
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
         columns = ("Month", "Tickets_Sold", "Total_Screenings", "TotalSeat", "OccupationRate")
@@ -2011,7 +2130,8 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
-
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
         columns = ("Month", "Tickets_Sold", "Total_Screenings", "TotalSeat", "OccupationRate")
@@ -2052,13 +2172,15 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         data = cursor.fetchall()
         cursor.close()
-
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         data.sort(key=lambda row: row[0])
         months = [row[0] for row in data]
         tickets_sold = [row[1] for row in data]
         occupation_rates = [row[2] for row in data]
 
         fig, ax1 = plt.subplots(figsize=(11, 6), dpi=100)
+        self.current_figure2 = fig
 
         ax1.bar(months, tickets_sold, color='skyblue', label='Tickets Sold')
         ax1.set_xlabel('Date')
@@ -2084,7 +2206,7 @@ class Admin(tk.Toplevel):
         canvas.get_tk_widget().pack(fill="both", expand=True, padx=10, pady=10)
         plt.close(fig)
     #Screeningtime
-    def display_screeningtime(self):
+    def display_screening_time(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
         self.sort_states = {}
@@ -2117,10 +2239,13 @@ class Admin(tk.Toplevel):
             self.sort_states[col] = not reverse
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT ScreeningTime, TicketSold, OccupationRate, Revenue FROM screeningtime30")
+        query = ("SELECT ScreeningTime, TicketSold, OccupationRate, Revenue FROM screeningtime30")
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
 
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True)
         columns = ("ScreeningTime", "TicketSold", "OccupationRate", "Revenue")
@@ -2188,10 +2313,13 @@ class Admin(tk.Toplevel):
             self.sort_states[col] = not reverse
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT ScreeningTime, TicketSold, OccupationRate, Revenue FROM screeningtime30")
+        query = ("SELECT ScreeningTime, TicketSold, OccupationRate, Revenue FROM screeningtime30")
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
 
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True)
         columns = ("ScreeningTime", "TicketSold", "OccupationRate", "Revenue")
@@ -2256,10 +2384,13 @@ class Admin(tk.Toplevel):
             self.sort_states[col] = not reverse
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT ScreeningTime, TicketSold, OccupationRate, Revenue FROM screeningtime90")
+        query = ("SELECT ScreeningTime, TicketSold, OccupationRate, Revenue FROM screeningtime90")
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
 
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True)
         columns = ("ScreeningTime", "TicketSold", "OccupationRate", "Revenue")
@@ -2324,10 +2455,12 @@ class Admin(tk.Toplevel):
             self.sort_states[col] = not reverse
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT ScreeningTime, TicketSold, OccupationRate, Revenue FROM screeningtime")
+        query = ("SELECT ScreeningTime, TicketSold, OccupationRate, Revenue FROM screeningtime")
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
-
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True)
         columns = ("ScreeningTime", "TicketSold", "OccupationRate", "Revenue")
@@ -2384,10 +2517,13 @@ class Admin(tk.Toplevel):
             self.sort_states[col] = not reverse
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT Day, TicketSold, MostPopularShowtime FROM day_performance30")
+        query = "SELECT Day, TicketSold, MostPopularShowtime FROM day_performance30"
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
 
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True)
         columns = ("Day", "TicketSold", "MostPopularShowtime")
@@ -2441,10 +2577,13 @@ class Admin(tk.Toplevel):
             self.sort_states[col] = not reverse
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT Day, TicketSold, MostPopularShowtime FROM day_performance30")
+        query = "SELECT Day, TicketSold, MostPopularShowtime FROM day_performance30"
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
 
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True)
         columns = ("Day", "TicketSold", "MostPopularShowtime")
@@ -2495,10 +2634,13 @@ class Admin(tk.Toplevel):
             self.sort_states[col] = not reverse
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT Day, TicketSold, MostPopularShowtime FROM day_performance90")
+        query = "SELECT Day, TicketSold, MostPopularShowtime FROM day_performance90"
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
 
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True)
         columns = ("Day", "TicketSold", "MostPopularShowtime")
@@ -2549,10 +2691,13 @@ class Admin(tk.Toplevel):
             self.sort_states[col] = not reverse
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT Day, TicketSold, MostPopularShowtime FROM day_performancealltime")
+        query = "SELECT Day, TicketSold, MostPopularShowtime FROM day_performancealltime"
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
 
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True)
         columns = ("Day", "TicketSold", "MostPopularShowtime")
@@ -2604,10 +2749,12 @@ class Admin(tk.Toplevel):
             self.sort_states[col] = not reverse
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT * FROM genre_format_30")
+        query = "SELECT * FROM genre_format_30"
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
-
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True)
 
@@ -2669,10 +2816,13 @@ class Admin(tk.Toplevel):
             self.sort_states[col] = not reverse
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT * FROM genre_format_30")
+        query = "SELECT * FROM genre_format_30"
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
 
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True)
 
@@ -2730,10 +2880,12 @@ class Admin(tk.Toplevel):
             self.sort_states[col] = not reverse
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT * FROM genre_format_90")
+        query = "SELECT * FROM genre_format_90"
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
-
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True)
 
@@ -2791,10 +2943,12 @@ class Admin(tk.Toplevel):
             self.sort_states[col] = not reverse
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT * FROM genre_format_year")
+        query = "SELECT * FROM genre_format_year"
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
-
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True)
 
@@ -2852,10 +3006,12 @@ class Admin(tk.Toplevel):
             self.sort_states[col] = not reverse
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT * FROM genre_format_all")
+        query = "SELECT * FROM genre_format_all"
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
-
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True)
 
@@ -2890,7 +3046,6 @@ class Admin(tk.Toplevel):
             tree.insert('', 'end', values=formatted_row)
 
     #DEF TAB3
-
     #Show/hide buttons
     def hide_button3(self):
         self.hide_age_button()
@@ -2939,8 +3094,6 @@ class Admin(tk.Toplevel):
         self.age_format_90_bt.pack_forget()
         self.age_format_year_bt.pack_forget()
         self.age_format_all_bt.pack_forget()
-
-
     #AGE
     def display_age(self):
         for widget in self.graph_frame3.winfo_children():
@@ -2957,7 +3110,10 @@ class Admin(tk.Toplevel):
                 """
 
         df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
+        self.current_dataframe3 = df.copy()
         fig = Figure(figsize=(11, 6), dpi=100)
+        self.current_figure3 = fig
         ax = fig.add_subplot(111)
 
         ax.bar(df['AgeRange'], df['CustomerCount'], color='green')
@@ -2992,7 +3148,9 @@ class Admin(tk.Toplevel):
                 """
 
         df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
         fig = Figure(figsize=(11, 6), dpi=100)
+        self.current_figure3 = fig
         ax = fig.add_subplot(111)
 
         ax.bar(df['AgeRange'], df['CustomerCount'], color='green')
@@ -3024,7 +3182,9 @@ class Admin(tk.Toplevel):
                 """
 
         df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
         fig = Figure(figsize=(11, 6), dpi=100)
+        self.current_figure3 = fig
         ax = fig.add_subplot(111)
 
         ax.bar(df['AgeRange'], df['CustomerCount'], color='green')
@@ -3056,7 +3216,9 @@ class Admin(tk.Toplevel):
                 """
 
         df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
         fig = Figure(figsize=(11, 6), dpi=100)
+        self.current_figure3 = fig
         ax = fig.add_subplot(111)
 
         ax.bar(df['AgeRange'], df['CustomerCount'], color='green')
@@ -3073,7 +3235,6 @@ class Admin(tk.Toplevel):
         canvas = FigureCanvasTkAgg(fig, master=self.graph_frame3)
         canvas.draw()
         canvas.get_tk_widget().pack(pady=20)
-
     #Genre-age
     def display_age_genre(self):
         for widget in self.graph_frame3.winfo_children():
@@ -3090,7 +3251,9 @@ class Admin(tk.Toplevel):
                 """
 
         df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
         fig = Figure(figsize=(11, 6), dpi=100)
+        self.current_figure3 = fig
         ax = fig.add_subplot(111)
 
         ax.bar(df['Genre'], df['TicketsSold'], color='blue')
@@ -3125,7 +3288,9 @@ class Admin(tk.Toplevel):
                 """
 
         df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
         fig = Figure(figsize=(11, 6), dpi=100)
+        self.current_figure3 = fig
         ax = fig.add_subplot(111)
 
         ax.bar(df['Genre'], df['TicketsSold'], color='blue')
@@ -3157,7 +3322,9 @@ class Admin(tk.Toplevel):
                 """
 
         df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
         fig = Figure(figsize=(11, 6), dpi=100)
+        self.current_figure3 = fig
         ax = fig.add_subplot(111)
 
         ax.bar(df['Genre'], df['TicketsSold'], color='blue')
@@ -3189,7 +3356,9 @@ class Admin(tk.Toplevel):
                 """
 
         df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
         fig = Figure(figsize=(11, 6), dpi=100)
+        self.current_figure3 = fig
         ax = fig.add_subplot(111)
 
         ax.bar(df['Genre'], df['TicketsSold'], color='blue')
@@ -3221,7 +3390,9 @@ class Admin(tk.Toplevel):
                 """
 
         df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
         fig = Figure(figsize=(11, 6), dpi=100)
+        self.current_figure3 = fig
         ax = fig.add_subplot(111)
 
         ax.bar(df['Genre'], df['TicketsSold'], color='blue')
@@ -3253,7 +3424,9 @@ class Admin(tk.Toplevel):
                 """
 
         df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
         fig = Figure(figsize=(11, 6), dpi=100)
+        self.current_figure3 = fig
         ax = fig.add_subplot(111)
 
         ax.bar(df['Genre'], df['TicketsSold'], color='blue')
@@ -3275,9 +3448,12 @@ class Admin(tk.Toplevel):
             widget.destroy()
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT * FROM genre_screening")
+        query="SELECT * FROM genre_screening"
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
 
         table_frame = tk.Frame(self.graph_frame3)
         table_frame.pack(fill="both", expand=True)
@@ -3297,16 +3473,18 @@ class Admin(tk.Toplevel):
 
         for row in records:
             tree.insert('', 'end', values=row)
-
     #ScreeningTime-Age
     def display_time_age(self):
         for widget in self.graph_frame3.winfo_children():
             widget.destroy()
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT * FROM age_time_30")
+        query = "SELECT * FROM age_time_30"
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
 
         table_frame = tk.Frame(self.graph_frame3)
         table_frame.pack(fill="both", expand=True)
@@ -3353,9 +3531,12 @@ class Admin(tk.Toplevel):
             widget.destroy()
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT * FROM age_time_30")
+        query = "SELECT * FROM age_time_30"
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
 
         table_frame = tk.Frame(self.graph_frame3)
         table_frame.pack(fill="both", expand=True)
@@ -3399,9 +3580,12 @@ class Admin(tk.Toplevel):
             widget.destroy()
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT * FROM age_time_90")
+        query = "SELECT * FROM age_time_90"
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
 
         table_frame = tk.Frame(self.graph_frame3)
         table_frame.pack(fill="both", expand=True)
@@ -3445,9 +3629,12 @@ class Admin(tk.Toplevel):
             widget.destroy()
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT * FROM age_time_year")
+        query = "SELECT * FROM age_time_year"
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
 
         table_frame = tk.Frame(self.graph_frame3)
         table_frame.pack(fill="both", expand=True)
@@ -3491,9 +3678,12 @@ class Admin(tk.Toplevel):
             widget.destroy()
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT * FROM age_time_all")
+        query="SELECT * FROM age_time_all"
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
 
         table_frame = tk.Frame(self.graph_frame3)
         table_frame.pack(fill="both", expand=True)
@@ -3532,16 +3722,18 @@ class Admin(tk.Toplevel):
 
         for row in records:
             tree.insert('', 'end', values=row)
-
     #Format-Age
     def display_format_age(self):
         for widget in self.graph_frame3.winfo_children():
             widget.destroy()
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT * FROM age_format_30")
+        query = "SELECT * FROM age_format_30"
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
 
         table_frame = tk.Frame(self.graph_frame3)
         table_frame.pack(fill="both", expand=True)
@@ -3588,9 +3780,12 @@ class Admin(tk.Toplevel):
             widget.destroy()
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT * FROM age_format_30")
+        query = "SELECT * FROM age_format_30"
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
 
         table_frame = tk.Frame(self.graph_frame3)
         table_frame.pack(fill="both", expand=True)
@@ -3634,9 +3829,12 @@ class Admin(tk.Toplevel):
             widget.destroy()
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT * FROM age_format_90")
+        query = "SELECT * FROM age_format_90"
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
 
         table_frame = tk.Frame(self.graph_frame3)
         table_frame.pack(fill="both", expand=True)
@@ -3680,9 +3878,12 @@ class Admin(tk.Toplevel):
             widget.destroy()
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT * FROM age_format_year")
+        query = "SELECT * FROM age_format_year"
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
 
         table_frame = tk.Frame(self.graph_frame3)
         table_frame.pack(fill="both", expand=True)
@@ -3726,9 +3927,13 @@ class Admin(tk.Toplevel):
             widget.destroy()
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT * FROM age_format_all")
+        query="SELECT * FROM age_format_all"
+        cursor.execute(query)
         records = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
+
 
         table_frame = tk.Frame(self.graph_frame3)
         table_frame.pack(fill="both", expand=True)
