@@ -406,6 +406,9 @@ class Admin(tk.Toplevel):
         self.configure(bg="white")
         self.main = main
         self.protocol("WM_DELETE_WINDOW", self.on_close)
+        self.sort_orders = {}
+        self.sort_states = {}
+
 
         # Style configuration
         style = ttk.Style()
@@ -1629,7 +1632,7 @@ class Admin(tk.Toplevel):
         cursor = self.main.mydb.cursor()
         query = "SELECT MovieID, MovieTitle, Genre, TicketsSold, TotalRevenue, AttendanceRate FROM movie_14days"
         cursor.execute(query)
-        data = cursor.fetchall()
+        records = cursor.fetchall()
         cursor.close()
 
         table_frame = tk.Frame(self.graph_frame2)
@@ -1656,16 +1659,16 @@ class Admin(tk.Toplevel):
             "AttendanceRate": "Attendance Rate"
         }
 
-        for col in columns:
-            tree.heading(col, text=headings[col], command=lambda c=col: sort_column(tree, c, col_types[c]))
-            tree.column(col, width=120 if col != "MovieTitle" else 200, anchor="center")
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name != "MovieTitle" else 200, anchor="center")
 
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side="right", fill="y")
         tree.pack(fill="both", expand=True)
 
-        for row in data:
+        for row in records:
             movie_id, title, genre, tickets, revenue, attendance = row
             formatted_revenue = "{:,.0f} ₫".format(revenue).replace(",", ".")
             formatted_attendance = f"{attendance * 100:.2f}%"
@@ -1710,7 +1713,7 @@ class Admin(tk.Toplevel):
         cursor = self.main.mydb.cursor()
         query = "SELECT MovieID, MovieTitle, Genre, TicketsSold, TotalRevenue, AttendanceRate FROM movie_14days"
         cursor.execute(query)
-        data = cursor.fetchall()
+        records = cursor.fetchall()
         cursor.close()
 
         table_frame = tk.Frame(self.graph_frame2)
@@ -1737,16 +1740,16 @@ class Admin(tk.Toplevel):
             "AttendanceRate": "Attendance Rate"
         }
 
-        for col in columns:
-            tree.heading(col, text=headings[col], command=lambda c=col: sort_column(tree, c, col_types[c]))
-            tree.column(col, width=120 if col != "MovieTitle" else 200, anchor="center")
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name != "MovieTitle" else 200, anchor="center")
 
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side="right", fill="y")
         tree.pack(fill="both", expand=True)
 
-        for row in data:
+        for row in records:
             movie_id, title, genre, tickets, revenue, attendance = row
             formatted_revenue = "{:,.0f} ₫".format(revenue).replace(",", ".")
             formatted_attendance = f"{attendance * 100:.2f}%"
@@ -1788,7 +1791,7 @@ class Admin(tk.Toplevel):
         cursor = self.main.mydb.cursor()
         query = "SELECT MovieID, MovieTitle, Genre, TicketsSold, TotalRevenue, AttendanceRate FROM movie_30days"
         cursor.execute(query)
-        data = cursor.fetchall()
+        records = cursor.fetchall()
         cursor.close()
 
         table_frame = tk.Frame(self.graph_frame2)
@@ -1815,16 +1818,16 @@ class Admin(tk.Toplevel):
             "AttendanceRate": "Attendance Rate"
         }
 
-        for col in columns:
-            tree.heading(col, text=headings[col], command=lambda c=col: sort_column(tree, c, col_types[c]))
-            tree.column(col, width=120 if col != "MovieTitle" else 200, anchor="center")
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name != "MovieTitle" else 200, anchor="center")
 
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side="right", fill="y")
         tree.pack(fill="both", expand=True)
 
-        for row in data:
+        for row in records:
             movie_id, title, genre, tickets, revenue, attendance = row
             formatted_revenue = "{:,.0f} ₫".format(revenue).replace(",", ".")
             formatted_attendance = f"{attendance * 100:.2f}%"
@@ -1866,7 +1869,7 @@ class Admin(tk.Toplevel):
         cursor = self.main.mydb.cursor()
         query = "SELECT MovieID, MovieTitle, Genre, TicketsSold, TotalRevenue, AttendanceRate FROM movie_60days"
         cursor.execute(query)
-        data = cursor.fetchall()
+        records = cursor.fetchall()
         cursor.close()
 
         table_frame = tk.Frame(self.graph_frame2)
@@ -1893,16 +1896,16 @@ class Admin(tk.Toplevel):
             "AttendanceRate": "Attendance Rate"
         }
 
-        for col in columns:
-            tree.heading(col, text=headings[col], command=lambda c=col: sort_column(tree, c, col_types[c]))
-            tree.column(col, width=120 if col != "MovieTitle" else 200, anchor="center")
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name != "MovieTitle" else 200, anchor="center")
 
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side="right", fill="y")
         tree.pack(fill="both", expand=True)
 
-        for row in data:
+        for row in records:
             movie_id, title, genre, tickets, revenue, attendance = row
             formatted_revenue = "{:,.0f} ₫".format(revenue).replace(",", ".")
             formatted_attendance = f"{attendance * 100:.2f}%"
@@ -1938,7 +1941,7 @@ class Admin(tk.Toplevel):
         cursor = self.main.mydb.cursor()
         query = "SELECT Month, Tickets_Sold, Total_Screenings, TotalSeat, `Occupation Rate (%)` FROM occupation"
         cursor.execute(query)
-        data = cursor.fetchall()
+        records = cursor.fetchall()
         cursor.close()
 
         table_frame = tk.Frame(self.graph_frame2)
@@ -1960,15 +1963,15 @@ class Admin(tk.Toplevel):
             "TotalSeat": "int",
             "OccupationRate": "percentage"
         }
-        for col in columns:
-            tree.heading(col, text=headings[col], command=lambda c=col: sort_column(tree, c, col_types[c]))
-            tree.column(col, width=130 if col == "Total_Screenings" else 100 if col != "OccupationRate" else 150,
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=130 if col_name == "Total_Screenings" else 100 if col_name != "OccupationRate" else 150,
                         anchor="center")
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side="right", fill="y")
         tree.pack(fill="both", expand=True)
-        for row in data:
+        for row in records:
             month, tickets_sold, total_screenings, total_seat, occupation_rate = row
             formatted_occupation = f"{occupation_rate:.2f}%"
             tree.insert("", "end", values=(month, tickets_sold, total_screenings, total_seat, formatted_occupation))
@@ -2006,7 +2009,7 @@ class Admin(tk.Toplevel):
         cursor = self.main.mydb.cursor()
         query = "SELECT Month, Tickets_Sold, Total_Screenings, TotalSeat, `Occupation Rate (%)` FROM occupation"
         cursor.execute(query)
-        data = cursor.fetchall()
+        records = cursor.fetchall()
         cursor.close()
 
         table_frame = tk.Frame(self.graph_frame2)
@@ -2028,15 +2031,15 @@ class Admin(tk.Toplevel):
             "TotalSeat": "int",
             "OccupationRate": "percentage"
         }
-        for col in columns:
-            tree.heading(col, text=headings[col], command=lambda c=col: sort_column(tree, c, col_types[c]))
-            tree.column(col, width=130 if col == "Total_Screenings" else 100 if col != "OccupationRate" else 150,
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=130 if col_name == "Total_Screenings" else 100 if col_name != "OccupationRate" else 150,
                         anchor="center")
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side="right", fill="y")
         tree.pack(fill="both", expand=True)
-        for row in data:
+        for row in records:
             month, tickets_sold, total_screenings, total_seat, occupation_rate = row
             formatted_occupation = f"{occupation_rate:.2f}%"
             tree.insert("", "end", values=(month, tickets_sold, total_screenings, total_seat, formatted_occupation))
@@ -2140,9 +2143,9 @@ class Admin(tk.Toplevel):
             "OccupationRate": "percentage",
             "Revenue": "currency"
         }
-        for col in columns:
-            tree.heading(col, text=headings[col], command=lambda c=col: sort_column(tree, c, col_types[c]))
-            tree.column(col, width=120 if col == "ScreeningTime" else 130, anchor="center")
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name == "ScreeningTime" else 130, anchor="center")
         for row in records:
             screening_time, tickets_sold, occupation_rate, revenue = row
             formatted_occupation = f"{occupation_rate * 100:.1f}%"
@@ -2211,9 +2214,9 @@ class Admin(tk.Toplevel):
             "OccupationRate": "percentage",
             "Revenue": "currency"
         }
-        for col in columns:
-            tree.heading(col, text=headings[col], command=lambda c=col: sort_column(tree, c, col_types[c]))
-            tree.column(col, width=120 if col == "ScreeningTime" else 130, anchor="center")
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name == "ScreeningTime" else 130, anchor="center")
         for row in records:
             screening_time, tickets_sold, occupation_rate, revenue = row
             formatted_occupation = f"{occupation_rate * 100:.1f}%"
@@ -2279,9 +2282,9 @@ class Admin(tk.Toplevel):
             "OccupationRate": "percentage",
             "Revenue": "currency"
         }
-        for col in columns:
-            tree.heading(col, text=headings[col], command=lambda c=col: sort_column(tree, c, col_types[c]))
-            tree.column(col, width=120 if col == "ScreeningTime" else 130, anchor="center")
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name == "ScreeningTime" else 130, anchor="center")
         for row in records:
             screening_time, tickets_sold, occupation_rate, revenue = row
             formatted_occupation = f"{occupation_rate * 100:.1f}%"
@@ -2347,9 +2350,9 @@ class Admin(tk.Toplevel):
             "OccupationRate": "percentage",
             "Revenue": "currency"
         }
-        for col in columns:
-            tree.heading(col, text=headings[col], command=lambda c=col: sort_column(tree, c, col_types[c]))
-            tree.column(col, width=120 if col == "ScreeningTime" else 130, anchor="center")
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name == "ScreeningTime" else 130, anchor="center")
         for row in records:
             screening_time, tickets_sold, occupation_rate, revenue = row
             formatted_occupation = f"{occupation_rate * 100:.1f}%"
@@ -2405,9 +2408,9 @@ class Admin(tk.Toplevel):
             "TicketSold": "int",
             "MostPopularShowtime": "text"
         }
-        for col in columns:
-            tree.heading(col, text=headings[col], command=lambda c=col: sort_column(tree, c, col_types[c]))
-            tree.column(col, width=120 if col == "Day" else 150, anchor="center")
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name == "Day" else 150, anchor="center")
         for row in records:
             tree.insert('', 'end', values=row)
 
@@ -2462,9 +2465,9 @@ class Admin(tk.Toplevel):
             "TicketSold": "int",
             "MostPopularShowtime": "text"
         }
-        for col in columns:
-            tree.heading(col, text=headings[col], command=lambda c=col: sort_column(tree, c, col_types[c]))
-            tree.column(col, width=120 if col == "Day" else 150, anchor="center")
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name == "Day" else 150, anchor="center")
         for row in records:
             tree.insert('', 'end', values=row)
     def display_day90(self):
@@ -2516,9 +2519,9 @@ class Admin(tk.Toplevel):
             "TicketSold": "int",
             "MostPopularShowtime": "text"
         }
-        for col in columns:
-            tree.heading(col, text=headings[col], command=lambda c=col: sort_column(tree, c, col_types[c]))
-            tree.column(col, width=120 if col == "Day" else 150, anchor="center")
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name == "Day" else 150, anchor="center")
         for row in records:
             tree.insert('', 'end', values=row)
     def display_day_all(self):
@@ -2570,9 +2573,9 @@ class Admin(tk.Toplevel):
             "TicketSold": "int",
             "MostPopularShowtime": "text"
         }
-        for col in columns:
-            tree.heading(col, text=headings[col], command=lambda c=col: sort_column(tree, c, col_types[c]))
-            tree.column(col, width=120 if col == "Day" else 150, anchor="center")
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name == "Day" else 150, anchor="center")
         for row in records:
             tree.insert('', 'end', values=row)
     #Format
@@ -2629,9 +2632,9 @@ class Admin(tk.Toplevel):
             "TotalRevenue": "int"
         }
 
-        for col in columns:
-            tree.heading(col, text=headings[col], command=lambda c=col: sort_column(tree, c, col_types[c]))
-            tree.column(col, width=120, anchor="center")
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120, anchor="center")
 
 
         for row in records:
@@ -2694,9 +2697,9 @@ class Admin(tk.Toplevel):
             "TotalRevenue": "int"
         }
 
-        for col in columns:
-            tree.heading(col, text=headings[col], command=lambda c=col: sort_column(tree, c, col_types[c]))
-            tree.column(col, width=120, anchor="center")
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120, anchor="center")
 
         for row in records:
             formatted_row = list(row)
@@ -2755,9 +2758,9 @@ class Admin(tk.Toplevel):
             "TotalRevenue": "int"
         }
 
-        for col in columns:
-            tree.heading(col, text=headings[col], command=lambda c=col: sort_column(tree, c, col_types[c]))
-            tree.column(col, width=120, anchor="center")
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120, anchor="center")
 
         for row in records:
             formatted_row = list(row)
@@ -2816,9 +2819,9 @@ class Admin(tk.Toplevel):
             "TotalRevenue": "int"
         }
 
-        for col in columns:
-            tree.heading(col, text=headings[col], command=lambda c=col: sort_column(tree, c, col_types[c]))
-            tree.column(col, width=120, anchor="center")
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120, anchor="center")
 
         for row in records:
             formatted_row = list(row)
@@ -2877,9 +2880,9 @@ class Admin(tk.Toplevel):
             "TotalRevenue": "int"
         }
 
-        for col in columns:
-            tree.heading(col, text=headings[col], command=lambda c=col: sort_column(tree, c, col_types[c]))
-            tree.column(col, width=120, anchor="center")
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120, anchor="center")
 
         for row in records:
             formatted_row = list(row)
@@ -3324,10 +3327,10 @@ class Admin(tk.Toplevel):
 
             sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
 
-            for row in tree.get_children():
-                tree.delete(row)
-            for row in sorted_records:
-                tree.insert('', 'end', values=row)
+            for item in tree.get_children():
+                tree.delete(item)
+            for record in sorted_records:
+                tree.insert('', 'end', values=record)
 
         tree.heading("AgeGroup", text="Age Group")
         tree.heading("ScreeningTime", text="Screening Time")
@@ -3373,10 +3376,10 @@ class Admin(tk.Toplevel):
 
             sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
 
-            for row in tree.get_children():
-                tree.delete(row)
-            for row in sorted_records:
-                tree.insert('', 'end', values=row)
+            for item in tree.get_children():
+                tree.delete(item)
+            for record in sorted_records:
+                tree.insert('', 'end', values=record)
 
         tree.heading("AgeGroup", text="Age Group")
         tree.heading("ScreeningTime", text="Screening Time")
@@ -3419,10 +3422,10 @@ class Admin(tk.Toplevel):
 
             sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
 
-            for row in tree.get_children():
-                tree.delete(row)
-            for row in sorted_records:
-                tree.insert('', 'end', values=row)
+            for item in tree.get_children():
+                tree.delete(item)
+            for record in sorted_records:
+                tree.insert('', 'end', values=record)
 
         tree.heading("AgeGroup", text="Age Group")
         tree.heading("ScreeningTime", text="Screening Time")
@@ -3465,10 +3468,10 @@ class Admin(tk.Toplevel):
 
             sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
 
-            for row in tree.get_children():
-                tree.delete(row)
-            for row in sorted_records:
-                tree.insert('', 'end', values=row)
+            for item in tree.get_children():
+                tree.delete(item)
+            for record in sorted_records:
+                tree.insert('', 'end', values=record)
 
         tree.heading("AgeGroup", text="Age Group")
         tree.heading("ScreeningTime", text="Screening Time")
@@ -3511,10 +3514,10 @@ class Admin(tk.Toplevel):
 
             sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
 
-            for row in tree.get_children():
-                tree.delete(row)
-            for row in sorted_records:
-                tree.insert('', 'end', values=row)
+            for item in tree.get_children():
+                tree.delete(item)
+            for record in sorted_records:
+                tree.insert('', 'end', values=record)
 
         tree.heading("AgeGroup", text="Age Group")
         tree.heading("ScreeningTime", text="Screening Time")
