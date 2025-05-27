@@ -58,7 +58,8 @@ DROP PROCEDURE IF EXISTS ticket_booking;
 
 DELIMITER //
 CREATE PROCEDURE ticket_booking (
-	IN cust_name VARCHAR(100), 
+	IN cust_name VARCHAR(100),
+    IN cust_dob DATE,
 	IN cust_phone VARCHAR(100), 
     IN screening_id INT, 
     IN seat_code VARCHAR(100), 
@@ -69,9 +70,11 @@ BEGIN
     DECLARE room_id INT;
     DECLARE seat_id INT;
     DECLARE seat_taken INT;
+    
 	DECLARE EXIT HANDLER FOR SQLEXCEPTION
 	BEGIN
-		SET result = 'Error: Unable to insert ticket';
+		SET result = IF(result = 'Unknown error', 'Error: Unable to insert ticket', result);
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = result;
 	END;
     
         -- Validate screening
@@ -98,8 +101,8 @@ BEGIN
         SELECT CustomerID INTO cust_id FROM Customers 
         WHERE PhoneNumber = cust_phone;
         IF cust_id IS NULL THEN
-            INSERT INTO Customers (CustomerName, PhoneNumber) 
-            VALUES (cust_name, cust_phone);
+            INSERT INTO Customers (CustomerName, DOB, PhoneNumber) 
+            VALUES (cust_name, cust_dob, cust_phone);
             SET cust_id = LAST_INSERT_ID();
         END IF;
 
@@ -113,7 +116,7 @@ DELIMITER ;
 
 # Testing stored proc
 START TRANSACTION;
-CALL ticket_booking('Quang', 10101, 1, 'A4', @result);
+CALL ticket_booking('Quang', 2004/06/03, 10101, 1, 'A4', @result);
 SELECT @result AS 'Booking status';
 ROLLBACK;
 

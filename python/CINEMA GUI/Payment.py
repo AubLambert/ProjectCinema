@@ -5,15 +5,17 @@ from datetime import datetime
 import mysql.connector
 from mysql.connector import Error
 
-class CustomerFormApp(tk.Tk):
-    def __init__(self, db_connection, screening_id, selected_seats, total_price):
-        super().__init__()
+class CustomerFormApp(tk.Toplevel):
+    def __init__(self, parent, db_connection, screening_id, selected_seats, total_price):
+        super().__init__(parent)
+        self.parent = parent
         self.title("Customer Form")
         self.geometry("800x500")
         self.mydb = db_connection
+        self.screening_id = screening_id
         self.selected_seats = selected_seats
         self.total_price = total_price
-        self.amount_due_var = StringVar(value="0.00")
+        self.amount_due_var = StringVar(value=f"{self.total_price:.2f}")
         self.create_widgets()
 
 
@@ -30,9 +32,8 @@ class CustomerFormApp(tk.Tk):
         return text == "" or text.isdigit()
     def calculate_amount_due(self, *args):
         try:
-            price_text = self.price_entry.get().strip()
+            price = float(self.total_price)
             discount_text = self.discount_entry.get().strip()
-            price = float(price_text) if price_text else 0.0
             discount = float(discount_text) if discount_text else 0.0
 
             discount = min(max(discount, 0), 100)
@@ -43,7 +44,7 @@ class CustomerFormApp(tk.Tk):
             amount_due = price * (100 - discount) / 100
             self.amount_due_var.set(f"{amount_due:.2f}")
         except ValueError:
-            self.amount_due_var.set("0.00")
+            self.amount_due_var.set(f"{self.total_price:.2f}")
 
 
     def confirm_form(self):
@@ -53,11 +54,11 @@ class CustomerFormApp(tk.Tk):
         month = self.month_entry.get().strip()
         year = self.year_entry.get().strip()
         dob = f"{year}-{month.zfill(2)}-{day.zfill(2)}" if day and month and year else None
-        seat_number = {}
         screening_id = self.screening_id
         amount_due = float(self.amount_due_var.get())
+        
 
-        self.book_ticket_and_insert_payment(customer_name, phone, screening_id, seat_number, amount_due)
+        self.book_ticket_and_insert_payment(customer_name, dob, phone, screening_id, self.selected_seats, amount_due)
 
         if not customer_name or not phone:
             self.error_label.config(text="Please enter customer name and phone number!")
@@ -65,16 +66,6 @@ class CustomerFormApp(tk.Tk):
         else:
             self.error_label.config(text="")
 
-        try:
-            mycursor = self.mydb.cursor()
-            sql = "INSERT INTO Customers (customername, phonenumber, dob) VALUES (%s, %s, %s)"
-            mycursor.execute(sql, (customer_name, phone, dob))
-            self.mydb.commit()
-            messagebox.showinfo("Success", "Customer data inserted successfully.")
-        except mysql.connector.Error as err:
-            messagebox.showerror("Database Error", f"Error: {err}")
-        finally:
-            mycursor.close()
 
     def check_auto_discount(self, event=None):
         try:
@@ -110,69 +101,78 @@ class CustomerFormApp(tk.Tk):
             self.calculate_amount_due()
 
         except ValueError:
-            pass
-
-    def book_ticket_and_insert_payment(self, customer_name, phone, screening_id, seat_number, amount):
+            self.discount_entry.config(state="normal")
+            self.discount_entry.delete(0, tk.END)
+            self.discount_entry.config(state="readonly")
+            self.calculate_amount_due()
+            
+    def book_ticket_and_insert_payment(self, customer_name, dob, phone, screening_id, selected_seats, amount_due):
         try:
-            result = ''
             cursor = self.mydb.cursor()
-
-            # Gọi stored procedure ticket_booking
-            cursor.callproc("ticket_booking", (customer_name, phone, screening_id, seat_number, result))
-
-            # Lấy kết quả từ OUT param
-            for res in cursor.stored_results():
-                result = res.fetchone()[0]
-
-            if "successfully" not in result.lower():
-                messagebox.showerror("Booking Failed", result)
-                return
-
-            # Truy vấn các ID cần để insert payment
-            cursor.execute("SELECT CustomerID FROM Customers WHERE PhoneNumber = %s", (phone,))
-            customer_id = cursor.fetchone()[0]
-
-            cursor.execute("SELECT RoomID FROM Screenings WHERE ScreeningID = %s", (screening_id,))
-            room_id = cursor.fetchone()[0]
-
-            cursor.execute("SELECT SeatID FROM Seats WHERE RoomID = %s AND SeatNumber = %s", (room_id, seat_number))
-            seat_id = cursor.fetchone()[0]
-
-            cursor.execute("""
-                SELECT TicketID FROM Tickets 
-                WHERE CustomerID = %s AND ScreeningID = %s AND SeatID = %s
-                ORDER BY TicketID DESC LIMIT 1
-            """, (customer_id, screening_id, seat_id))
-            ticket_id = cursor.fetchone()[0]
-
-            # Insert payment
-            cursor.execute("""
-                INSERT INTO Payments (CustomerID, ScreeningID, TicketID, Amount, PayTime)
-                VALUES (%s, %s, %s, %s, NOW())
-            """, (customer_id, screening_id, ticket_id, amount))
-
+            ticket_ids = []
+    
+            for seat in selected_seats:
+                result = ''
+                cursor.callproc("ticket_booking", (customer_name, phone, dob, screening_id, seat, result))
+    
+                for res in cursor.stored_results():
+                    result = res.fetchone()[0]
+    
+                if "successfully" not in result.lower():
+                    messagebox.showerror("Booking Failed", f"{seat}: {result}")
+                    return  # Exit on first failure
+    
+                # Get IDs for payment
+                cursor.execute("SELECT CustomerID FROM Customers WHERE PhoneNumber = %s", (phone,))
+                customer_id = cursor.fetchone()[0]
+    
+                cursor.execute("SELECT RoomID FROM Screenings WHERE ScreeningID = %s", (screening_id,))
+                room_id = cursor.fetchone()[0]
+    
+                cursor.execute("SELECT SeatID FROM Seats WHERE RoomID = %s AND SeatNumber = %s", (room_id, seat))
+                seat_id = cursor.fetchone()[0]
+    
+                cursor.execute("""
+                    SELECT TicketID FROM Tickets 
+                    WHERE CustomerID = %s AND ScreeningID = %s AND SeatID = %s
+                    ORDER BY TicketID DESC LIMIT 1
+                """, (customer_id, screening_id, seat_id))
+                ticket_id = cursor.fetchone()[0]
+                ticket_ids.append(ticket_id)
+    
+            # Insert payments for each ticket
+            for ticket_id in ticket_ids:
+                cursor.execute("""
+                    INSERT INTO Payments (CustomerID, ScreeningID, TicketID, Amount, PayTime)
+                    VALUES (%s, %s, %s, %s, NOW())
+                """, (customer_id, screening_id, ticket_id, amount_due/len(ticket_ids)))
+    
             self.mydb.commit()
-            messagebox.showinfo("Success", "Ticket booked and payment saved successfully!")
-
+            messagebox.showinfo("Success", f"Tickets for {len(selected_seats)} seat(s) booked successfully!")
+    
         except mysql.connector.Error as err:
             messagebox.showerror("Database Error", f"Error: {err}")
         finally:
             cursor.close()
 
     def create_widgets(self):
+        #Confirm button
         Button(self, text="Confirm", font=("Arial", 10), width=15, command=self.confirm_form).place(x=330, y=420)
         Button(self, text="BACK", font=("Arial", 10), width=7).place(x=10, y=10)
-
+        
+        #Customer name
         Label(self, text="Customer Name:").place(x=80, y=100)
         vcmd_name = (self.register(self.validate_name_input), '%P')
         self.customer_name_entry = tk.Entry(self, width=40, validate='key', validatecommand = vcmd_name)
         self.customer_name_entry.place(x=250, y=100)
-
+        
+        #Phone number
         Label(self, text="Phone Number:").place(x=80, y=150)
         vcmd_phone = (self.register(self.validate_phone_input), '%P')
         self.phone_entry = tk.Entry(self, width=40, validate='key', validatecommand = vcmd_phone)
         self.phone_entry.place(x=250, y=150)
-
+        
+        #DOB
         Label(self, text="DOB - optional:").place(x=80, y=200)
         self.day_entry = tk.Entry(self, width=3, validate='key', validatecommand=(self.register(self.validate_day_input), '%P'))
         self.day_entry.place(x=250, y=200)
@@ -182,29 +182,35 @@ class CustomerFormApp(tk.Tk):
         Label(self, text="/").place(x=310, y=200)
         self.year_entry = tk.Entry(self, width=5, validate='key', validatecommand=(self.register(self.validate_year_input), '%P'))
         self.year_entry.place(x=320, y=200)
+        
+        #Seat number
         Label(self, text="Seat Number:").place(x=80, y=250)
-        self.seat_entry = tk.Entry(self, width=20, state="readonly")
-        self.seat_entry.insert(0, self.seat_numbers)
+        self.seat_entry = tk.Entry(self, width=20, state="normal")
         self.seat_entry.place(x=250, y=250)
+        seats_str = ", ".join(self.selected_seats.keys())
+        self.seat_entry.insert(0, seats_str)
+        self.seat_entry.configure(state="readonly")
+        
+        
+        #Price        
         Label(self, text="Price (VND):").place(x=500, y=260)
-        self.price_entry = tk.Entry(self, width=20, state="readonly")
-        self.price_entry.insert(0, self.total_price)
-        self.price_entry.place(x=600, y=260)
+        self.price_entry = tk.Entry(self, width=20, state="normal")
+        self.price_entry.place(x=610, y=260)
+        self.price_entry.insert(0, f"{self.total_price:.2f}")
+        self.price_entry.configure(state="readonly")
 
         Label(self, text="Discount (%):").place(x=500, y=300)
         self.discount_entry = tk.Entry(self, width=20, state="readonly")
-        self.discount_entry.place(x=600, y=300)
+        self.discount_entry.place(x=610, y=300)
 
-        Label(self, text="Amount Due ($):").place(x=500, y=340)
-        Label(self, textvariable=self.amount_due_var, width=18, relief="sunken", bg="white", anchor="w").place(x=600, y=340)
+        Label(self, text="Amount Due (VND):").place(x=500, y=340)
+        Label(self, textvariable=self.amount_due_var, width=18, relief="sunken", bg="white", anchor="w").place(x=610, y=340)
 
         self.price_entry.bind('<KeyRelease>', self.calculate_amount_due)
         self.discount_entry.bind('<KeyRelease>', self.calculate_amount_due)
         self.price_entry.bind('<FocusOut>', self.calculate_amount_due)
         self.discount_entry.bind('<FocusOut>', self.calculate_amount_due)
 
-        self.price_entry.insert(0, "")
-        self.discount_entry.insert(0, "")
         self.calculate_amount_due()
 
         self.error_label = Label(self, text="", fg="red", font=("Arial", 10))
