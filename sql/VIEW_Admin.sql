@@ -284,7 +284,7 @@ GROUP BY
 ORDER BY 
     fg.PeriodStart ASC;
     
-    
+-- TICKET
 CREATE OR REPLACE VIEW ticket_30days AS
 WITH RECURSIVE DateRange AS (
     SELECT DATE_SUB(CURDATE(), INTERVAL 30 DAY) AS PaymentDate
@@ -344,6 +344,7 @@ LEFT JOIN Tickets t ON s.ScreeningID = t.ScreeningID
 LEFT JOIN Payments p ON t.TicketID = p.TicketID
 WHERE s.ScreeningDate >= CURDATE() - INTERVAL 14 DAY
 GROUP BY m.MovieID, m.MovieTitle, m.Genre
+HAVING TotalRevenue > 0
 ORDER BY 
     TotalRevenue DESC,
     TicketsSold DESC,
@@ -370,6 +371,7 @@ LEFT JOIN Tickets t ON s.ScreeningID = t.ScreeningID
 LEFT JOIN Payments p ON t.TicketID = p.TicketID
 WHERE s.ScreeningDate >= CURDATE() - INTERVAL 30 DAY
 GROUP BY m.MovieID, m.MovieTitle, m.Genre
+HAVING TotalRevenue > 0
 ORDER BY 
     TotalRevenue DESC,
     TicketsSold DESC,
@@ -396,6 +398,7 @@ LEFT JOIN Tickets t ON s.ScreeningID = t.ScreeningID
 LEFT JOIN Payments p ON t.TicketID = p.TicketID
 WHERE s.ScreeningDate >= CURDATE() - INTERVAL 60 DAY
 GROUP BY m.MovieID, m.MovieTitle, m.Genre
+HAVING TotalRevenue > 0
 ORDER BY 
     TotalRevenue DESC,
     TicketsSold DESC,
@@ -654,3 +657,586 @@ SELECT
     Revenue
 FROM AggregatedStats
 ORDER BY ScreeningTime;
+
+-- AGE
+CREATE OR REPLACE VIEW age AS
+SELECT
+  CASE
+    WHEN TIMESTAMPDIFF(YEAR, DOB, CURDATE()) BETWEEN 0 AND 12 THEN '0-12'
+    WHEN TIMESTAMPDIFF(YEAR, DOB, CURDATE()) BETWEEN 13 AND 17 THEN '13-17'
+    WHEN TIMESTAMPDIFF(YEAR, DOB, CURDATE()) BETWEEN 18 AND 25 THEN '18-25'
+    WHEN TIMESTAMPDIFF(YEAR, DOB, CURDATE()) BETWEEN 26 AND 40 THEN '26-40'
+    WHEN TIMESTAMPDIFF(YEAR, DOB, CURDATE()) BETWEEN 41 AND 60 THEN '41-60'
+    WHEN TIMESTAMPDIFF(YEAR, DOB, CURDATE()) > 60 THEN '60+'
+    ELSE 'Unknown'
+  END AS AgeRange,
+  COUNT(*) AS CustomerCount
+FROM Customers
+WHERE DOB IS NOT NULL
+GROUP BY AgeRange
+ORDER BY
+  CASE AgeRange
+    WHEN '0-12' THEN 1
+    WHEN '13-17' THEN 2
+    WHEN '18-25' THEN 3
+    WHEN '26-40' THEN 4
+    WHEN '41-60' THEN 5
+    WHEN '60+' THEN 6
+    ELSE 7
+  END;
+
+-- AGE
+CREATE OR REPLACE VIEW age90 AS
+SELECT
+  CASE
+    WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 0 AND 12 THEN '0-12'
+    WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 13 AND 17 THEN '13-17'
+    WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 18 AND 25 THEN '18-25'
+    WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 26 AND 40 THEN '26-40'
+    WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 41 AND 60 THEN '41-60'
+    WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) > 60 THEN '60+'
+    ELSE 'Unknown'
+  END AS AgeRange,
+  COUNT(DISTINCT c.CustomerID) AS CustomerCount
+FROM Customers c
+JOIN Payments p ON c.CustomerID = p.CustomerID
+WHERE c.DOB IS NOT NULL
+  AND p.PayTime >= CURDATE() - INTERVAL 90 DAY
+GROUP BY AgeRange
+ORDER BY
+  CASE AgeRange
+    WHEN '0-12' THEN 1
+    WHEN '13-17' THEN 2
+    WHEN '18-25' THEN 3
+    WHEN '26-40' THEN 4
+    WHEN '41-60' THEN 5
+    WHEN '60+' THEN 6
+    ELSE 7
+  END;
+  
+  -- AGE
+CREATE OR REPLACE VIEW ageyear AS
+SELECT
+  CASE
+    WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 0 AND 12 THEN '0-12'
+    WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 13 AND 17 THEN '13-17'
+    WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 18 AND 25 THEN '18-25'
+    WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 26 AND 40 THEN '26-40'
+    WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 41 AND 60 THEN '41-60'
+    WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) > 60 THEN '60+'
+    ELSE 'Unknown'
+  END AS AgeRange,
+  COUNT(DISTINCT c.CustomerID) AS CustomerCount
+FROM Customers c
+JOIN Payments p ON c.CustomerID = p.CustomerID
+WHERE c.DOB IS NOT NULL
+  AND p.PayTime >= CURDATE() - INTERVAL 365 DAY
+GROUP BY AgeRange
+ORDER BY
+  CASE AgeRange
+    WHEN '0-12' THEN 1
+    WHEN '13-17' THEN 2
+    WHEN '18-25' THEN 3
+    WHEN '26-40' THEN 4
+    WHEN '41-60' THEN 5
+    WHEN '60+' THEN 6
+    ELSE 7
+  END;
+  
+-- age 13-17
+CREATE OR REPLACE VIEW age17 AS
+SELECT m.Genre, COUNT(*) AS TicketsSold
+FROM Tickets t
+JOIN Customers c ON t.CustomerID = c.CustomerID
+JOIN Screenings s ON t.ScreeningID = s.ScreeningID
+JOIN Movies m ON s.MovieID = m.MovieID
+WHERE TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 13 AND 17
+GROUP BY m.Genre
+ORDER BY TicketsSold DESC;
+
+-- age 18-25
+CREATE OR REPLACE VIEW age25 AS
+SELECT m.Genre, COUNT(*) AS TicketsSold
+FROM Tickets t
+JOIN Customers c ON t.CustomerID = c.CustomerID
+JOIN Screenings s ON t.ScreeningID = s.ScreeningID
+JOIN Movies m ON s.MovieID = m.MovieID
+WHERE TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 18 AND 25
+GROUP BY m.Genre
+ORDER BY TicketsSold DESC;
+
+-- age 26-40
+CREATE OR REPLACE VIEW age40 AS
+SELECT m.Genre, COUNT(*) AS TicketsSold
+FROM Tickets t
+JOIN Customers c ON t.CustomerID = c.CustomerID
+JOIN Screenings s ON t.ScreeningID = s.ScreeningID
+JOIN Movies m ON s.MovieID = m.MovieID
+WHERE TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 26 AND 40
+GROUP BY m.Genre
+ORDER BY TicketsSold DESC;
+
+-- age 41-60
+CREATE OR REPLACE VIEW age60 AS
+SELECT m.Genre, COUNT(*) AS TicketsSold
+FROM Tickets t
+JOIN Customers c ON t.CustomerID = c.CustomerID
+JOIN Screenings s ON t.ScreeningID = s.ScreeningID
+JOIN Movies m ON s.MovieID = m.MovieID
+WHERE TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 41 AND 60
+GROUP BY m.Genre
+ORDER BY TicketsSold DESC;
+
+-- age 60+
+CREATE OR REPLACE VIEW ageabove60 AS
+SELECT m.Genre, COUNT(*) AS TicketsSold
+FROM Tickets t
+JOIN Customers c ON t.CustomerID = c.CustomerID
+JOIN Screenings s ON t.ScreeningID = s.ScreeningID
+JOIN Movies m ON s.MovieID = m.MovieID
+WHERE TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) > 60
+GROUP BY m.Genre
+ORDER BY TicketsSold DESC;
+
+-- genre-screening
+CREATE OR REPLACE VIEW genre_screening AS
+SELECT m.Genre, COUNT(*) AS TotalScreenings
+FROM Screenings s
+JOIN Movies m ON s.MovieID = m.MovieID
+GROUP BY m.Genre
+ORDER BY Genre;
+
+-- Age-time
+CREATE OR REPLACE VIEW age_time_30 AS
+WITH AgeGroups AS (
+  SELECT '13-17' AS AgeGroup
+  UNION SELECT '18-25'
+  UNION SELECT '26-40'
+  UNION SELECT '41-60'
+  UNION SELECT '60+'
+),
+AllTimes AS (
+  SELECT DISTINCT ScreeningTime 
+  FROM Screenings
+  WHERE ScreeningDate >= CURDATE() - INTERVAL 30 DAY
+),
+AllCombinations AS (
+  SELECT ag.AgeGroup, at.ScreeningTime
+  FROM AgeGroups ag
+  CROSS JOIN AllTimes at
+),
+TicketCounts AS (
+  SELECT
+    CASE
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 13 AND 17 THEN '13-17'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 18 AND 25 THEN '18-25'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 26 AND 40 THEN '26-40'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 41 AND 60 THEN '41-60'
+      ELSE '60+'
+    END AS AgeGroup,
+    s.ScreeningTime,
+    COUNT(*) AS TicketsSold
+  FROM Tickets t
+  JOIN Customers c ON t.CustomerID = c.CustomerID
+  JOIN Screenings s ON t.ScreeningID = s.ScreeningID
+  WHERE c.DOB IS NOT NULL
+    AND s.ScreeningDate >= CURDATE() - INTERVAL 30 DAY
+  GROUP BY AgeGroup, s.ScreeningTime
+)
+SELECT ac.AgeGroup, ac.ScreeningTime, COALESCE(tc.TicketsSold, 0) AS TicketsSold
+FROM AllCombinations ac
+LEFT JOIN TicketCounts tc
+  ON ac.AgeGroup = tc.AgeGroup AND ac.ScreeningTime = tc.ScreeningTime
+ORDER BY ac.AgeGroup, ac.ScreeningTime;
+
+-- Age-time
+CREATE OR REPLACE VIEW age_time_90 AS
+WITH AgeGroups AS (
+  SELECT '13-17' AS AgeGroup
+  UNION SELECT '18-25'
+  UNION SELECT '26-40'
+  UNION SELECT '41-60'
+  UNION SELECT '60+'
+),
+AllTimes AS (
+  SELECT DISTINCT ScreeningTime 
+  FROM Screenings
+  WHERE ScreeningDate >= CURDATE() - INTERVAL 90 DAY
+),
+AllCombinations AS (
+  SELECT ag.AgeGroup, at.ScreeningTime
+  FROM AgeGroups ag
+  CROSS JOIN AllTimes at
+),
+TicketCounts AS (
+  SELECT
+    CASE
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 13 AND 17 THEN '13-17'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 18 AND 25 THEN '18-25'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 26 AND 40 THEN '26-40'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 41 AND 60 THEN '41-60'
+      ELSE '60+'
+    END AS AgeGroup,
+    s.ScreeningTime,
+    COUNT(*) AS TicketsSold
+  FROM Tickets t
+  JOIN Customers c ON t.CustomerID = c.CustomerID
+  JOIN Screenings s ON t.ScreeningID = s.ScreeningID
+  WHERE c.DOB IS NOT NULL
+    AND s.ScreeningDate >= CURDATE() - INTERVAL 90 DAY
+  GROUP BY AgeGroup, s.ScreeningTime
+)
+SELECT ac.AgeGroup, ac.ScreeningTime, COALESCE(tc.TicketsSold, 0) AS TicketsSold
+FROM AllCombinations ac
+LEFT JOIN TicketCounts tc
+  ON ac.AgeGroup = tc.AgeGroup AND ac.ScreeningTime = tc.ScreeningTime
+ORDER BY ac.AgeGroup, ac.ScreeningTime;
+
+-- Age-time
+CREATE OR REPLACE VIEW age_time_year AS
+WITH AgeGroups AS (
+  SELECT '13-17' AS AgeGroup
+  UNION SELECT '18-25'
+  UNION SELECT '26-40'
+  UNION SELECT '41-60'
+  UNION SELECT '60+'
+),
+AllTimes AS (
+  SELECT DISTINCT ScreeningTime 
+  FROM Screenings
+  WHERE ScreeningDate >= CURDATE() - INTERVAL 365 DAY
+),
+AllCombinations AS (
+  SELECT ag.AgeGroup, at.ScreeningTime
+  FROM AgeGroups ag
+  CROSS JOIN AllTimes at
+),
+TicketCounts AS (
+  SELECT
+    CASE
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 13 AND 17 THEN '13-17'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 18 AND 25 THEN '18-25'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 26 AND 40 THEN '26-40'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 41 AND 60 THEN '41-60'
+      ELSE '60+'
+    END AS AgeGroup,
+    s.ScreeningTime,
+    COUNT(*) AS TicketsSold
+  FROM Tickets t
+  JOIN Customers c ON t.CustomerID = c.CustomerID
+  JOIN Screenings s ON t.ScreeningID = s.ScreeningID
+  WHERE c.DOB IS NOT NULL
+    AND s.ScreeningDate >= CURDATE() - INTERVAL 365 DAY
+  GROUP BY AgeGroup, s.ScreeningTime
+)
+SELECT ac.AgeGroup, ac.ScreeningTime, COALESCE(tc.TicketsSold, 0) AS TicketsSold
+FROM AllCombinations ac
+LEFT JOIN TicketCounts tc
+  ON ac.AgeGroup = tc.AgeGroup AND ac.ScreeningTime = tc.ScreeningTime
+ORDER BY ac.AgeGroup, ac.ScreeningTime;
+
+
+-- Age-time
+CREATE OR REPLACE VIEW age_time_all AS
+WITH AgeGroups AS (
+  SELECT '13-17' AS AgeGroup
+  UNION SELECT '18-25'
+  UNION SELECT '26-40'
+  UNION SELECT '41-60'
+  UNION SELECT '60+'
+),
+AllTimes AS (
+  SELECT DISTINCT ScreeningTime 
+  FROM Screenings
+),
+AllCombinations AS (
+  SELECT ag.AgeGroup, at.ScreeningTime
+  FROM AgeGroups ag
+  CROSS JOIN AllTimes at
+),
+TicketCounts AS (
+  SELECT
+    CASE
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 13 AND 17 THEN '13-17'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 18 AND 25 THEN '18-25'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 26 AND 40 THEN '26-40'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 41 AND 60 THEN '41-60'
+      ELSE '60+'
+    END AS AgeGroup,
+    s.ScreeningTime,
+    COUNT(*) AS TicketsSold
+  FROM Tickets t
+  JOIN Customers c ON t.CustomerID = c.CustomerID
+  JOIN Screenings s ON t.ScreeningID = s.ScreeningID
+  WHERE c.DOB IS NOT NULL
+  GROUP BY AgeGroup, s.ScreeningTime
+)
+SELECT ac.AgeGroup, ac.ScreeningTime, COALESCE(tc.TicketsSold, 0) AS TicketsSold
+FROM AllCombinations ac
+LEFT JOIN TicketCounts tc
+  ON ac.AgeGroup = tc.AgeGroup AND ac.ScreeningTime = tc.ScreeningTime
+ORDER BY ac.AgeGroup, ac.ScreeningTime;
+
+-- Age-Format
+CREATE OR REPLACE VIEW age_format_30 AS
+WITH AgeGroups AS (
+  SELECT '13-17' AS AgeGroup, 13 AS AgeMin, 17 AS AgeMax
+  UNION ALL SELECT '18-25', 18, 25
+  UNION ALL SELECT '26-40', 26, 40
+  UNION ALL SELECT '41-60', 41, 60
+  UNION ALL SELECT '60+', 61, 200
+),
+Formats AS (
+  SELECT DISTINCT MovieFormat FROM Screenings
+),
+Sales AS (
+  SELECT
+    CASE
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 13 AND 17 THEN '13-17'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 18 AND 25 THEN '18-25'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 26 AND 40 THEN '26-40'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 41 AND 60 THEN '41-60'
+      ELSE '60+'
+    END AS AgeGroup,
+    s.MovieFormat,
+    COUNT(*) AS TicketsSold
+  FROM Tickets t
+  JOIN Customers c ON t.CustomerID = c.CustomerID
+  JOIN Screenings s ON t.ScreeningID = s.ScreeningID
+  WHERE c.DOB IS NOT NULL
+    AND s.ScreeningDate >= CURDATE() - INTERVAL 30 DAY
+  GROUP BY AgeGroup, s.MovieFormat
+)
+SELECT 
+  a.AgeGroup,
+  f.MovieFormat,
+  COALESCE(s.TicketsSold, 0) AS TicketsSold
+FROM AgeGroups a
+CROSS JOIN Formats f
+LEFT JOIN Sales s ON s.AgeGroup = a.AgeGroup AND s.MovieFormat = f.MovieFormat
+ORDER BY a.AgeMin, f.MovieFormat;
+
+-- Age-Format
+CREATE OR REPLACE VIEW age_format_90 AS
+WITH AgeGroups AS (
+  SELECT '13-17' AS AgeGroup, 13 AS AgeMin, 17 AS AgeMax
+  UNION ALL SELECT '18-25', 18, 25
+  UNION ALL SELECT '26-40', 26, 40
+  UNION ALL SELECT '41-60', 41, 60
+  UNION ALL SELECT '60+', 61, 200
+),
+Formats AS (
+  SELECT DISTINCT MovieFormat FROM Screenings
+),
+Sales AS (
+  SELECT
+    CASE
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 13 AND 17 THEN '13-17'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 18 AND 25 THEN '18-25'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 26 AND 40 THEN '26-40'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 41 AND 60 THEN '41-60'
+      ELSE '60+'
+    END AS AgeGroup,
+    s.MovieFormat,
+    COUNT(*) AS TicketsSold
+  FROM Tickets t
+  JOIN Customers c ON t.CustomerID = c.CustomerID
+  JOIN Screenings s ON t.ScreeningID = s.ScreeningID
+  WHERE c.DOB IS NOT NULL
+    AND s.ScreeningDate >= CURDATE() - INTERVAL 90 DAY
+  GROUP BY AgeGroup, s.MovieFormat
+)
+SELECT 
+  a.AgeGroup,
+  f.MovieFormat,
+  COALESCE(s.TicketsSold, 0) AS TicketsSold
+FROM AgeGroups a
+CROSS JOIN Formats f
+LEFT JOIN Sales s ON s.AgeGroup = a.AgeGroup AND s.MovieFormat = f.MovieFormat
+ORDER BY a.AgeMin, f.MovieFormat;
+
+-- Age-Format
+CREATE OR REPLACE VIEW age_format_year AS
+WITH AgeGroups AS (
+  SELECT '13-17' AS AgeGroup, 13 AS AgeMin, 17 AS AgeMax
+  UNION ALL SELECT '18-25', 18, 25
+  UNION ALL SELECT '26-40', 26, 40
+  UNION ALL SELECT '41-60', 41, 60
+  UNION ALL SELECT '60+', 61, 200
+),
+Formats AS (
+  SELECT DISTINCT MovieFormat FROM Screenings
+),
+Sales AS (
+  SELECT
+    CASE
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 13 AND 17 THEN '13-17'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 18 AND 25 THEN '18-25'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 26 AND 40 THEN '26-40'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 41 AND 60 THEN '41-60'
+      ELSE '60+'
+    END AS AgeGroup,
+    s.MovieFormat,
+    COUNT(*) AS TicketsSold
+  FROM Tickets t
+  JOIN Customers c ON t.CustomerID = c.CustomerID
+  JOIN Screenings s ON t.ScreeningID = s.ScreeningID
+  WHERE c.DOB IS NOT NULL
+    AND s.ScreeningDate >= CURDATE() - INTERVAL 365 DAY
+  GROUP BY AgeGroup, s.MovieFormat
+)
+SELECT 
+  a.AgeGroup,
+  f.MovieFormat,
+  COALESCE(s.TicketsSold, 0) AS TicketsSold
+FROM AgeGroups a
+CROSS JOIN Formats f
+LEFT JOIN Sales s ON s.AgeGroup = a.AgeGroup AND s.MovieFormat = f.MovieFormat
+ORDER BY a.AgeMin, f.MovieFormat;
+
+-- Age-Format
+CREATE OR REPLACE VIEW age_format_all AS
+WITH AgeGroups AS (
+  SELECT '13-17' AS AgeGroup, 13 AS AgeMin, 17 AS AgeMax
+  UNION ALL SELECT '18-25', 18, 25
+  UNION ALL SELECT '26-40', 26, 40
+  UNION ALL SELECT '41-60', 41, 60
+  UNION ALL SELECT '60+', 61, 200
+),
+Formats AS (
+  SELECT DISTINCT MovieFormat FROM Screenings
+),
+Sales AS (
+  SELECT
+    CASE
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 13 AND 17 THEN '13-17'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 18 AND 25 THEN '18-25'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 26 AND 40 THEN '26-40'
+      WHEN TIMESTAMPDIFF(YEAR, c.DOB, CURDATE()) BETWEEN 41 AND 60 THEN '41-60'
+      ELSE '60+'
+    END AS AgeGroup,
+    s.MovieFormat,
+    COUNT(*) AS TicketsSold
+  FROM Tickets t
+  JOIN Customers c ON t.CustomerID = c.CustomerID
+  JOIN Screenings s ON t.ScreeningID = s.ScreeningID
+  WHERE c.DOB IS NOT NULL
+  GROUP BY AgeGroup, s.MovieFormat
+)
+SELECT 
+  a.AgeGroup,
+  f.MovieFormat,
+  COALESCE(s.TicketsSold, 0) AS TicketsSold
+FROM AgeGroups a
+CROSS JOIN Formats f
+LEFT JOIN Sales s ON s.AgeGroup = a.AgeGroup AND s.MovieFormat = f.MovieFormat
+ORDER BY a.AgeMin, f.MovieFormat;
+
+-- Format-Performance
+CREATE OR REPLACE VIEW genre_format_30 AS
+SELECT 
+    m.Genre AS MovieGenre,
+    s.MovieFormat,
+    COUNT(t.TicketID) AS TotalTicketsSold,
+    IFNULL(SUM(p.Amount), 0) AS TotalRevenue
+FROM 
+    Movies m
+JOIN 
+    Screenings s ON m.MovieID = s.MovieID
+JOIN 
+    Tickets t ON s.ScreeningID = t.ScreeningID
+LEFT JOIN 
+    Payments p ON t.TicketID = p.TicketID
+WHERE 
+    p.PayTime >= NOW() - INTERVAL 30 DAY
+GROUP BY 
+    m.Genre, s.MovieFormat
+ORDER BY 
+    MovieFormat;
+    
+-- Format-Performance
+CREATE OR REPLACE VIEW genre_format_30 AS
+SELECT 
+    m.Genre AS MovieGenre,
+    s.MovieFormat,
+    COUNT(t.TicketID) AS TotalTicketsSold,
+    IFNULL(SUM(p.Amount), 0) AS TotalRevenue
+FROM 
+    Movies m
+JOIN 
+    Screenings s ON m.MovieID = s.MovieID
+JOIN 
+    Tickets t ON s.ScreeningID = t.ScreeningID
+LEFT JOIN 
+    Payments p ON t.TicketID = p.TicketID
+WHERE 
+    p.PayTime >= NOW() - INTERVAL 30 DAY
+GROUP BY 
+    m.Genre, s.MovieFormat
+ORDER BY 
+    MovieFormat;
+    
+-- Format-Performance
+CREATE OR REPLACE VIEW genre_format_90 AS
+SELECT 
+    m.Genre AS MovieGenre,
+    s.MovieFormat,
+    COUNT(t.TicketID) AS TotalTicketsSold,
+    IFNULL(SUM(p.Amount), 0) AS TotalRevenue
+FROM 
+    Movies m
+JOIN 
+    Screenings s ON m.MovieID = s.MovieID
+JOIN 
+    Tickets t ON s.ScreeningID = t.ScreeningID
+LEFT JOIN 
+    Payments p ON t.TicketID = p.TicketID
+WHERE 
+    p.PayTime >= NOW() - INTERVAL 90 DAY
+GROUP BY 
+    m.Genre, s.MovieFormat
+ORDER BY 
+    MovieFormat;
+    
+-- Format-Performance
+CREATE OR REPLACE VIEW genre_format_year AS
+SELECT 
+    m.Genre AS MovieGenre,
+    s.MovieFormat,
+    COUNT(t.TicketID) AS TotalTicketsSold,
+    IFNULL(SUM(p.Amount), 0) AS TotalRevenue
+FROM 
+    Movies m
+JOIN 
+    Screenings s ON m.MovieID = s.MovieID
+JOIN 
+    Tickets t ON s.ScreeningID = t.ScreeningID
+LEFT JOIN 
+    Payments p ON t.TicketID = p.TicketID
+WHERE 
+    p.PayTime >= NOW() - INTERVAL 365 DAY
+GROUP BY 
+    m.Genre, s.MovieFormat
+ORDER BY 
+    MovieFormat;
+    
+-- Format-Performance
+CREATE OR REPLACE VIEW genre_format_all AS
+SELECT 
+    m.Genre AS MovieGenre,
+    s.MovieFormat,
+    COUNT(t.TicketID) AS TotalTicketsSold,
+    IFNULL(SUM(p.Amount), 0) AS TotalRevenue
+FROM 
+    Movies m
+JOIN 
+    Screenings s ON m.MovieID = s.MovieID
+JOIN 
+    Tickets t ON s.ScreeningID = t.ScreeningID
+LEFT JOIN 
+    Payments p ON t.TicketID = p.TicketID
+GROUP BY 
+    m.Genre, s.MovieFormat
+ORDER BY 
+    MovieFormat;
+

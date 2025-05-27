@@ -11,10 +11,16 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.dates as mdates
 from matplotlib.ticker import MaxNLocator
+from tkinter import filedialog
 import os
 from TicketSearch import ticket_searching
+import warnings
+import ttkbootstrap as tb
+from ttkbootstrap.constants import *
+
 
 base_dir = os.path.dirname(__file__)
+warnings.filterwarnings("ignore", message="pandas only supports SQLAlchemy")
 class Liemora(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -430,10 +436,10 @@ class SeatBooking(tk.Toplevel):
         # Check if the seat is already selected
         if seat_number in self.selected_seats:
         # Deselect the seat
-            self.seat_buttons[seat_number].config(bg="white", fg = "black")  # Reset to default color
+            self.seat_buttons[seat_number].config(bg="white", fg = "black")
             del self.selected_seats[seat_number]
         else:
-            # Select the seat
+
             self.seat_buttons[seat_number].config(bg="blue", fg = "white")
             self.selected_seats[seat_number] = True
         # Update total selected seats and price
@@ -682,123 +688,273 @@ class CustomerFormApp(tk.Toplevel):
         self.year_entry.bind('<FocusOut>', self.check_auto_discount)
     
        
-class Admin(tk.Toplevel):
+class Admin(tb.Window):
     def __init__(self, main):
-        super().__init__(main)
+        super().__init__(themename="litera")
         self.title("Liemora's Report")
-        self.geometry("1350x750")
+        self.geometry("1600x900")
         self.resizable(False, False)
         self.configure(bg="white")
         self.main = main
         self.protocol("WM_DELETE_WINDOW", self.on_close)
+        self.sort_orders = {}
+        self.sort_states = {}
+        self.current_dataframe = None
+        self.current_dataframe2 = None
+        self.current_dataframe3 = None
+        self.current_figure = None
+        self.current_figure2 = None
+        self.current_figure3 = None
 
-        # Style configuration
-        style = ttk.Style()
-        style.theme_use('default')
-        fixed_width = 20
-        style.configure('TNotebook.Tab',width=fixed_width,padding=[0, 10],anchor='center',font=('Helvetica', 12, 'bold'))
 
-        tab_control = ttk.Notebook(self)
-        tab_control.pack(expand=True, fill='both')
-        self.tab1 = ttk.Frame(tab_control)
-        self.tab2 = ttk.Frame(tab_control)
-        self.tab3 = ttk.Frame(tab_control)
 
-        tab_control.add(self.tab1, text='Sales Overview')
-        tab_control.add(self.tab2, text='Performance Report')
-        tab_control.add(self.tab3, text='Customer Insight')
+        self.tab_control = tb.Notebook(self)
+        self.tab_control.pack(expand=True, fill='both', padx=20, pady=20)
+        self.tab1 = tb.Frame(self.tab_control)
+        self.tab2 = tb.Frame(self.tab_control)
+        self.tab3 = tb.Frame(self.tab_control)
+
+        self.tab_control.add(self.tab1, text='📊 Sales Overview')
+        self.tab_control.add(self.tab2, text='📈 Performance Report')
+        self.tab_control.add(self.tab3, text='👥 Customer Insight')
+
+        self.tab_control.bind("<<NotebookTabChanged>>", self.on_tab_changed)
+
 
         for tab in (self.tab1, self.tab2, self.tab3):
-            main_frame = tk.Frame(tab)
+            main_frame = tb.Frame(tab)
             main_frame.pack(fill="both", expand=True)
 
-            left_frame = tk.Frame(main_frame, width=160, bg="lightgrey")
-            left_frame.pack(side="left", fill="y")
+            self.left_frame = tb.Frame(main_frame, width=180)
+            self.left_frame.pack(side="left", fill="y")
 
-            right_frame = tk.Frame(main_frame)
+            right_frame = tb.Frame(main_frame)
             right_frame.pack(side="right", fill="both", expand=True)
 
             #Button
             if tab == self.tab1:
-                self.graph_frame = tk.Frame(right_frame)
+                self.graph_frame = tb.Frame(right_frame)
                 self.graph_frame.pack(fill="both", expand=True)
-                self.buttons_frame = tk.Frame(right_frame)
+                self.buttons_frame = tb.Frame(right_frame)
                 self.buttons_frame.pack(fill="x", pady=10)
 
                 #Left buttons
-                tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5,side="bottom")
-                tk.Button(left_frame, width=20, height=2, text="Total Revenue",command=self.display_total_revenue).pack(pady=3, padx=5)
-                tk.Button(left_frame,width=20,height=2, text="Revenue Trends", command=self.display_revenue_sales_chart).pack(pady=3,padx=5)
-                tk.Button(left_frame, text="Ticket Sold", width=20, height=2, command=self.display_ticket).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="Tickets Sold Trend", width=20, height=2,command=self.display_ticket_chart).pack(pady=3, padx=5)
+                tb.Button(self.left_frame, text="Logout",width=20, command=self.logout).pack(pady=3,padx=5,side="bottom",ipady=10)
+                tb.Button(self.left_frame, text="Export as Excel\n(With PNG if available)", width=20, command=self.excel_export).pack(pady=3,padx=5,side="bottom",ipady=10)
+                tb.Button(self.left_frame, width=20,  text="Total Revenue",command=self.display_total_revenue).pack(pady=3, padx=5,ipady=10)
+                tb.Button(self.left_frame,width=20, text="Revenue Trends", command=self.display_revenue_sales_chart).pack(pady=3,padx=5,ipady=10)
+                tb.Button(self.left_frame, text="Total Ticket Sold", width=20,  command=self.display_ticket).pack(pady=3, padx=5,ipady=10)
+                tb.Button(self.left_frame, text="Tickets Sold Trend", width=20, command=self.display_ticket_chart).pack(pady=3, padx=5,ipady=10)
 
                 #Revenue and ticket trend buttons
-                self.all_time_btn = tk.Button(self.buttons_frame, text="All time", width=20, height=2,
+                self.all_time_btn = tb.Button(self.buttons_frame, text="All time", width=20,
                                               command=lambda: self.update_chart_by_range("all"))
-                self.last_year_btn = tk.Button(self.buttons_frame, text="Last year", width=20, height=2,
+                self.last_year_btn = tb.Button(self.buttons_frame, text="Last year", width=20,
                                                command=lambda: self.update_chart_by_range("year"))
-                self.last_6_months_btn = tk.Button(self.buttons_frame, text="Last 6 months", width=20, height=2,
+                self.last_6_months_btn = tb.Button(self.buttons_frame, text="Last 6 months", width=20,
                                                    command=lambda: self.update_chart_by_range("6m"))
-                self.last_30_days_btn = tk.Button(self.buttons_frame, text="Last 30 days", width=20, height=2,
+                self.last_30_days_btn = tb.Button(self.buttons_frame, text="Last 30 days", width=20,
                                                   command=lambda: self.update_chart_by_range("30"))
 
                 #Revenue
-                self.revenue_daily_btn = tk.Button(self.buttons_frame, text="Daily",width=20,height=2,command=self.revenue_daily)
-                self.revenue_monthly_btn = tk.Button(self.buttons_frame, text="Monthly", width=20, height=2,command=self.revenue_monthly)
-                self.revenue_quarterly_btn = tk.Button(self.buttons_frame, text="Quarterly", width=20, height=2,command=self.revenue_quarterly)
-                self.revenue_yearly_btn = tk.Button(self.buttons_frame, text="Yearly", width=20, height=2,command=self.revenue_yearly)
+                self.revenue_daily_btn = tb.Button(self.buttons_frame, text="Daily",width=20,command=self.revenue_daily)
+                self.revenue_monthly_btn = tb.Button(self.buttons_frame, text="Monthly", width=20, command=self.revenue_monthly)
+                self.revenue_quarterly_btn = tb.Button(self.buttons_frame, text="Quarterly", width=20, command=self.revenue_quarterly)
+                self.revenue_yearly_btn = tb.Button(self.buttons_frame, text="Yearly", width=20, command=self.revenue_yearly)
 
                 #Ticket
-                self.ticket_daily_btn = tk.Button(self.buttons_frame, text="Daily", width=20, height=2,command=self.ticket_daily)
-                self.ticket_monthly_btn = tk.Button(self.buttons_frame, text="Monthly", width=20, height=2,command=self.ticket_monthly)
-                self.ticket_quarterly_btn = tk.Button(self.buttons_frame, text="Quarterly", width=20, height=2,command=self.ticket_quarterly)
-                self.ticket_yearly_btn = tk.Button(self.buttons_frame, text="Yearly", width=20, height=2,command=self.ticket_yearly)
+                self.ticket_daily_btn = tb.Button(self.buttons_frame, text="Daily", width=20, command=self.ticket_daily)
+                self.ticket_monthly_btn = tb.Button(self.buttons_frame, text="Monthly", width=20,command=self.ticket_monthly)
+                self.ticket_quarterly_btn = tb.Button(self.buttons_frame, text="Quarterly", width=20, command=self.ticket_quarterly)
+                self.ticket_yearly_btn = tb.Button(self.buttons_frame, text="Yearly", width=20, command=self.ticket_yearly)
 
             elif tab == self.tab2:
-                self.graph_frame2 = tk.Frame(right_frame)
+                self.graph_frame2 = tb.Frame(right_frame)
                 self.graph_frame2.pack(fill="both", expand=True)
-                self.buttons_frame2 = tk.Frame(right_frame)
+                self.buttons_frame2 = tb.Frame(right_frame)
                 self.buttons_frame2.pack(fill="x", pady=10)
 
-                tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5,side="bottom")
-                tk.Button(left_frame, text="Movie Performance", width=20, height=2,command=self.display_movie).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="Occupation Rate", width=20, height=2, command=self.display_occupation).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="Screening Time", width=20, height=2,command=self.display_screeningtime).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="Weekday Performance", width=20, height=2,command=self.day_performance).pack(pady=3, padx=5)
+                tb.Button(self.left_frame, text="Logout",width=20,command=self.logout).pack(pady=3, padx=5,ipady=10,side="bottom",)
+                tb.Button(self.left_frame, text="Movie Performance", width=20, command=self.display_movie).pack(pady=3, padx=5,ipady=10)
+                tb.Button(self.left_frame, text="Occupation Rate", width=20,  command=self.display_occupation).pack(pady=3, padx=5,ipady=10)
+                tb.Button(self.left_frame, text="Screening Time", width=20, command=self.display_screening_time).pack(pady=3, padx=5,ipady=10)
+                tb.Button(self.left_frame, text="Weekday Performance", width=20, command=self.day_performance).pack(pady=3, padx=5,ipady=10)
+                tb.Button(self.left_frame, text="Movie Format", width=20,
+                          command=self.format_performance).pack(pady=3, padx=5,ipady=10)
+                tb.Button(self.left_frame, text="Export as Excel\n(With PNG if available)", width=20,
+                                              command=self.excel_export2).pack(pady=3, padx=5,ipady=10, side="bottom")
 
                 #Movies
-                self.last_14days = tk.Button(self.buttons_frame2, text="Last 14 days", width=20, height=2,command=self.display_movie14)
-                self.last_30days = tk.Button(self.buttons_frame2, text="Last 30 days", width=20, height=2,command=self.display_movie30)
-                self.last_60days = tk.Button(self.buttons_frame2, text="Last 60 days", width=20, height=2,command=self.display_movie60)
+                self.last_14days = tb.Button(self.buttons_frame2, text="Last 14 days", width=20,command=self.display_movie14)
+                self.last_30days = tb.Button(self.buttons_frame2, text="Last 30 days", width=20, command=self.display_movie30)
+                self.last_60days = tb.Button(self.buttons_frame2, text="Last 60 days", width=20, command=self.display_movie60)
 
                 #Occupation
-                self.Occupation_table = tk.Button(self.buttons_frame2, text="Table", width=20, height=2,
+                self.Occupation_table = tb.Button(self.buttons_frame2, text="Table", width=20,
                                              command=self.display_occupation_table)
-                self.Occupation_graph = tk.Button(self.buttons_frame2, text="Graph", width=20, height=2,
+                self.Occupation_graph = tb.Button(self.buttons_frame2, text="Graph", width=20,
                                                   command=self.display_occupation_graph)
 
                 #Screening
-                self.screening30 = tk.Button(self.buttons_frame2, text="Last 30 days", width=20, height=2,
+                self.screening30 = tb.Button(self.buttons_frame2, text="Last 30 days", width=20,
                                              command=self.display_screening30)
-                self.screening90 = tk.Button(self.buttons_frame2, text="Last 90 days", width=20, height=2,
+                self.screening90 = tb.Button(self.buttons_frame2, text="Last 90 days", width=20,
                                            command=self.display_screening90)
-                self.screening = tk.Button(self.buttons_frame2, text="All time", width=20, height=2,
+                self.screening = tb.Button(self.buttons_frame2, text="All time", width=20,
                                            command=self.display_screening)
                 #Day Performance
-                self.day_30 = tk.Button(self.buttons_frame2, text="Last 30 days", width=20, height=2,
+                self.day_30 = tb.Button(self.buttons_frame2, text="Last 30 days", width=20,
                                              command=self.display_day30)
-                self.day_90 = tk.Button(self.buttons_frame2, text="Last 90 days", width=20, height=2,
+                self.day_90 = tb.Button(self.buttons_frame2, text="Last 90 days", width=20,
                                              command=self.display_day90)
-                self.day_all = tk.Button(self.buttons_frame2, text="All time", width=20, height=2,
+                self.day_all = tb.Button(self.buttons_frame2, text="All time", width=20,
                                              command=self.display_day_all)
+                #Format Performance
+                self.format_30_bt = tb.Button(self.buttons_frame2, text="Last 30 days", width=20,
+                                         command=self.format_30)
+                self.format_90_bt = tb.Button(self.buttons_frame2, text="Last 90 days", width=20,
+                                         command=self.format_90)
+                self.format_year_bt = tb.Button(self.buttons_frame2, text="Last year", width=20,
+                                         command=self.format_year)
+                self.format_all_bt = tb.Button(self.buttons_frame2, text="All time", width=20,
+                                         command=self.format_all)
 
             elif tab == self.tab3:
-                tk.Button(left_frame, text="Logout",width=20,height=2, command=self.logout).pack(pady=3,padx=5,side="bottom")
-                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
-                tk.Button(left_frame, text="PLACEHOLDER", width=20, height=2, ).pack(pady=3, padx=5)
+                self.graph_frame3 = tb.Frame(right_frame)
+                self.graph_frame3.pack(fill="both", expand=True)
+                self.buttons_frame3 = tb.Frame(right_frame)
+                self.buttons_frame3.pack(fill="x", pady=10)
 
+                tb.Button(self.left_frame, text="Logout",width=20, command=self.logout).pack(pady=3, padx=5,ipady=10,side="bottom")
+                tb.Button(self.left_frame, text="Age Distribution", width=20, command=self.display_age).pack(pady=3, padx=5,ipady=10)
+                tb.Button(self.left_frame, text="Genre By Age", width=20, command=self.display_age_genre).pack(pady=3, padx=5,ipady=10)
+                tb.Button(self.left_frame, text="Time Preference By Age", width=20,command=self.display_time_age).pack(pady=3, padx=5,ipady=10)
+                tb.Button(self.left_frame, text="Format Preference By Age", width=20,command=self.display_format_age).pack(pady=3, padx=5,ipady=10)
+                tb.Button(self.left_frame, text="Export as Excel\n(With PNG if available)", width=20,
+                                               command=self.excel_export3).pack(pady=3, padx=5,ipady=10, side="bottom")
+
+                #Age
+                self.age_90 = tb.Button(self.buttons_frame3, text="Last 90 days", width=20,
+                                        command=self.age90)
+                self.age_year = tb.Button(self.buttons_frame3, text="Last year", width=20,
+                                        command=self.ageyear)
+                self.age_all = tb.Button(self.buttons_frame3, text="All time", width=20,
+                                         command=self.ageall)
+                #Age-Genre
+                self.genre_17 = tb.Button(self.buttons_frame3, text="Age 12-17", width=20,
+                                        command=self.genre17)
+                self.genre_25 = tb.Button(self.buttons_frame3, text="Age 18-25", width=20,
+                                        command=self.genre25)
+                self.genre_40 = tb.Button(self.buttons_frame3, text="Age 26-40", width=20,
+                                        command=self.genre40)
+                self.genre_60 = tb.Button(self.buttons_frame3, text="Age 41-60", width=20,
+                                          command=self.genre60)
+                self.genre_above = tb.Button(self.buttons_frame3, text="Above 60+", width=20,
+                                          command=self.genre_above_60)
+                self.genre_screening = tb.Button(self.buttons_frame3, text="Genre Screening Count", width=20,
+                                             command=self.genre_screening_1)
+
+                #Age-ScreeningTime
+                self.age_time_30_bt = tb.Button(self.buttons_frame3, text="Last 30 days", width=20,
+                                          command=self.age_time_30)
+                self.age_time_90_bt = tb.Button(self.buttons_frame3, text="Last 90 days", width=20,
+                                          command=self.age_time_90)
+                self.age_time_year_bt = tb.Button(self.buttons_frame3, text="Last year", width=20,
+                                          command=self.age_time_year)
+                self.age_time_all_bt = tb.Button(self.buttons_frame3, text="All time", width=20,
+                                          command=self.age_time_all)
+                #Age-Format
+                self.age_format_30_bt = tb.Button(self.buttons_frame3, text="Last 30 days", width=20,
+                                                 command=self.age_format_30)
+                self.age_format_90_bt = tb.Button(self.buttons_frame3, text="Last 90 days", width=20,
+                                                 command=self.age_format_90)
+                self.age_format_year_bt = tb.Button(self.buttons_frame3, text="Last year", width=20,
+                                                 command=self.age_format_year)
+                self.age_format_all_bt = tb.Button(self.buttons_frame3, text="All time", width=20,
+                                                 command=self.age_format_all)
+
+    def on_tab_changed(self, event):
+        selected_tab = self.tab_control.select()
+        tab_index = self.tab_control.index(selected_tab)
+
+        if tab_index == 0:
+            for widget in self.graph_frame.winfo_children():
+                widget.destroy()
+            self.graph_frame.update_idletasks()
+        elif tab_index == 1:
+            for widget in self.graph_frame2.winfo_children():
+                widget.destroy()
+            self.graph_frame2.update_idletasks()
+        elif tab_index == 2:
+            for widget in self.graph_frame3.winfo_children():
+                widget.destroy()
+            self.graph_frame3.update_idletasks()
+
+        self.left_frame.update()
+        self.left_frame.update_idletasks()
+        self.tab_control.update()
+        self.update_idletasks()
+    def excel_export(self):
+        if self.current_dataframe is None:
+            return
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".xlsx",
+            filetypes=[("Excel files", "*.xlsx")],
+            title="Save as Excel"
+        )
+        if file_path:
+            try:
+
+                self.current_dataframe.to_excel(file_path, index=False)
+
+
+                if hasattr(self, 'current_figure') and self.current_figure:
+                    image_path = os.path.splitext(file_path)[0] + ".png"
+                    self.current_figure.savefig(image_path, dpi=300)
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to export:\n{e}")
+    def excel_export2(self):
+        if self.current_dataframe2 is None:
+            return
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".xlsx",
+            filetypes=[("Excel files", "*.xlsx")],
+            title="Save as Excel"
+        )
+        if file_path:
+            try:
+
+                self.current_dataframe2.to_excel(file_path, index=False)
+
+                if hasattr(self, 'current_figure') and self.current_figure2:
+                    image_path = os.path.splitext(file_path)[0] + ".png"
+                    self.current_figure2.savefig(image_path, dpi=300)
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to export:\n{e}")
+    def excel_export3(self):
+        if self.current_dataframe3 is None:
+            return
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".xlsx",
+            filetypes=[("Excel files", "*.xlsx")],
+            title="Save as Excel"
+        )
+        if file_path:
+            try:
+
+                self.current_dataframe3.to_excel(file_path, index=False)
+
+                if hasattr(self, 'current_figure') and self.current_figure3:
+                    image_path = os.path.splitext(file_path)[0] + ".png"
+                    self.current_figure3.savefig(image_path, dpi=300)
+
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to export:\n{e}")
     #DEF TAB1
     def on_close(self):
         if self.main.mydb and self.main.mydb.is_connected():
@@ -811,7 +967,6 @@ class Admin(tk.Toplevel):
         self.main.account_entry.delete(0, tk.END)
         self.main.password_entry.delete(0, tk.END)
         self.main.deiconify()
-    #DEF Show/hide buttons
     def hide_time_range_totalrevenue(self):
         self.revenue_daily_btn.pack_forget()
         self.revenue_monthly_btn.pack_forget()
@@ -863,6 +1018,10 @@ class Admin(tk.Toplevel):
                 self.display_ticket_alltime()
     #Revenue trend
     def display_revenue_sales_chart(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        self.graph_frame.update_idletasks()
+
         query = """
                 SELECT 
                     Date, 
@@ -874,11 +1033,13 @@ class Admin(tk.Toplevel):
             """
         try:
             df = pd.read_sql(query, self.main.mydb)
+            self.current_dataframe = df.copy()
             if df.empty:
                 raise ValueError("No data found for chart.")
             df['Date'] = pd.to_datetime(df['Date'])
 
-            fig = Figure(figsize=(11, 6), dpi=100)
+            fig = Figure(figsize=(11,6), dpi=100)
+            self.current_figure = fig
             ax = fig.add_subplot(111)
             ax.plot(df['Date'], df['TotalRevenue'], marker='o', linestyle='-', color='green')
             ax.set_title("Revenue Over Last 30 Days")
@@ -888,11 +1049,9 @@ class Admin(tk.Toplevel):
             fig.autofmt_xdate()
             fig.tight_layout()
 
-            for widget in self.graph_frame.winfo_children():
-                widget.destroy()
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
             canvas.draw()
-            canvas.get_tk_widget().pack(pady=20)
+            canvas.get_tk_widget().pack(fill='both', expand=True)
         except Exception as e:
             print(f"Error generating chart: {e}")
         self.hide_time_range_ticket()
@@ -901,6 +1060,9 @@ class Admin(tk.Toplevel):
         self.chart_mode = "revenue"
         self.update_chart_by_range("30")
     def display_30_days_revenue(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        self.graph_frame.update_idletasks()
         query = """
                 SELECT 
                     Date, 
@@ -912,11 +1074,13 @@ class Admin(tk.Toplevel):
             """
         try:
             df = pd.read_sql(query, self.main.mydb)
+            self.current_dataframe = df.copy()
             if df.empty:
                 raise ValueError("No data found for chart.")
             df['Date'] = pd.to_datetime(df['Date'])
 
             fig = Figure(figsize=(11, 6), dpi=100)
+            self.current_figure = fig
             ax = fig.add_subplot(111)
             ax.plot(df['Date'], df['TotalRevenue'], marker='o', linestyle='-', color='green')
             ax.set_title("Revenue Over Last 30 Days")
@@ -926,14 +1090,16 @@ class Admin(tk.Toplevel):
             fig.autofmt_xdate()
             fig.tight_layout()
 
-            for widget in self.graph_frame.winfo_children():
-                widget.destroy()
+
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
             canvas.draw()
             canvas.get_tk_widget().pack(pady=20)
         except Exception as e:
             print(f"Error generating chart: {e}")
     def display_6_months_revenue(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        self.graph_frame.update_idletasks()
         query = """
             SELECT 
                 Date, 
@@ -945,11 +1111,13 @@ class Admin(tk.Toplevel):
         """
         try:
             df = pd.read_sql(query, self.main.mydb)
+            self.current_dataframe = df.copy()
             if df.empty:
                 raise ValueError("No data found for 6-month revenue.")
             df['Date'] = pd.to_datetime(df['Date'])
 
             fig = Figure(figsize=(11, 6), dpi=100)
+            self.current_figure = fig
             ax = fig.add_subplot(111)
             ax.plot(df['Date'], df['TotalRevenue'], marker='o', linestyle='-', color='green')
             ax.set_title("Revenue Over Last 6 Months")
@@ -959,14 +1127,15 @@ class Admin(tk.Toplevel):
             fig.autofmt_xdate()
             fig.tight_layout()
 
-            for widget in self.graph_frame.winfo_children():
-                widget.destroy()
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
             canvas.draw()
             canvas.get_tk_widget().pack(pady=20)
         except Exception as e:
             print(f"Error generating 6-month chart: {e}")
     def display_year_revenue(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        self.graph_frame.update_idletasks()
         query = """
             SELECT 
                 Date, 
@@ -978,11 +1147,13 @@ class Admin(tk.Toplevel):
         """
         try:
             df = pd.read_sql(query, self.main.mydb)
+            self.current_dataframe = df.copy()
             if df.empty:
                 raise ValueError("No data found for yearly revenue.")
             df['Date'] = pd.to_datetime(df['Date'])
 
             fig = Figure(figsize=(11, 6), dpi=100)
+            self.current_figure = fig
             ax = fig.add_subplot(111)
             ax.plot(df['Date'], df['TotalRevenue'], marker='o', linestyle='-', color='green')
             ax.set_title("Revenue Over Last Year")
@@ -993,14 +1164,15 @@ class Admin(tk.Toplevel):
             fig.tight_layout()
 
 
-            for widget in self.graph_frame.winfo_children():
-                widget.destroy()
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
             canvas.draw()
             canvas.get_tk_widget().pack(pady=20)
         except Exception as e:
             print(f"Error generating yearly chart: {e}")
     def display_alltime_revenue(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        self.graph_frame.update_idletasks()
         query = """
             SELECT 
                 Date, 
@@ -1012,10 +1184,12 @@ class Admin(tk.Toplevel):
         """
         try:
             df = pd.read_sql(query, self.main.mydb)
+            self.current_dataframe = df.copy()
             if df.empty:
                 raise ValueError("No data found for all-time revenue.")
 
             fig = Figure(figsize=(11, 6), dpi=100)
+            self.current_figure = fig
             ax = fig.add_subplot(111)
 
 
@@ -1031,8 +1205,7 @@ class Admin(tk.Toplevel):
             fig.tight_layout()
 
 
-            for widget in self.graph_frame.winfo_children():
-                widget.destroy()
+
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
             canvas.draw()
             canvas.get_tk_widget().pack(pady=20)
@@ -1040,6 +1213,9 @@ class Admin(tk.Toplevel):
             print(f"Error generating all-time chart: {e}")
     #ticket trend
     def display_ticket_chart(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        self.graph_frame.update_idletasks()
         query = """
             SELECT 
                 Date, 
@@ -1051,10 +1227,12 @@ class Admin(tk.Toplevel):
         """
         try:
             df = pd.read_sql(query, self.main.mydb)
+            self.current_dataframe = df.copy()
             if df.empty:
                 raise ValueError("No data found for ticket sales.")
 
             fig = Figure(figsize=(11, 6), dpi=100)
+            self.current_figure = fig
             ax = fig.add_subplot(111)
 
 
@@ -1067,9 +1245,6 @@ class Admin(tk.Toplevel):
             ax.ticklabel_format(style='plain', axis='y')
             fig.autofmt_xdate()
             fig.tight_layout()
-
-            for widget in self.graph_frame.winfo_children():
-                widget.destroy()
 
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
             canvas.draw()
@@ -1084,6 +1259,9 @@ class Admin(tk.Toplevel):
         self.chart_mode = "ticket"
         self.update_chart_by_range("30")
     def display_ticket_30days(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        self.graph_frame.update_idletasks()
         query = """
                     SELECT 
                         Date, 
@@ -1095,10 +1273,12 @@ class Admin(tk.Toplevel):
                 """
         try:
             df = pd.read_sql(query, self.main.mydb)
+            self.current_dataframe = df.copy()
             if df.empty:
                 raise ValueError("No data found for ticket sales.")
 
             fig = Figure(figsize=(11, 6), dpi=100)
+            self.current_figure = fig
             ax = fig.add_subplot(111)
 
 
@@ -1113,9 +1293,6 @@ class Admin(tk.Toplevel):
             fig.tight_layout()
 
 
-            for widget in self.graph_frame.winfo_children():
-                widget.destroy()
-
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
             canvas.draw()
             canvas.get_tk_widget().pack(pady=20)
@@ -1123,6 +1300,9 @@ class Admin(tk.Toplevel):
         except Exception as e:
             messagebox.showerror("Error", f"Could not load ticket sales chart.\n{str(e)}")
     def display_ticket_6months(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        self.graph_frame.update_idletasks()
         query = """
                     SELECT 
                         Date, 
@@ -1134,10 +1314,12 @@ class Admin(tk.Toplevel):
                 """
         try:
             df = pd.read_sql(query, self.main.mydb)
+            self.current_dataframe = df.copy()
             if df.empty:
                 raise ValueError("No data found for ticket sales.")
 
             fig = Figure(figsize=(11, 6), dpi=100)
+            self.current_figure = fig
             ax = fig.add_subplot(111)
 
 
@@ -1152,8 +1334,6 @@ class Admin(tk.Toplevel):
             fig.tight_layout()
 
 
-            for widget in self.graph_frame.winfo_children():
-                widget.destroy()
 
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
             canvas.draw()
@@ -1162,6 +1342,9 @@ class Admin(tk.Toplevel):
         except Exception as e:
             messagebox.showerror("Error", f"Could not load ticket sales chart.\n{str(e)}")
     def display_ticket_year(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        self.graph_frame.update_idletasks()
         query = """
                             SELECT 
                                 Date, 
@@ -1173,10 +1356,12 @@ class Admin(tk.Toplevel):
                         """
         try:
             df = pd.read_sql(query, self.main.mydb)
+            self.current_dataframe = df.copy()
             if df.empty:
                 raise ValueError("No data found for ticket sales.")
 
             fig = Figure(figsize=(11, 6), dpi=100)
+            self.current_figure = fig
             ax = fig.add_subplot(111)
 
 
@@ -1191,9 +1376,6 @@ class Admin(tk.Toplevel):
             fig.tight_layout()
 
 
-            for widget in self.graph_frame.winfo_children():
-                widget.destroy()
-
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
             canvas.draw()
             canvas.get_tk_widget().pack(pady=20)
@@ -1201,6 +1383,10 @@ class Admin(tk.Toplevel):
         except Exception as e:
             messagebox.showerror("Error", f"Could not load ticket sales chart.\n{str(e)}")
     def display_ticket_alltime(self):
+        for widget in self.graph_frame.winfo_children():
+            widget.destroy()
+        self.graph_frame.update_idletasks()
+
         query = """
              SELECT 
                  Date, 
@@ -1212,10 +1398,12 @@ class Admin(tk.Toplevel):
          """
         try:
             df = pd.read_sql(query, self.main.mydb)
+            self.current_dataframe = df.copy()
             if df.empty:
                 raise ValueError("No data found for all-time ticket sold.")
 
             fig = Figure(figsize=(11, 6), dpi=100)
+            self.current_figure = fig
             ax = fig.add_subplot(111)
 
 
@@ -1231,8 +1419,6 @@ class Admin(tk.Toplevel):
             fig.tight_layout()
 
 
-            for widget in self.graph_frame.winfo_children():
-                widget.destroy()
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
             canvas.draw()
             canvas.get_tk_widget().pack(pady=20)
@@ -1242,26 +1428,31 @@ class Admin(tk.Toplevel):
     def display_total_revenue(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
+        self.graph_frame.update_idletasks()
+
         cursor = self.main.mydb.cursor()
         query = """
-                SELECT
-                    DATE(PayTime) AS PayDate,
-                    SUM(Amount) AS TotalRevenue
-                FROM Payments
-                GROUP BY PayDate
-                ORDER BY PayDate DESC;
-                """
+                        SELECT
+                            DATE(PayTime) AS PayDate,
+                            SUM(Amount) AS TotalRevenue
+                        FROM Payments
+                        GROUP BY PayDate
+                        ORDER BY PayDate DESC;
+                        """
         cursor.execute(query)
         data = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe = df.copy()
+
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe = df.copy()
 
         table_frame = tk.Frame(self.graph_frame)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
         columns = ("YearMonth", "TotalRevenue")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
-        tree.heading("YearMonth", text="Date")
-        tree.heading("TotalRevenue", text="Total Revenue")
         tree.column("YearMonth", width=150, anchor="center")
         tree.column("TotalRevenue", width=200, anchor="center")
 
@@ -1270,6 +1461,18 @@ class Admin(tk.Toplevel):
         scrollbar.pack(side="right", fill="y")
         tree.pack(fill="both", expand=True)
 
+        def sort_column(col, reverse):
+            data_list = [(tree.set(k, col), k) for k in tree.get_children('')]
+            if col == "TotalRevenue":
+                data_list.sort(key=lambda t: int(t[0].replace(".", "").replace(" ₫", "")), reverse=reverse)
+            else:
+                data_list.sort(reverse=reverse)
+
+            for index, (val, k) in enumerate(data_list):
+                tree.move(k, '', index)
+            tree.heading(col, command=lambda: sort_column(col, not reverse))
+        tree.heading("YearMonth", text="Date", command=lambda: sort_column("YearMonth", False))
+        tree.heading("TotalRevenue", text="Total Revenue", command=lambda: sort_column("TotalRevenue", False))
         for row in data:
             year_month, total_revenue = row
             formatted_revenue = "{:,.0f} ₫".format(total_revenue).replace(",", ".")
@@ -1281,6 +1484,7 @@ class Admin(tk.Toplevel):
     def revenue_daily(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
+        self.graph_frame.update_idletasks()
         cursor = self.main.mydb.cursor()
         query = """
                 SELECT
@@ -1293,6 +1497,8 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         data = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe = df.copy()
 
         table_frame = tk.Frame(self.graph_frame)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -1316,26 +1522,28 @@ class Admin(tk.Toplevel):
     def revenue_monthly(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
+        self.graph_frame.update_idletasks()
+
         cursor = self.main.mydb.cursor()
         query = """
-                SELECT
-                   DATE_FORMAT(PayTime, '%Y-%m') AS YearMonth,
-                   SUM(Amount) AS TotalRevenue
-                FROM Payments
-                GROUP BY YearMonth
-                ORDER BY YearMonth DESC;
-                """
+                        SELECT
+                           DATE_FORMAT(PayTime, '%Y-%m') AS YearMonth,
+                           SUM(Amount) AS TotalRevenue
+                        FROM Payments
+                        GROUP BY YearMonth
+                        ORDER BY YearMonth DESC;
+                        """
         cursor.execute(query)
         data = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe = df.copy()
 
         table_frame = tk.Frame(self.graph_frame)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
         columns = ("YearMonth", "TotalRevenue")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
-        tree.heading("YearMonth", text="Date")
-        tree.heading("TotalRevenue", text="Total Revenue")
         tree.column("YearMonth", width=150, anchor="center")
         tree.column("TotalRevenue", width=200, anchor="center")
 
@@ -1344,6 +1552,22 @@ class Admin(tk.Toplevel):
         scrollbar.pack(side="right", fill="y")
         tree.pack(fill="both", expand=True)
 
+        def sort_column(col, reverse):
+            data_list = [(tree.set(k, col), k) for k in tree.get_children('')]
+
+            if col == "TotalRevenue":
+                data_list.sort(key=lambda t: int(t[0].replace(".", "").replace(" ₫", "")), reverse=reverse)
+            else:
+                data_list.sort(reverse=reverse)
+
+            for index, (val, k) in enumerate(data_list):
+                tree.move(k, '', index)
+
+            tree.heading(col, command=lambda: sort_column(col, not reverse))
+
+        tree.heading("YearMonth", text="Date", command=lambda: sort_column("YearMonth", False))
+        tree.heading("TotalRevenue", text="Total Revenue", command=lambda: sort_column("TotalRevenue", False))
+
         for row in data:
             year_month, total_revenue = row
             formatted_revenue = "{:,.0f} ₫".format(total_revenue).replace(",", ".")
@@ -1351,6 +1575,7 @@ class Admin(tk.Toplevel):
     def revenue_quarterly(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
+        self.graph_frame.update_idletasks()
         cursor = self.main.mydb.cursor()
         query = """
                 SELECT
@@ -1369,6 +1594,8 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         data = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe = df.copy()
 
         table_frame = tk.Frame(self.graph_frame)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -1384,6 +1611,22 @@ class Admin(tk.Toplevel):
         scrollbar.pack(side="right", fill="y")
         tree.pack(fill="both", expand=True)
 
+        def sort_column(col, reverse):
+            data_list = [(tree.set(k, col), k) for k in tree.get_children('')]
+
+            if col == "TotalRevenue":
+                data_list.sort(key=lambda t: int(t[0].replace(".", "").replace(" ₫", "")), reverse=reverse)
+            else:
+                data_list.sort(reverse=reverse)
+
+            for index, (val, k) in enumerate(data_list):
+                tree.move(k, '', index)
+
+            tree.heading(col, command=lambda: sort_column(col, not reverse))
+
+        tree.heading("YearMonth", text="Date", command=lambda: sort_column("YearMonth", False))
+        tree.heading("TotalRevenue", text="Total Revenue", command=lambda: sort_column("TotalRevenue", False))
+
         for row in data:
             year_month, total_revenue = row
             formatted_revenue = "{:,.0f} ₫".format(total_revenue).replace(",", ".")
@@ -1391,6 +1634,7 @@ class Admin(tk.Toplevel):
     def revenue_yearly(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
+        self.graph_frame.update_idletasks()
         cursor = self.main.mydb.cursor()
         query = """
                 SELECT
@@ -1408,6 +1652,8 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         data = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe = df.copy()
 
         table_frame = tk.Frame(self.graph_frame)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -1424,6 +1670,22 @@ class Admin(tk.Toplevel):
         scrollbar.pack(side="right", fill="y")
         tree.pack(fill="both", expand=True)
 
+        def sort_column(col, reverse):
+            data_list = [(tree.set(k, col), k) for k in tree.get_children('')]
+
+            if col == "TotalRevenue":
+                data_list.sort(key=lambda t: int(t[0].replace(".", "").replace(" ₫", "")), reverse=reverse)
+            else:
+                data_list.sort(reverse=reverse)
+
+            for index, (val, k) in enumerate(data_list):
+                tree.move(k, '', index)
+
+            tree.heading(col, command=lambda: sort_column(col, not reverse))
+
+        tree.heading("YearMonth", text="Date", command=lambda: sort_column("YearMonth", False))
+        tree.heading("TotalRevenue", text="Total Revenue", command=lambda: sort_column("TotalRevenue", False))
+
         for row in data:
             year_month, total_revenue = row
             formatted_revenue = "{:,.0f} ₫".format(total_revenue).replace(",", ".")
@@ -1432,38 +1694,61 @@ class Admin(tk.Toplevel):
     def display_ticket(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
+        self.graph_frame.update_idletasks()
+
         cursor = self.main.mydb.cursor()
         query = """
-                SELECT
-                  DATE(PayTime) AS SaleDate,
-                  COUNT(TicketID) AS TotalTicketsSold
-                FROM Payments
-                GROUP BY DATE(PayTime)
-                ORDER BY SaleDate desc;
-                """
+                        SELECT
+                          DATE(PayTime) AS SaleDate,
+                          COUNT(TicketID) AS TotalTicketsSold
+                        FROM Payments
+                        GROUP BY DATE(PayTime)
+                        ORDER BY SaleDate DESC;
+                        """
         cursor.execute(query)
         data = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe = df.copy()
 
         table_frame = tk.Frame(self.graph_frame)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        columns = ("YearMonth", "TotalRevenue")
+        columns = ("SaleDate", "TotalTicketsSold")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
-        tree.heading("YearMonth", text="Date")
-        tree.heading("TotalRevenue", text="Total Ticket Sold")
-        tree.column("YearMonth", width=150, anchor="center")
-        tree.column("TotalRevenue", width=200, anchor="center")
+        tree.column("SaleDate", width=150, anchor="center")
+        tree.column("TotalTicketsSold", width=200, anchor="center")
 
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side="right", fill="y")
         tree.pack(fill="both", expand=True)
 
+
+        def sort_column(col, reverse):
+
+            data_list = [(tree.set(k, col), k) for k in tree.get_children('')]
+
+            if col == "TotalTicketsSold":
+
+                data_list.sort(key=lambda t: int(t[0].replace(".", "")), reverse=reverse)
+            else:
+                data_list.sort(key=lambda t: t[0], reverse=reverse)
+
+            for index, (val, k) in enumerate(data_list):
+                tree.move(k, '', index)
+
+            tree.heading(col, command=lambda: sort_column(col, not reverse))
+
+
+        tree.heading("SaleDate", text="Date", command=lambda: sort_column("SaleDate", False))
+        tree.heading("TotalTicketsSold", text="Total Ticket Sold",
+                     command=lambda: sort_column("TotalTicketsSold", False))
+
         for row in data:
-            year_month, total_revenue = row
-            formatted_revenue = "{:,.0f}".format(total_revenue).replace(",", ".")
-            tree.insert("", "end", values=(year_month, formatted_revenue))
+            sale_date, total_tickets = row
+            formatted_tickets = "{:,.0f}".format(total_tickets).replace(",", ".")
+            tree.insert("", "end", values=(sale_date, formatted_tickets))
 
         self.hide_time_range_buttons()
         self.hide_time_range_totalrevenue()
@@ -1471,6 +1756,7 @@ class Admin(tk.Toplevel):
     def ticket_daily(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
+        self.graph_frame.update_idletasks()
         cursor = self.main.mydb.cursor()
         query = """
                 SELECT
@@ -1483,6 +1769,8 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         data = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe = df.copy()
 
         table_frame = tk.Frame(self.graph_frame)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -1499,13 +1787,33 @@ class Admin(tk.Toplevel):
         scrollbar.pack(side="right", fill="y")
         tree.pack(fill="both", expand=True)
 
+        def sort_column(col, reverse):
+
+            data_list = [(tree.set(k, col), k) for k in tree.get_children('')]
+
+            if col == "TotalRevenue":
+
+                data_list.sort(key=lambda t: int(t[0].replace(".", "")), reverse=reverse)
+            else:
+                data_list.sort(key=lambda t: t[0], reverse=reverse)
+
+            for index, (val, k) in enumerate(data_list):
+                tree.move(k, '', index)
+
+            tree.heading(col, command=lambda: sort_column(col, not reverse))
+
+        tree.heading("YearMonth", text="Date", command=lambda: sort_column("YearMonth", False))
+        tree.heading("TotalRevenue", text="Total Ticket Sold",
+                     command=lambda: sort_column("TotalRevenue", False))
+
         for row in data:
-            year_month, total_revenue = row
-            formatted_revenue = "{:,.0f}".format(total_revenue).replace(",", ".")
-            tree.insert("", "end", values=(year_month, formatted_revenue))
+            sale_date, total_tickets = row
+            formatted_tickets = "{:,.0f}".format(total_tickets).replace(",", ".")
+            tree.insert("", "end", values=(sale_date, formatted_tickets))
     def ticket_monthly(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
+        self.graph_frame.update_idletasks()
         cursor = self.main.mydb.cursor()
         query = """
                 SELECT
@@ -1518,6 +1826,8 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         data = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe = df.copy()
 
         table_frame = tk.Frame(self.graph_frame)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -1534,13 +1844,33 @@ class Admin(tk.Toplevel):
         scrollbar.pack(side="right", fill="y")
         tree.pack(fill="both", expand=True)
 
+        def sort_column(col, reverse):
+
+            data_list = [(tree.set(k, col), k) for k in tree.get_children('')]
+
+            if col == "TotalRevenue":
+
+                data_list.sort(key=lambda t: int(t[0].replace(".", "")), reverse=reverse)
+            else:
+                data_list.sort(key=lambda t: t[0], reverse=reverse)
+
+            for index, (val, k) in enumerate(data_list):
+                tree.move(k, '', index)
+
+            tree.heading(col, command=lambda: sort_column(col, not reverse))
+
+        tree.heading("YearMonth", text="Date", command=lambda: sort_column("YearMonth", False))
+        tree.heading("TotalRevenue", text="Total Ticket Sold",
+                     command=lambda: sort_column("TotalRevenue", False))
+
         for row in data:
-            year_month, total_revenue = row
-            formatted_revenue = "{:,.0f}".format(total_revenue).replace(",", ".")
-            tree.insert("", "end", values=(year_month, formatted_revenue))
+            sale_date, total_tickets = row
+            formatted_tickets = "{:,.0f}".format(total_tickets).replace(",", ".")
+            tree.insert("", "end", values=(sale_date, formatted_tickets))
     def ticket_quarterly(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
+        self.graph_frame.update_idletasks()
         cursor = self.main.mydb.cursor()
         query = """
                 SELECT
@@ -1559,6 +1889,8 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         data = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe = df.copy()
 
         table_frame = tk.Frame(self.graph_frame)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -1575,13 +1907,33 @@ class Admin(tk.Toplevel):
         scrollbar.pack(side="right", fill="y")
         tree.pack(fill="both", expand=True)
 
+        def sort_column(col, reverse):
+
+            data_list = [(tree.set(k, col), k) for k in tree.get_children('')]
+
+            if col == "TotalRevenue":
+
+                data_list.sort(key=lambda t: int(t[0].replace(".", "")), reverse=reverse)
+            else:
+                data_list.sort(key=lambda t: t[0], reverse=reverse)
+
+            for index, (val, k) in enumerate(data_list):
+                tree.move(k, '', index)
+
+            tree.heading(col, command=lambda: sort_column(col, not reverse))
+
+        tree.heading("YearMonth", text="Date", command=lambda: sort_column("YearMonth", False))
+        tree.heading("TotalRevenue", text="Total Ticket Sold",
+                     command=lambda: sort_column("TotalRevenue", False))
+
         for row in data:
-            year_month, total_revenue = row
-            formatted_revenue = "{:,.0f}".format(total_revenue).replace(",", ".")
-            tree.insert("", "end", values=(year_month, formatted_revenue))
+            sale_date, total_tickets = row
+            formatted_tickets = "{:,.0f}".format(total_tickets).replace(",", ".")
+            tree.insert("", "end", values=(sale_date, formatted_tickets))
     def ticket_yearly(self):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
+        self.graph_frame.update_idletasks()
         cursor = self.main.mydb.cursor()
         query = """
                 SELECT
@@ -1594,6 +1946,8 @@ class Admin(tk.Toplevel):
         cursor.execute(query)
         data = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe = df.copy()
 
         table_frame = tk.Frame(self.graph_frame)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
@@ -1610,10 +1964,29 @@ class Admin(tk.Toplevel):
         scrollbar.pack(side="right", fill="y")
         tree.pack(fill="both", expand=True)
 
+        def sort_column(col, reverse):
+
+            data_list = [(tree.set(k, col), k) for k in tree.get_children('')]
+
+            if col == "TotalRevenue":
+
+                data_list.sort(key=lambda t: int(t[0].replace(".", "")), reverse=reverse)
+            else:
+                data_list.sort(key=lambda t: t[0], reverse=reverse)
+
+            for index, (val, k) in enumerate(data_list):
+                tree.move(k, '', index)
+
+            tree.heading(col, command=lambda: sort_column(col, not reverse))
+
+        tree.heading("YearMonth", text="Date", command=lambda: sort_column("YearMonth", False))
+        tree.heading("TotalRevenue", text="Total Ticket Sold",
+                     command=lambda: sort_column("TotalRevenue", False))
+
         for row in data:
-            year_month, total_revenue = row
-            formatted_revenue = "{:,.0f}".format(total_revenue).replace(",", ".")
-            tree.insert("", "end", values=(year_month, formatted_revenue))
+            sale_date, total_tickets = row
+            formatted_tickets = "{:,.0f}".format(total_tickets).replace(",", ".")
+            tree.insert("", "end", values=(sale_date, formatted_tickets))
 
 
     #DEF TAB2
@@ -1623,6 +1996,7 @@ class Admin(tk.Toplevel):
         self.hide_occupation()
         self.hide_screening()
         self.hide_day_button()
+        self.hide_format_button()
     def show_movie_button(self):
         self.last_14days.pack(side="right", padx=10)
         self.last_30days.pack(side="right", padx=10)
@@ -1653,44 +2027,94 @@ class Admin(tk.Toplevel):
         self.day_30.pack_forget()
         self.day_90.pack_forget()
         self.day_all.pack_forget()
-
-
+    def show_format_button(self):
+        self.format_30_bt.pack(side="right", padx=10)
+        self.format_90_bt.pack(side="right", padx=10)
+        self.format_year_bt.pack(side="right", padx=10)
+        self.format_all_bt.pack(side="right", padx=10)
+    def hide_format_button(self):
+        self.format_30_bt.pack_forget()
+        self.format_90_bt.pack_forget()
+        self.format_year_bt.pack_forget()
+        self.format_all_bt.pack_forget()
     #Movie
     def display_movie(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
+
+        self.sort_states = {}
+
+        def sort_column(treeview, col, col_type):
+            def clean_value(val):
+                if col_type == 'int':
+                    try:
+                        return int(val)
+                    except ValueError:
+                        return 0
+                elif col_type == 'currency':
+                    try:
+                        return float(val.replace("₫", "").replace(".", "").replace(",", ".").strip())
+                    except ValueError:
+                        return 0.0
+                elif col_type == 'percentage':
+                    try:
+                        return float(val.replace("%", "").strip())
+                    except ValueError:
+                        return 0.0
+                return val.lower() if isinstance(val, str) else val
+
+            data = [(treeview.set(child, col), child) for child in treeview.get_children("")]
+            reverse = self.sort_states.get(col, False)
+            data.sort(key=lambda x: clean_value(x[0]), reverse=reverse)
+
+            for index, (_, child) in enumerate(data):
+                treeview.move(child, "", index)
+
+            self.sort_states[col] = not reverse
 
         cursor = self.main.mydb.cursor()
         query = "SELECT MovieID, MovieTitle, Genre, TicketsSold, TotalRevenue, AttendanceRate FROM movie_14days"
         cursor.execute(query)
-        data = cursor.fetchall()
+        records = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
 
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
         columns = ("MovieID", "MovieTitle", "Genre", "TicketsSold", "TotalRevenue", "AttendanceRate")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
 
-        tree.heading("MovieID", text="Movie ID")
-        tree.heading("MovieTitle", text="Title")
-        tree.heading("Genre", text="Genre")
-        tree.heading("TicketsSold", text="Tickets Sold")
-        tree.heading("TotalRevenue", text="Total Revenue")
-        tree.heading("AttendanceRate", text="Attendance Rate")
+        col_types = {
+            "MovieID": "int",
+            "MovieTitle": "text",
+            "Genre": "text",
+            "TicketsSold": "int",
+            "TotalRevenue": "currency",
+            "AttendanceRate": "percentage"
+        }
 
-        tree.column("MovieID", width=80, anchor="center")
-        tree.column("MovieTitle", width=200, anchor="center")
-        tree.column("Genre", width=100, anchor="center")
-        tree.column("TicketsSold", width=100, anchor="center")
-        tree.column("TotalRevenue", width=150, anchor="center")
-        tree.column("AttendanceRate", width=150, anchor="center")
+        headings = {
+            "MovieID": "Movie ID",
+            "MovieTitle": "Title",
+            "Genre": "Genre",
+            "TicketsSold": "Tickets Sold",
+            "TotalRevenue": "Total Revenue",
+            "AttendanceRate": "Attendance Rate"
+        }
+
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name != "MovieTitle" else 200, anchor="center")
 
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side="right", fill="y")
         tree.pack(fill="both", expand=True)
 
-        for row in data:
+        for row in records:
             movie_id, title, genre, tickets, revenue, attendance = row
             formatted_revenue = "{:,.0f} ₫".format(revenue).replace(",", ".")
             formatted_attendance = f"{attendance * 100:.2f}%"
@@ -1701,38 +2125,79 @@ class Admin(tk.Toplevel):
     def display_movie14(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
+
+        self.sort_states = {}
+
+        def sort_column(treeview, col, col_type):
+            def clean_value(val):
+                if col_type == 'int':
+                    try:
+                        return int(val)
+                    except ValueError:
+                        return 0
+                elif col_type == 'currency':
+                    try:
+                        return float(val.replace("₫", "").replace(".", "").replace(",", ".").strip())
+                    except ValueError:
+                        return 0.0
+                elif col_type == 'percentage':
+                    try:
+                        return float(val.replace("%", "").strip())
+                    except ValueError:
+                        return 0.0
+                return val.lower() if isinstance(val, str) else val
+
+            data = [(treeview.set(child, col), child) for child in treeview.get_children("")]
+            reverse = self.sort_states.get(col, False)
+            data.sort(key=lambda x: clean_value(x[0]), reverse=reverse)
+
+            for index, (_, child) in enumerate(data):
+                treeview.move(child, "", index)
+
+            self.sort_states[col] = not reverse
 
         cursor = self.main.mydb.cursor()
         query = "SELECT MovieID, MovieTitle, Genre, TicketsSold, TotalRevenue, AttendanceRate FROM movie_14days"
         cursor.execute(query)
-        data = cursor.fetchall()
+        records = cursor.fetchall()
         cursor.close()
-
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
         columns = ("MovieID", "MovieTitle", "Genre", "TicketsSold", "TotalRevenue", "AttendanceRate")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
 
-        tree.heading("MovieID", text="Movie ID")
-        tree.heading("MovieTitle", text="Title")
-        tree.heading("Genre", text="Genre")
-        tree.heading("TicketsSold", text="Tickets Sold")
-        tree.heading("TotalRevenue", text="Total Revenue")
-        tree.heading("AttendanceRate", text="Attendance Rate")
+        col_types = {
+            "MovieID": "int",
+            "MovieTitle": "text",
+            "Genre": "text",
+            "TicketsSold": "int",
+            "TotalRevenue": "currency",
+            "AttendanceRate": "percentage"
+        }
 
-        tree.column("MovieID", width=80, anchor="center")
-        tree.column("MovieTitle", width=200, anchor="center")
-        tree.column("Genre", width=100, anchor="center")
-        tree.column("TicketsSold", width=100, anchor="center")
-        tree.column("TotalRevenue", width=150, anchor="center")
-        tree.column("AttendanceRate", width=150, anchor="center")
+        headings = {
+            "MovieID": "Movie ID",
+            "MovieTitle": "Title",
+            "Genre": "Genre",
+            "TicketsSold": "Tickets Sold",
+            "TotalRevenue": "Total Revenue",
+            "AttendanceRate": "Attendance Rate"
+        }
+
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name != "MovieTitle" else 200, anchor="center")
 
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side="right", fill="y")
         tree.pack(fill="both", expand=True)
 
-        for row in data:
+        for row in records:
             movie_id, title, genre, tickets, revenue, attendance = row
             formatted_revenue = "{:,.0f} ₫".format(revenue).replace(",", ".")
             formatted_attendance = f"{attendance * 100:.2f}%"
@@ -1740,38 +2205,79 @@ class Admin(tk.Toplevel):
     def display_movie30(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
+
+        self.sort_states = {}
+
+        def sort_column(treeview, col, col_type):
+            def clean_value(val):
+                if col_type == 'int':
+                    try:
+                        return int(val)
+                    except ValueError:
+                        return 0
+                elif col_type == 'currency':
+                    try:
+                        return float(val.replace("₫", "").replace(".", "").replace(",", ".").strip())
+                    except ValueError:
+                        return 0.0
+                elif col_type == 'percentage':
+                    try:
+                        return float(val.replace("%", "").strip())
+                    except ValueError:
+                        return 0.0
+                return val.lower() if isinstance(val, str) else val
+
+            data = [(treeview.set(child, col), child) for child in treeview.get_children("")]
+            reverse = self.sort_states.get(col, False)
+            data.sort(key=lambda x: clean_value(x[0]), reverse=reverse)
+
+            for index, (_, child) in enumerate(data):
+                treeview.move(child, "", index)
+
+            self.sort_states[col] = not reverse
 
         cursor = self.main.mydb.cursor()
         query = "SELECT MovieID, MovieTitle, Genre, TicketsSold, TotalRevenue, AttendanceRate FROM movie_30days"
         cursor.execute(query)
-        data = cursor.fetchall()
+        records = cursor.fetchall()
         cursor.close()
-
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
         columns = ("MovieID", "MovieTitle", "Genre", "TicketsSold", "TotalRevenue", "AttendanceRate")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
 
-        tree.heading("MovieID", text="Movie ID")
-        tree.heading("MovieTitle", text="Title")
-        tree.heading("Genre", text="Genre")
-        tree.heading("TicketsSold", text="Tickets Sold")
-        tree.heading("TotalRevenue", text="Total Revenue")
-        tree.heading("AttendanceRate", text="Attendance Rate")
+        col_types = {
+            "MovieID": "int",
+            "MovieTitle": "text",
+            "Genre": "text",
+            "TicketsSold": "int",
+            "TotalRevenue": "currency",
+            "AttendanceRate": "percentage"
+        }
 
-        tree.column("MovieID", width=80, anchor="center")
-        tree.column("MovieTitle", width=200, anchor="center")
-        tree.column("Genre", width=100, anchor="center")
-        tree.column("TicketsSold", width=100, anchor="center")
-        tree.column("TotalRevenue", width=150, anchor="center")
-        tree.column("AttendanceRate", width=150, anchor="center")
+        headings = {
+            "MovieID": "Movie ID",
+            "MovieTitle": "Title",
+            "Genre": "Genre",
+            "TicketsSold": "Tickets Sold",
+            "TotalRevenue": "Total Revenue",
+            "AttendanceRate": "Attendance Rate"
+        }
+
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name != "MovieTitle" else 200, anchor="center")
 
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side="right", fill="y")
         tree.pack(fill="both", expand=True)
 
-        for row in data:
+        for row in records:
             movie_id, title, genre, tickets, revenue, attendance = row
             formatted_revenue = "{:,.0f} ₫".format(revenue).replace(",", ".")
             formatted_attendance = f"{attendance * 100:.2f}%"
@@ -1779,38 +2285,79 @@ class Admin(tk.Toplevel):
     def display_movie60(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
+
+        self.sort_states = {}
+
+        def sort_column(treeview, col, col_type):
+            def clean_value(val):
+                if col_type == 'int':
+                    try:
+                        return int(val)
+                    except ValueError:
+                        return 0
+                elif col_type == 'currency':
+                    try:
+                        return float(val.replace("₫", "").replace(".", "").replace(",", ".").strip())
+                    except ValueError:
+                        return 0.0
+                elif col_type == 'percentage':
+                    try:
+                        return float(val.replace("%", "").strip())
+                    except ValueError:
+                        return 0.0
+                return val.lower() if isinstance(val, str) else val
+
+            data = [(treeview.set(child, col), child) for child in treeview.get_children("")]
+            reverse = self.sort_states.get(col, False)
+            data.sort(key=lambda x: clean_value(x[0]), reverse=reverse)
+
+            for index, (_, child) in enumerate(data):
+                treeview.move(child, "", index)
+
+            self.sort_states[col] = not reverse
 
         cursor = self.main.mydb.cursor()
         query = "SELECT MovieID, MovieTitle, Genre, TicketsSold, TotalRevenue, AttendanceRate FROM movie_60days"
         cursor.execute(query)
-        data = cursor.fetchall()
+        records = cursor.fetchall()
         cursor.close()
-
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
         columns = ("MovieID", "MovieTitle", "Genre", "TicketsSold", "TotalRevenue", "AttendanceRate")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
 
-        tree.heading("MovieID", text="Movie ID")
-        tree.heading("MovieTitle", text="Title")
-        tree.heading("Genre", text="Genre")
-        tree.heading("TicketsSold", text="Tickets Sold")
-        tree.heading("TotalRevenue", text="Total Revenue")
-        tree.heading("AttendanceRate", text="Attendance Rate")
+        col_types = {
+            "MovieID": "int",
+            "MovieTitle": "text",
+            "Genre": "text",
+            "TicketsSold": "int",
+            "TotalRevenue": "currency",
+            "AttendanceRate": "percentage"
+        }
 
-        tree.column("MovieID", width=80, anchor="center")
-        tree.column("MovieTitle", width=200, anchor="center")
-        tree.column("Genre", width=100, anchor="center")
-        tree.column("TicketsSold", width=100, anchor="center")
-        tree.column("TotalRevenue", width=150, anchor="center")
-        tree.column("AttendanceRate", width=150, anchor="center")
+        headings = {
+            "MovieID": "Movie ID",
+            "MovieTitle": "Title",
+            "Genre": "Genre",
+            "TicketsSold": "Tickets Sold",
+            "TotalRevenue": "Total Revenue",
+            "AttendanceRate": "Attendance Rate"
+        }
+
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name != "MovieTitle" else 200, anchor="center")
 
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side="right", fill="y")
         tree.pack(fill="both", expand=True)
 
-        for row in data:
+        for row in records:
             movie_id, title, genre, tickets, revenue, attendance = row
             formatted_revenue = "{:,.0f} ₫".format(revenue).replace(",", ".")
             formatted_attendance = f"{attendance * 100:.2f}%"
@@ -1819,37 +2366,66 @@ class Admin(tk.Toplevel):
     def display_occupation(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
+        self.sort_states = {}
+        def sort_column(treeview, col, col_type):
+            def clean_value(val):
+                if col_type == 'int':
+                    try:
+                        return int(val)
+                    except ValueError:
+                        return 0
+                elif col_type == 'percentage':
+                    try:
+                        return float(val.replace("%", "").strip())
+                    except ValueError:
+                        return 0.0
+                return val.lower() if isinstance(val, str) else val
+
+            data = [(treeview.set(child, col), child) for child in treeview.get_children("")]
+            reverse = self.sort_states.get(col, False)
+            data.sort(key=lambda x: clean_value(x[0]), reverse=reverse)
+
+            for index, (_, child) in enumerate(data):
+                treeview.move(child, "", index)
+
+            self.sort_states[col] = not reverse
 
         cursor = self.main.mydb.cursor()
         query = "SELECT Month, Tickets_Sold, Total_Screenings, TotalSeat, `Occupation Rate (%)` FROM occupation"
         cursor.execute(query)
-        data = cursor.fetchall()
+        records = cursor.fetchall()
         cursor.close()
-
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
-
         columns = ("Month", "Tickets_Sold", "Total_Screenings", "TotalSeat", "OccupationRate")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
 
-        tree.heading("Month", text="Month")
-        tree.heading("Tickets_Sold", text="Tickets Sold")
-        tree.heading("Total_Screenings", text="Total Screenings")
-        tree.heading("TotalSeat", text="Total Seats")
-        tree.heading("OccupationRate", text="Occupation Rate (%)")
-
-        tree.column("Month", width=100, anchor="center")
-        tree.column("Tickets_Sold", width=100, anchor="center")
-        tree.column("Total_Screenings", width=130, anchor="center")
-        tree.column("TotalSeat", width=100, anchor="center")
-        tree.column("OccupationRate", width=150, anchor="center")
-
+        headings = {
+            "Month": "Month",
+            "Tickets_Sold": "Tickets Sold",
+            "Total_Screenings": "Total Screenings",
+            "TotalSeat": "Total Seats",
+            "OccupationRate": "Occupation Rate (%)"
+        }
+        col_types = {
+            "Month": "text",
+            "Tickets_Sold": "int",
+            "Total_Screenings": "int",
+            "TotalSeat": "int",
+            "OccupationRate": "percentage"
+        }
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=130 if col_name == "Total_Screenings" else 100 if col_name != "OccupationRate" else 150,
+                        anchor="center")
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side="right", fill="y")
         tree.pack(fill="both", expand=True)
-
-        for row in data:
+        for row in records:
             month, tickets_sold, total_screenings, total_seat, occupation_rate = row
             formatted_occupation = f"{occupation_rate:.2f}%"
             tree.insert("", "end", values=(month, tickets_sold, total_screenings, total_seat, formatted_occupation))
@@ -1859,56 +2435,89 @@ class Admin(tk.Toplevel):
     def display_occupation_table(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
+        self.sort_states = {}
+
+        def sort_column(treeview, col, col_type):
+            def clean_value(val):
+                if col_type == 'int':
+                    try:
+                        return int(val)
+                    except ValueError:
+                        return 0
+                elif col_type == 'percentage':
+                    try:
+                        return float(val.replace("%", "").strip())
+                    except ValueError:
+                        return 0.0
+                return val.lower() if isinstance(val, str) else val
+
+            data = [(treeview.set(child, col), child) for child in treeview.get_children("")]
+            reverse = self.sort_states.get(col, False)
+            data.sort(key=lambda x: clean_value(x[0]), reverse=reverse)
+
+            for index, (_, child) in enumerate(data):
+                treeview.move(child, "", index)
+
+            self.sort_states[col] = not reverse
 
         cursor = self.main.mydb.cursor()
         query = "SELECT Month, Tickets_Sold, Total_Screenings, TotalSeat, `Occupation Rate (%)` FROM occupation"
         cursor.execute(query)
-        data = cursor.fetchall()
+        records = cursor.fetchall()
         cursor.close()
-
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True, padx=10, pady=10)
-
         columns = ("Month", "Tickets_Sold", "Total_Screenings", "TotalSeat", "OccupationRate")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
 
-        tree.heading("Month", text="Month")
-        tree.heading("Tickets_Sold", text="Tickets Sold")
-        tree.heading("Total_Screenings", text="Total Screenings")
-        tree.heading("TotalSeat", text="Total Seats")
-        tree.heading("OccupationRate", text="Occupation Rate (%)")
-
-        tree.column("Month", width=100, anchor="center")
-        tree.column("Tickets_Sold", width=100, anchor="center")
-        tree.column("Total_Screenings", width=130, anchor="center")
-        tree.column("TotalSeat", width=100, anchor="center")
-        tree.column("OccupationRate", width=150, anchor="center")
-
+        headings = {
+            "Month": "Month",
+            "Tickets_Sold": "Tickets Sold",
+            "Total_Screenings": "Total Screenings",
+            "TotalSeat": "Total Seats",
+            "OccupationRate": "Occupation Rate (%)"
+        }
+        col_types = {
+            "Month": "text",
+            "Tickets_Sold": "int",
+            "Total_Screenings": "int",
+            "TotalSeat": "int",
+            "OccupationRate": "percentage"
+        }
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=130 if col_name == "Total_Screenings" else 100 if col_name != "OccupationRate" else 150,
+                        anchor="center")
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side="right", fill="y")
         tree.pack(fill="both", expand=True)
-
-        for row in data:
+        for row in records:
             month, tickets_sold, total_screenings, total_seat, occupation_rate = row
             formatted_occupation = f"{occupation_rate:.2f}%"
             tree.insert("", "end", values=(month, tickets_sold, total_screenings, total_seat, formatted_occupation))
     def display_occupation_graph(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
 
         cursor = self.main.mydb.cursor()
         query = "SELECT Month, Tickets_Sold, `Occupation Rate (%)` FROM occupation"
         cursor.execute(query)
         data = cursor.fetchall()
         cursor.close()
-
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         data.sort(key=lambda row: row[0])
         months = [row[0] for row in data]
         tickets_sold = [row[1] for row in data]
         occupation_rates = [row[2] for row in data]
 
         fig, ax1 = plt.subplots(figsize=(11, 6), dpi=100)
+        self.current_figure2 = fig
 
         ax1.bar(months, tickets_sold, color='skyblue', label='Tickets Sold')
         ax1.set_xlabel('Date')
@@ -1934,278 +2543,568 @@ class Admin(tk.Toplevel):
         canvas.get_tk_widget().pack(fill="both", expand=True, padx=10, pady=10)
         plt.close(fig)
     #Screeningtime
-    def display_screeningtime(self):
+    def display_screening_time(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
+        self.sort_states = {}
+        def sort_column(treeview, col, col_type):
+            def clean_value(val):
+                if col_type == 'int':
+                    try:
+                        return int(val)
+                    except ValueError:
+                        return 0
+                elif col_type == 'currency':
+                    try:
+                        return float(val.replace("₫", "").replace(",", "").replace(".", "").strip())
+                    except ValueError:
+                        return 0.0
+                elif col_type == 'percentage':
+                    try:
+                        return float(val.replace("%", "").strip())
+                    except ValueError:
+                        return 0.0
+                return val.lower() if isinstance(val, str) else val
+
+            data = [(treeview.set(child, col), child) for child in treeview.get_children("")]
+            reverse = self.sort_states.get(col, False)
+            data.sort(key=lambda x: clean_value(x[0]), reverse=reverse)
+
+            for index, (_, child) in enumerate(data):
+                treeview.move(child, "", index)
+
+            self.sort_states[col] = not reverse
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT ScreeningTime, TicketSold, OccupationRate, Revenue FROM screeningtime30")
+        query = ("SELECT ScreeningTime, TicketSold, OccupationRate, Revenue FROM screeningtime30")
+        cursor.execute(query)
         records = cursor.fetchall()
+        cursor.close()
 
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True)
-
         columns = ("ScreeningTime", "TicketSold", "OccupationRate", "Revenue")
         tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=20)
         tree.pack(side="left", fill="both", expand=True)
-
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
         scrollbar.pack(side="right", fill="y")
         tree.configure(yscrollcommand=scrollbar.set)
 
-        tree.heading("ScreeningTime", text="Screening Time")
-        tree.heading("TicketSold", text="Tickets Sold")
-        tree.heading("OccupationRate", text="Occupation Rate")
-        tree.heading("Revenue", text="Revenue")
+        headings = {
+            "ScreeningTime": "Screening Time",
+            "TicketSold": "Tickets Sold",
+            "OccupationRate": "Occupation Rate",
+            "Revenue": "Revenue"
+        }
 
-        tree.column("ScreeningTime", width=120, anchor="center")
-        tree.column("TicketSold", width=100, anchor="center")
-        tree.column("OccupationRate", width=130, anchor="center")
-        tree.column("Revenue", width=140, anchor="center")
-
+        col_types = {
+            "ScreeningTime": "text",
+            "TicketSold": "int",
+            "OccupationRate": "percentage",
+            "Revenue": "currency"
+        }
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name == "ScreeningTime" else 130, anchor="center")
         for row in records:
             screening_time, tickets_sold, occupation_rate, revenue = row
-
             formatted_occupation = f"{occupation_rate * 100:.1f}%"
-            formatted_revenue = f"{int(revenue):,} ₫"
+            formatted_revenue = f"{int(revenue):,} ₫".replace(",", ".")
+            tree.insert('', 'end', values=(screening_time, tickets_sold, formatted_occupation, formatted_revenue))
 
-            tree.insert('', 'end', values=(
-                screening_time,
-                tickets_sold,
-                formatted_occupation,
-                formatted_revenue
-            ))
-
-        cursor.close()
         self.hide_button2()
         self.show_screening()
     def display_screening30(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
+        self.sort_states = {}
+
+        def sort_column(treeview, col, col_type):
+            def clean_value(val):
+                if col_type == 'int':
+                    try:
+                        return int(val)
+                    except ValueError:
+                        return 0
+                elif col_type == 'currency':
+                    try:
+                        return float(val.replace("₫", "").replace(",", "").replace(".", "").strip())
+                    except ValueError:
+                        return 0.0
+                elif col_type == 'percentage':
+                    try:
+                        return float(val.replace("%", "").strip())
+                    except ValueError:
+                        return 0.0
+                return val.lower() if isinstance(val, str) else val
+
+            data = [(treeview.set(child, col), child) for child in treeview.get_children("")]
+            reverse = self.sort_states.get(col, False)
+            data.sort(key=lambda x: clean_value(x[0]), reverse=reverse)
+
+            for index, (_, child) in enumerate(data):
+                treeview.move(child, "", index)
+
+            self.sort_states[col] = not reverse
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT ScreeningTime, TicketSold, OccupationRate, Revenue FROM screeningtime30")
+        query = ("SELECT ScreeningTime, TicketSold, OccupationRate, Revenue FROM screeningtime30")
+        cursor.execute(query)
         records = cursor.fetchall()
+        cursor.close()
 
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True)
-
         columns = ("ScreeningTime", "TicketSold", "OccupationRate", "Revenue")
         tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=20)
         tree.pack(side="left", fill="both", expand=True)
-
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
         scrollbar.pack(side="right", fill="y")
         tree.configure(yscrollcommand=scrollbar.set)
 
-        tree.heading("ScreeningTime", text="Screening Time")
-        tree.heading("TicketSold", text="Tickets Sold")
-        tree.heading("OccupationRate", text="Occupation Rate")
-        tree.heading("Revenue", text="Revenue")
+        headings = {
+            "ScreeningTime": "Screening Time",
+            "TicketSold": "Tickets Sold",
+            "OccupationRate": "Occupation Rate",
+            "Revenue": "Revenue"
+        }
 
-        tree.column("ScreeningTime", width=120, anchor="center")
-        tree.column("TicketSold", width=100, anchor="center")
-        tree.column("OccupationRate", width=130, anchor="center")
-        tree.column("Revenue", width=140, anchor="center")
-
+        col_types = {
+            "ScreeningTime": "text",
+            "TicketSold": "int",
+            "OccupationRate": "percentage",
+            "Revenue": "currency"
+        }
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name == "ScreeningTime" else 130, anchor="center")
         for row in records:
             screening_time, tickets_sold, occupation_rate, revenue = row
-
             formatted_occupation = f"{occupation_rate * 100:.1f}%"
-            formatted_revenue = f"{int(revenue):,} ₫"
-
-            tree.insert('', 'end', values=(
-                screening_time,
-                tickets_sold,
-                formatted_occupation,
-                formatted_revenue
-            ))
-
-        cursor.close()
+            formatted_revenue = f"{int(revenue):,} ₫".replace(",", ".")
+            tree.insert('', 'end', values=(screening_time, tickets_sold, formatted_occupation, formatted_revenue))
     def display_screening90(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
+        self.sort_states = {}
+
+        def sort_column(treeview, col, col_type):
+            def clean_value(val):
+                if col_type == 'int':
+                    try:
+                        return int(val)
+                    except ValueError:
+                        return 0
+                elif col_type == 'currency':
+                    try:
+                        return float(val.replace("₫", "").replace(",", "").replace(".", "").strip())
+                    except ValueError:
+                        return 0.0
+                elif col_type == 'percentage':
+                    try:
+                        return float(val.replace("%", "").strip())
+                    except ValueError:
+                        return 0.0
+                return val.lower() if isinstance(val, str) else val
+
+            data = [(treeview.set(child, col), child) for child in treeview.get_children("")]
+            reverse = self.sort_states.get(col, False)
+            data.sort(key=lambda x: clean_value(x[0]), reverse=reverse)
+
+            for index, (_, child) in enumerate(data):
+                treeview.move(child, "", index)
+
+            self.sort_states[col] = not reverse
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT ScreeningTime, TicketSold, OccupationRate, Revenue FROM screeningtime90")
+        query = ("SELECT ScreeningTime, TicketSold, OccupationRate, Revenue FROM screeningtime90")
+        cursor.execute(query)
         records = cursor.fetchall()
+        cursor.close()
 
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True)
-
         columns = ("ScreeningTime", "TicketSold", "OccupationRate", "Revenue")
         tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=20)
         tree.pack(side="left", fill="both", expand=True)
-
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
         scrollbar.pack(side="right", fill="y")
         tree.configure(yscrollcommand=scrollbar.set)
 
-        tree.heading("ScreeningTime", text="Screening Time")
-        tree.heading("TicketSold", text="Tickets Sold")
-        tree.heading("OccupationRate", text="Occupation Rate")
-        tree.heading("Revenue", text="Revenue")
+        headings = {
+            "ScreeningTime": "Screening Time",
+            "TicketSold": "Tickets Sold",
+            "OccupationRate": "Occupation Rate",
+            "Revenue": "Revenue"
+        }
 
-        tree.column("ScreeningTime", width=120, anchor="center")
-        tree.column("TicketSold", width=100, anchor="center")
-        tree.column("OccupationRate", width=130, anchor="center")
-        tree.column("Revenue", width=140, anchor="center")
-
+        col_types = {
+            "ScreeningTime": "text",
+            "TicketSold": "int",
+            "OccupationRate": "percentage",
+            "Revenue": "currency"
+        }
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name == "ScreeningTime" else 130, anchor="center")
         for row in records:
             screening_time, tickets_sold, occupation_rate, revenue = row
-
             formatted_occupation = f"{occupation_rate * 100:.1f}%"
-            formatted_revenue = f"{int(revenue):,} ₫"
-
-            tree.insert('', 'end', values=(
-                screening_time,
-                tickets_sold,
-                formatted_occupation,
-                formatted_revenue
-            ))
-
-        cursor.close()
+            formatted_revenue = f"{int(revenue):,} ₫".replace(",", ".")
+            tree.insert('', 'end', values=(screening_time, tickets_sold, formatted_occupation, formatted_revenue))
     def display_screening(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
+        self.sort_states = {}
+
+        def sort_column(treeview, col, col_type):
+            def clean_value(val):
+                if col_type == 'int':
+                    try:
+                        return int(val)
+                    except ValueError:
+                        return 0
+                elif col_type == 'currency':
+                    try:
+                        return float(val.replace("₫", "").replace(",", "").replace(".", "").strip())
+                    except ValueError:
+                        return 0.0
+                elif col_type == 'percentage':
+                    try:
+                        return float(val.replace("%", "").strip())
+                    except ValueError:
+                        return 0.0
+                return val.lower() if isinstance(val, str) else val
+
+            data = [(treeview.set(child, col), child) for child in treeview.get_children("")]
+            reverse = self.sort_states.get(col, False)
+            data.sort(key=lambda x: clean_value(x[0]), reverse=reverse)
+
+            for index, (_, child) in enumerate(data):
+                treeview.move(child, "", index)
+
+            self.sort_states[col] = not reverse
 
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT ScreeningTime, TicketSold, OccupationRate, Revenue FROM screeningtime")
+        query = ("SELECT ScreeningTime, TicketSold, OccupationRate, Revenue FROM screeningtime")
+        cursor.execute(query)
         records = cursor.fetchall()
-
+        cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True)
-
         columns = ("ScreeningTime", "TicketSold", "OccupationRate", "Revenue")
         tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=20)
         tree.pack(side="left", fill="both", expand=True)
-
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
         scrollbar.pack(side="right", fill="y")
         tree.configure(yscrollcommand=scrollbar.set)
 
-        tree.heading("ScreeningTime", text="Screening Time")
-        tree.heading("TicketSold", text="Tickets Sold")
-        tree.heading("OccupationRate", text="Occupation Rate")
-        tree.heading("Revenue", text="Revenue")
+        headings = {
+            "ScreeningTime": "Screening Time",
+            "TicketSold": "Tickets Sold",
+            "OccupationRate": "Occupation Rate",
+            "Revenue": "Revenue"
+        }
 
-        tree.column("ScreeningTime", width=120, anchor="center")
-        tree.column("TicketSold", width=100, anchor="center")
-        tree.column("OccupationRate", width=130, anchor="center")
-        tree.column("Revenue", width=140, anchor="center")
-
+        col_types = {
+            "ScreeningTime": "text",
+            "TicketSold": "int",
+            "OccupationRate": "percentage",
+            "Revenue": "currency"
+        }
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name == "ScreeningTime" else 130, anchor="center")
         for row in records:
             screening_time, tickets_sold, occupation_rate, revenue = row
-
             formatted_occupation = f"{occupation_rate * 100:.1f}%"
-            formatted_revenue = f"{int(revenue):,} ₫"
-
-            tree.insert('', 'end', values=(
-                screening_time,
-                tickets_sold,
-                formatted_occupation,
-                formatted_revenue
-            ))
-
-        cursor.close()
+            formatted_revenue = f"{int(revenue):,} ₫".replace(",", ".")
+            tree.insert('', 'end', values=(screening_time, tickets_sold, formatted_occupation, formatted_revenue))
     #Day
     def day_performance(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
+
+        self.sort_states = {}
+
+        def sort_column(treeview, col, col_type):
+            def clean_value(val):
+                if col_type == 'int':
+                    try:
+                        return int(val)
+                    except ValueError:
+                        return 0
+                return val.lower() if isinstance(val, str) else val
+
+            data = [(treeview.set(child, col), child) for child in treeview.get_children("")]
+            reverse = self.sort_states.get(col, False)
+            data.sort(key=lambda x: clean_value(x[0]), reverse=reverse)
+
+            for index, (_, child) in enumerate(data):
+                treeview.move(child, '', index)
+
+            self.sort_states[col] = not reverse
+
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT Day, TicketSold, MostPopularShowtime FROM day_performance30")
+        query = "SELECT Day, TicketSold, MostPopularShowtime FROM day_performance30"
+        cursor.execute(query)
         records = cursor.fetchall()
+        cursor.close()
+
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True)
-
         columns = ("Day", "TicketSold", "MostPopularShowtime")
         tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
         tree.pack(side="left", fill="both", expand=True)
-
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
         scrollbar.pack(side="right", fill="y")
         tree.configure(yscrollcommand=scrollbar.set)
 
-        tree.heading("Day", text="Day")
-        tree.heading("TicketSold", text="Tickets Sold")
-        tree.heading("MostPopularShowtime", text="Most Popular Showtime")
-        tree.column("Day", width=120, anchor="center")
-        tree.column("TicketSold", width=100, anchor="center")
-        tree.column("MostPopularShowtime", width=150, anchor="center")
+        headings = {
+            "Day": "Day",
+            "TicketSold": "Tickets Sold",
+            "MostPopularShowtime": "Most Popular Showtime"
+        }
 
+        col_types = {
+            "Day": "text",
+            "TicketSold": "int",
+            "MostPopularShowtime": "text"
+        }
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name == "Day" else 150, anchor="center")
         for row in records:
             tree.insert('', 'end', values=row)
-
-        cursor.close()
 
         self.hide_button2()
         self.show_day_button()
     def display_day30(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
+
+        self.sort_states = {}
+
+        def sort_column(treeview, col, col_type):
+            def clean_value(val):
+                if col_type == 'int':
+                    try:
+                        return int(val)
+                    except ValueError:
+                        return 0
+                return val.lower() if isinstance(val, str) else val
+
+            data = [(treeview.set(child, col), child) for child in treeview.get_children("")]
+            reverse = self.sort_states.get(col, False)
+            data.sort(key=lambda x: clean_value(x[0]), reverse=reverse)
+
+            for index, (_, child) in enumerate(data):
+                treeview.move(child, '', index)
+
+            self.sort_states[col] = not reverse
+
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT Day, TicketSold, MostPopularShowtime FROM day_performance30")
+        query = "SELECT Day, TicketSold, MostPopularShowtime FROM day_performance30"
+        cursor.execute(query)
         records = cursor.fetchall()
+        cursor.close()
+
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True)
-
         columns = ("Day", "TicketSold", "MostPopularShowtime")
         tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
         tree.pack(side="left", fill="both", expand=True)
-
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
         scrollbar.pack(side="right", fill="y")
         tree.configure(yscrollcommand=scrollbar.set)
 
-        tree.heading("Day", text="Day")
-        tree.heading("TicketSold", text="Tickets Sold")
-        tree.heading("MostPopularShowtime", text="Most Popular Showtime")
-        tree.column("Day", width=120, anchor="center")
-        tree.column("TicketSold", width=100, anchor="center")
-        tree.column("MostPopularShowtime", width=150, anchor="center")
+        headings = {
+            "Day": "Day",
+            "TicketSold": "Tickets Sold",
+            "MostPopularShowtime": "Most Popular Showtime"
+        }
 
+        col_types = {
+            "Day": "text",
+            "TicketSold": "int",
+            "MostPopularShowtime": "text"
+        }
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name == "Day" else 150, anchor="center")
         for row in records:
             tree.insert('', 'end', values=row)
-
-        cursor.close()
     def display_day90(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
+
+        self.sort_states = {}
+
+        def sort_column(treeview, col, col_type):
+            def clean_value(val):
+                if col_type == 'int':
+                    try:
+                        return int(val)
+                    except ValueError:
+                        return 0
+                return val.lower() if isinstance(val, str) else val
+
+            data = [(treeview.set(child, col), child) for child in treeview.get_children("")]
+            reverse = self.sort_states.get(col, False)
+            data.sort(key=lambda x: clean_value(x[0]), reverse=reverse)
+
+            for index, (_, child) in enumerate(data):
+                treeview.move(child, '', index)
+
+            self.sort_states[col] = not reverse
+
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT Day, TicketSold, MostPopularShowtime FROM day_performance90")
+        query = "SELECT Day, TicketSold, MostPopularShowtime FROM day_performance90"
+        cursor.execute(query)
         records = cursor.fetchall()
+        cursor.close()
+
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True)
-
         columns = ("Day", "TicketSold", "MostPopularShowtime")
         tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
         tree.pack(side="left", fill="both", expand=True)
-
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
         scrollbar.pack(side="right", fill="y")
         tree.configure(yscrollcommand=scrollbar.set)
 
-        tree.heading("Day", text="Day")
-        tree.heading("TicketSold", text="Tickets Sold")
-        tree.heading("MostPopularShowtime", text="Most Popular Showtime")
-        tree.column("Day", width=120, anchor="center")
-        tree.column("TicketSold", width=100, anchor="center")
-        tree.column("MostPopularShowtime", width=150, anchor="center")
+        headings = {
+            "Day": "Day",
+            "TicketSold": "Tickets Sold",
+            "MostPopularShowtime": "Most Popular Showtime"
+        }
 
+        col_types = {
+            "Day": "text",
+            "TicketSold": "int",
+            "MostPopularShowtime": "text"
+        }
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name == "Day" else 150, anchor="center")
         for row in records:
             tree.insert('', 'end', values=row)
-
-        cursor.close()
     def display_day_all(self):
         for widget in self.graph_frame2.winfo_children():
             widget.destroy()
+        self.graph_frame2.update_idletasks()
+
+        self.sort_states = {}
+
+        def sort_column(treeview, col, col_type):
+            def clean_value(val):
+                if col_type == 'int':
+                    try:
+                        return int(val)
+                    except ValueError:
+                        return 0
+                return val.lower() if isinstance(val, str) else val
+
+            data = [(treeview.set(child, col), child) for child in treeview.get_children("")]
+            reverse = self.sort_states.get(col, False)
+            data.sort(key=lambda x: clean_value(x[0]), reverse=reverse)
+
+            for index, (_, child) in enumerate(data):
+                treeview.move(child, '', index)
+
+            self.sort_states[col] = not reverse
+
         cursor = self.main.mydb.cursor()
-        cursor.execute("SELECT Day, TicketSold, MostPopularShowtime FROM day_performancealltime")
+        query = "SELECT Day, TicketSold, MostPopularShowtime FROM day_performancealltime"
+        cursor.execute(query)
         records = cursor.fetchall()
+        cursor.close()
+
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
+        table_frame = tk.Frame(self.graph_frame2)
+        table_frame.pack(fill="both", expand=True)
+        columns = ("Day", "TicketSold", "MostPopularShowtime")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        headings = {
+            "Day": "Day",
+            "TicketSold": "Tickets Sold",
+            "MostPopularShowtime": "Most Popular Showtime"
+        }
+
+        col_types = {
+            "Day": "text",
+            "TicketSold": "int",
+            "MostPopularShowtime": "text"
+        }
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120 if col_name == "Day" else 150, anchor="center")
+        for row in records:
+            tree.insert('', 'end', values=row)
+    #Format
+    def format_performance(self):
+        for widget in self.graph_frame2.winfo_children():
+            widget.destroy()
+        self.graph_frame2.update_idletasks()
+
+        self.sort_states = {}
+
+        def sort_column(treeview, col, col_type):
+            def clean_value(val):
+                if col_type == 'int':
+                    try:
+                        return int(float(val.replace(',', '').replace('₫', '').strip()))
+                    except ValueError:
+                        return 0
+                return val.lower() if isinstance(val, str) else val
+
+            data = [(treeview.set(child, col), child) for child in treeview.get_children('')]
+            reverse = self.sort_states.get(col, False)
+            data.sort(key=lambda x: clean_value(x[0]), reverse=reverse)
+
+            for index, (_, child) in enumerate(data):
+                treeview.move(child, '', index)
+
+            self.sort_states[col] = not reverse
+
+        cursor = self.main.mydb.cursor()
+        query = "SELECT * FROM genre_format_30"
+        cursor.execute(query)
+        records = cursor.fetchall()
+        cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
         table_frame = tk.Frame(self.graph_frame2)
         table_frame.pack(fill="both", expand=True)
 
-        columns = ("Day", "TicketSold", "MostPopularShowtime")
+        columns = ("MovieGenre", "MovieFormat", "TotalTicketsSold", "TotalRevenue")
         tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
         tree.pack(side="left", fill="both", expand=True)
 
@@ -2213,17 +3112,1237 @@ class Admin(tk.Toplevel):
         scrollbar.pack(side="right", fill="y")
         tree.configure(yscrollcommand=scrollbar.set)
 
-        tree.heading("Day", text="Day")
-        tree.heading("TicketSold", text="Tickets Sold")
-        tree.heading("MostPopularShowtime", text="Most Popular Showtime")
-        tree.column("Day", width=120, anchor="center")
-        tree.column("TicketSold", width=100, anchor="center")
-        tree.column("MostPopularShowtime", width=150, anchor="center")
+        headings = {
+            "MovieGenre": "Genre",
+            "MovieFormat": "Format",
+            "TotalTicketsSold": "Tickets Sold",
+            "TotalRevenue": "Revenue"
+        }
+        col_types = {
+            "MovieGenre": "text",
+            "MovieFormat": "text",
+            "TotalTicketsSold": "int",
+            "TotalRevenue": "int"
+        }
+
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120, anchor="center")
+
+
+        for row in records:
+            formatted_row = list(row)
+            formatted_row[3] = f"{formatted_row[3]:,.0f} ₫"
+            tree.insert('', 'end', values=formatted_row)
+
+        self.hide_button2()
+        self.show_format_button()
+    def format_30(self):
+        for widget in self.graph_frame2.winfo_children():
+            widget.destroy()
+        self.graph_frame2.update_idletasks()
+
+        self.sort_states = {}
+
+        def sort_column(treeview, col, col_type):
+            def clean_value(val):
+                if col_type == 'int':
+                    try:
+                        return int(float(val.replace(',', '').replace('₫', '').strip()))
+                    except ValueError:
+                        return 0
+                return val.lower() if isinstance(val, str) else val
+
+            data = [(treeview.set(child, col), child) for child in treeview.get_children('')]
+            reverse = self.sort_states.get(col, False)
+            data.sort(key=lambda x: clean_value(x[0]), reverse=reverse)
+
+            for index, (_, child) in enumerate(data):
+                treeview.move(child, '', index)
+
+            self.sort_states[col] = not reverse
+
+        cursor = self.main.mydb.cursor()
+        query = "SELECT * FROM genre_format_30"
+        cursor.execute(query)
+        records = cursor.fetchall()
+        cursor.close()
+
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
+        table_frame = tk.Frame(self.graph_frame2)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("MovieGenre", "MovieFormat", "TotalTicketsSold", "TotalRevenue")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        headings = {
+            "MovieGenre": "Genre",
+            "MovieFormat": "Format",
+            "TotalTicketsSold": "Tickets Sold",
+            "TotalRevenue": "Revenue"
+        }
+        col_types = {
+            "MovieGenre": "text",
+            "MovieFormat": "text",
+            "TotalTicketsSold": "int",
+            "TotalRevenue": "int"
+        }
+
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120, anchor="center")
+
+        for row in records:
+            formatted_row = list(row)
+            formatted_row[3] = f"{formatted_row[3]:,.0f} ₫"
+            tree.insert('', 'end', values=formatted_row)
+    def format_90(self):
+        for widget in self.graph_frame2.winfo_children():
+            widget.destroy()
+        self.graph_frame2.update_idletasks()
+
+        self.sort_states = {}
+
+        def sort_column(treeview, col, col_type):
+            def clean_value(val):
+                if col_type == 'int':
+                    try:
+                        return int(float(val.replace(',', '').replace('₫', '').strip()))
+                    except ValueError:
+                        return 0
+                return val.lower() if isinstance(val, str) else val
+
+            data = [(treeview.set(child, col), child) for child in treeview.get_children('')]
+            reverse = self.sort_states.get(col, False)
+            data.sort(key=lambda x: clean_value(x[0]), reverse=reverse)
+
+            for index, (_, child) in enumerate(data):
+                treeview.move(child, '', index)
+
+            self.sort_states[col] = not reverse
+
+        cursor = self.main.mydb.cursor()
+        query = "SELECT * FROM genre_format_90"
+        cursor.execute(query)
+        records = cursor.fetchall()
+        cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
+        table_frame = tk.Frame(self.graph_frame2)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("MovieGenre", "MovieFormat", "TotalTicketsSold", "TotalRevenue")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        headings = {
+            "MovieGenre": "Genre",
+            "MovieFormat": "Format",
+            "TotalTicketsSold": "Tickets Sold",
+            "TotalRevenue": "Revenue"
+        }
+        col_types = {
+            "MovieGenre": "text",
+            "MovieFormat": "text",
+            "TotalTicketsSold": "int",
+            "TotalRevenue": "int"
+        }
+
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120, anchor="center")
+
+        for row in records:
+            formatted_row = list(row)
+            formatted_row[3] = f"{formatted_row[3]:,.0f} ₫"
+            tree.insert('', 'end', values=formatted_row)
+    def format_year(self):
+        for widget in self.graph_frame2.winfo_children():
+            widget.destroy()
+        self.graph_frame2.update_idletasks()
+
+        self.sort_states = {}
+
+        def sort_column(treeview, col, col_type):
+            def clean_value(val):
+                if col_type == 'int':
+                    try:
+                        return int(float(val.replace(',', '').replace('₫', '').strip()))
+                    except ValueError:
+                        return 0
+                return val.lower() if isinstance(val, str) else val
+
+            data = [(treeview.set(child, col), child) for child in treeview.get_children('')]
+            reverse = self.sort_states.get(col, False)
+            data.sort(key=lambda x: clean_value(x[0]), reverse=reverse)
+
+            for index, (_, child) in enumerate(data):
+                treeview.move(child, '', index)
+
+            self.sort_states[col] = not reverse
+
+        cursor = self.main.mydb.cursor()
+        query = "SELECT * FROM genre_format_year"
+        cursor.execute(query)
+        records = cursor.fetchall()
+        cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
+        table_frame = tk.Frame(self.graph_frame2)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("MovieGenre", "MovieFormat", "TotalTicketsSold", "TotalRevenue")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        headings = {
+            "MovieGenre": "Genre",
+            "MovieFormat": "Format",
+            "TotalTicketsSold": "Tickets Sold",
+            "TotalRevenue": "Revenue"
+        }
+        col_types = {
+            "MovieGenre": "text",
+            "MovieFormat": "text",
+            "TotalTicketsSold": "int",
+            "TotalRevenue": "int"
+        }
+
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120, anchor="center")
+
+        for row in records:
+            formatted_row = list(row)
+            formatted_row[3] = f"{formatted_row[3]:,.0f} ₫"
+            tree.insert('', 'end', values=formatted_row)
+    def format_all(self):
+        for widget in self.graph_frame2.winfo_children():
+            widget.destroy()
+        self.graph_frame2.update_idletasks()
+
+        self.sort_states = {}
+
+        def sort_column(treeview, col, col_type):
+            def clean_value(val):
+                if col_type == 'int':
+                    try:
+                        return int(float(val.replace(',', '').replace('₫', '').strip()))
+                    except ValueError:
+                        return 0
+                return val.lower() if isinstance(val, str) else val
+
+            data = [(treeview.set(child, col), child) for child in treeview.get_children('')]
+            reverse = self.sort_states.get(col, False)
+            data.sort(key=lambda x: clean_value(x[0]), reverse=reverse)
+
+            for index, (_, child) in enumerate(data):
+                treeview.move(child, '', index)
+
+            self.sort_states[col] = not reverse
+
+        cursor = self.main.mydb.cursor()
+        query = "SELECT * FROM genre_format_all"
+        cursor.execute(query)
+        records = cursor.fetchall()
+        cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe2 = df.copy()
+        table_frame = tk.Frame(self.graph_frame2)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("MovieGenre", "MovieFormat", "TotalTicketsSold", "TotalRevenue")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        headings = {
+            "MovieGenre": "Genre",
+            "MovieFormat": "Format",
+            "TotalTicketsSold": "Tickets Sold",
+            "TotalRevenue": "Revenue"
+        }
+        col_types = {
+            "MovieGenre": "text",
+            "MovieFormat": "text",
+            "TotalTicketsSold": "int",
+            "TotalRevenue": "int"
+        }
+
+        for col_name in columns:
+            tree.heading(col_name, text=headings[col_name], command=lambda c=col_name: sort_column(tree, c, col_types[c]))
+            tree.column(col_name, width=120, anchor="center")
+
+        for row in records:
+            formatted_row = list(row)
+            formatted_row[3] = f"{formatted_row[3]:,.0f} ₫"
+            tree.insert('', 'end', values=formatted_row)
+
+    #DEF TAB3
+    #Show/hide buttons
+    def hide_button3(self):
+        self.hide_age_button()
+        self.hide_age_genre_button()
+        self.hide_age_time_button()
+        self.hide_age_format_button()
+    def show_age_button(self):
+        self.age_90.pack(side="right", padx=10)
+        self.age_year.pack(side="right", padx=10)
+        self.age_all.pack(side="right", padx=10)
+    def hide_age_button(self):
+        self.age_90.pack_forget()
+        self.age_year.pack_forget()
+        self.age_all.pack_forget()
+    def show_age_genre_button(self):
+        self.genre_17.pack(side="right", padx=10)
+        self.genre_25.pack(side="right", padx=10)
+        self.genre_40.pack(side="right", padx=10)
+        self.genre_60.pack(side="right", padx=10)
+        self.genre_above.pack(side="right", padx=10)
+        self.genre_screening.pack(side="right", padx=10)
+    def hide_age_genre_button(self):
+        self.genre_17.pack_forget()
+        self.genre_25.pack_forget()
+        self.genre_40.pack_forget()
+        self.genre_60.pack_forget()
+        self.genre_above.pack_forget()
+        self.genre_screening.pack_forget()
+    def show_age_time_button(self):
+        self.age_time_30_bt.pack(side="right", padx=10)
+        self.age_time_90_bt.pack(side="right", padx=10)
+        self.age_time_year_bt.pack(side="right", padx=10)
+        self.age_time_all_bt.pack(side="right", padx=10)
+    def hide_age_time_button(self):
+        self.age_time_30_bt.pack_forget()
+        self.age_time_90_bt.pack_forget()
+        self.age_time_year_bt.pack_forget()
+        self.age_time_all_bt.pack_forget()
+    def show_age_format_button(self):
+        self.age_format_30_bt.pack(side="right", padx=10)
+        self.age_format_90_bt.pack(side="right", padx=10)
+        self.age_format_year_bt.pack(side="right", padx=10)
+        self.age_format_all_bt.pack(side="right", padx=10)
+    def hide_age_format_button(self):
+        self.age_format_30_bt.pack_forget()
+        self.age_format_90_bt.pack_forget()
+        self.age_format_year_bt.pack_forget()
+        self.age_format_all_bt.pack_forget()
+    #AGE
+    def display_age(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+        self.graph_frame3.update_idletasks()
+
+        query = """
+                    SELECT 
+                        AgeRange, 
+                        CustomerCount 
+                    FROM 
+                        age90
+                    ORDER BY 
+                        AgeRange;
+                """
+
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
+        self.current_dataframe3 = df.copy()
+        fig = Figure(figsize=(11, 6), dpi=100)
+        self.current_figure3 = fig
+        ax = fig.add_subplot(111)
+
+        ax.bar(df['AgeRange'], df['CustomerCount'], color='green')
+
+        ax.set_title("Customer Distribution by Age Range")
+        ax.set_xlabel("Age Range")
+        ax.set_ylabel("Customer Count")
+        ax.ticklabel_format(style='plain', axis='y')
+        ax.set_xticks(range(len(df['AgeRange'])))
+        ax.set_xticklabels(df['AgeRange'], rotation=45)
+        fig.autofmt_xdate()
+        fig.tight_layout()
+
+        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame3)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+
+        self.hide_button3()
+        self.show_age_button()
+    def age90(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+        self.graph_frame3.update_idletasks()
+
+        query = """
+                    SELECT 
+                        AgeRange, 
+                        CustomerCount 
+                    FROM 
+                        age90
+                    ORDER BY 
+                        AgeRange;
+                """
+
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
+        fig = Figure(figsize=(11, 6), dpi=100)
+        self.current_figure3 = fig
+        ax = fig.add_subplot(111)
+
+        ax.bar(df['AgeRange'], df['CustomerCount'], color='green')
+
+        ax.set_title("Customer Distribution by Age Range")
+        ax.set_xlabel("Age Range")
+        ax.set_ylabel("Customer Count")
+        ax.ticklabel_format(style='plain', axis='y')
+        ax.set_xticks(range(len(df['AgeRange'])))
+        ax.set_xticklabels(df['AgeRange'], rotation=45)
+        fig.autofmt_xdate()
+        fig.tight_layout()
+
+        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame3)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+    def ageyear(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+        self.graph_frame3.update_idletasks()
+
+        query = """
+                    SELECT 
+                        AgeRange, 
+                        CustomerCount 
+                    FROM 
+                        ageyear
+                    ORDER BY 
+                        AgeRange;
+                """
+
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
+        fig = Figure(figsize=(11, 6), dpi=100)
+        self.current_figure3 = fig
+        ax = fig.add_subplot(111)
+
+        ax.bar(df['AgeRange'], df['CustomerCount'], color='green')
+
+        ax.set_title("Customer Distribution by Age Range")
+        ax.set_xlabel("Age Range")
+        ax.set_ylabel("Customer Count")
+        ax.ticklabel_format(style='plain', axis='y')
+        ax.set_xticks(range(len(df['AgeRange'])))
+        ax.set_xticklabels(df['AgeRange'], rotation=45)
+        fig.autofmt_xdate()
+        fig.tight_layout()
+
+        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame3)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+    def ageall(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+        self.graph_frame3.update_idletasks()
+
+        query = """
+                    SELECT 
+                        AgeRange, 
+                        CustomerCount 
+                    FROM 
+                        age
+                    ORDER BY 
+                        AgeRange;
+                """
+
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
+        fig = Figure(figsize=(11, 6), dpi=100)
+        self.current_figure3 = fig
+        ax = fig.add_subplot(111)
+
+        ax.bar(df['AgeRange'], df['CustomerCount'], color='green')
+
+        ax.set_title("Customer Distribution by Age Range")
+        ax.set_xlabel("Age Range")
+        ax.set_ylabel("Customer Count")
+        ax.ticklabel_format(style='plain', axis='y')
+        ax.set_xticks(range(len(df['AgeRange'])))
+        ax.set_xticklabels(df['AgeRange'], rotation=45)
+        fig.autofmt_xdate()
+        fig.tight_layout()
+
+        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame3)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+    #Genre-age
+    def display_age_genre(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+        self.graph_frame3.update_idletasks()
+
+        query = """
+                    SELECT 
+                        Genre, 
+                        TicketsSold 
+                    FROM 
+                        age17
+                    ORDER BY 
+                        Genre;
+                """
+
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
+        fig = Figure(figsize=(11, 6), dpi=100)
+        self.current_figure3 = fig
+        ax = fig.add_subplot(111)
+
+        ax.bar(df['Genre'], df['TicketsSold'], color='blue')
+
+        ax.set_title("Customer Distribution by Age Range")
+        ax.set_xlabel("Genre")
+        ax.set_ylabel("Customer Count")
+        ax.ticklabel_format(style='plain', axis='y')
+        ax.set_xticks(range(len(df['Genre'])))
+        ax.set_xticklabels(df['Genre'], rotation=45)
+        fig.autofmt_xdate()
+        fig.tight_layout()
+
+        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame3)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+
+        self.hide_button3()
+        self.show_age_genre_button()
+    def genre17(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+        self.graph_frame3.update_idletasks()
+
+        query = """
+                    SELECT 
+                        Genre, 
+                        TicketsSold 
+                    FROM 
+                        age17
+                    ORDER BY 
+                        Genre;
+                """
+
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
+        fig = Figure(figsize=(11, 6), dpi=100)
+        self.current_figure3 = fig
+        ax = fig.add_subplot(111)
+
+        ax.bar(df['Genre'], df['TicketsSold'], color='blue')
+
+        ax.set_title("Customer Distribution by Age Range")
+        ax.set_xlabel("Genre")
+        ax.set_ylabel("Customer Count")
+        ax.ticklabel_format(style='plain', axis='y')
+        ax.set_xticks(range(len(df['Genre'])))
+        ax.set_xticklabels(df['Genre'], rotation=45)
+        fig.autofmt_xdate()
+        fig.tight_layout()
+
+        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame3)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+    def genre25(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+        self.graph_frame3.update_idletasks()
+
+        query = """
+                    SELECT 
+                        Genre, 
+                        TicketsSold 
+                    FROM 
+                        age25
+                    ORDER BY 
+                        Genre;
+                """
+
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
+        fig = Figure(figsize=(11, 6), dpi=100)
+        self.current_figure3 = fig
+        ax = fig.add_subplot(111)
+
+        ax.bar(df['Genre'], df['TicketsSold'], color='blue')
+
+        ax.set_title("Customer Distribution by Age Range")
+        ax.set_xlabel("Genre")
+        ax.set_ylabel("Customer Count")
+        ax.ticklabel_format(style='plain', axis='y')
+        ax.set_xticks(range(len(df['Genre'])))
+        ax.set_xticklabels(df['Genre'], rotation=45)
+        fig.autofmt_xdate()
+        fig.tight_layout()
+
+        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame3)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+    def genre40(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+        self.graph_frame3.update_idletasks()
+
+        query = """
+                    SELECT 
+                        Genre, 
+                        TicketsSold 
+                    FROM 
+                        age40
+                    ORDER BY 
+                        Genre;
+                """
+
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
+        fig = Figure(figsize=(11, 6), dpi=100)
+        self.current_figure3 = fig
+        ax = fig.add_subplot(111)
+
+        ax.bar(df['Genre'], df['TicketsSold'], color='blue')
+
+        ax.set_title("Customer Distribution by Age Range")
+        ax.set_xlabel("Genre")
+        ax.set_ylabel("Customer Count")
+        ax.ticklabel_format(style='plain', axis='y')
+        ax.set_xticks(range(len(df['Genre'])))
+        ax.set_xticklabels(df['Genre'], rotation=45)
+        fig.autofmt_xdate()
+        fig.tight_layout()
+
+        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame3)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+    def genre60(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+        self.graph_frame3.update_idletasks()
+
+        query = """
+                    SELECT 
+                        Genre, 
+                        TicketsSold 
+                    FROM 
+                        age60
+                    ORDER BY 
+                        Genre;
+                """
+
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
+        fig = Figure(figsize=(11, 6), dpi=100)
+        self.current_figure3 = fig
+        ax = fig.add_subplot(111)
+
+        ax.bar(df['Genre'], df['TicketsSold'], color='blue')
+
+        ax.set_title("Customer Distribution by Age Range")
+        ax.set_xlabel("Genre")
+        ax.set_ylabel("Customer Count")
+        ax.ticklabel_format(style='plain', axis='y')
+        ax.set_xticks(range(len(df['Genre'])))
+        ax.set_xticklabels(df['Genre'], rotation=45)
+        fig.autofmt_xdate()
+        fig.tight_layout()
+
+        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame3)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+    def genre_above_60(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+        self.graph_frame3.update_idletasks()
+
+        query = """
+                    SELECT 
+                        Genre, 
+                        TicketsSold 
+                    FROM 
+                        ageabove60
+                    ORDER BY 
+                        Genre;
+                """
+
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
+        fig = Figure(figsize=(11, 6), dpi=100)
+        self.current_figure3 = fig
+        ax = fig.add_subplot(111)
+
+        ax.bar(df['Genre'], df['TicketsSold'], color='blue')
+
+        ax.set_title("Customer Distribution by Age Range")
+        ax.set_xlabel("Genre")
+        ax.set_ylabel("Customer Count")
+        ax.ticklabel_format(style='plain', axis='y')
+        ax.set_xticks(range(len(df['Genre'])))
+        ax.set_xticklabels(df['Genre'], rotation=45)
+        fig.autofmt_xdate()
+        fig.tight_layout()
+
+        canvas = FigureCanvasTkAgg(fig, master=self.graph_frame3)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=20)
+    def genre_screening_1(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+        self.graph_frame3.update_idletasks()
+
+        cursor = self.main.mydb.cursor()
+        query="SELECT * FROM genre_screening"
+        cursor.execute(query)
+        records = cursor.fetchall()
+        cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
+
+        table_frame = tk.Frame(self.graph_frame3)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("Genre", "TotalScreenings")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        tree.heading("Genre", text="Genre")
+        tree.heading("TotalScreenings", text="Total Screenings")
+        tree.column("Genre", width=150, anchor="center")
+        tree.column("TotalScreenings", width=150, anchor="center")
+
+        for row in records:
+            tree.insert('', 'end', values=row)
+    #ScreeningTime-Age
+    def display_time_age(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+        self.graph_frame3.update_idletasks()
+
+        cursor = self.main.mydb.cursor()
+        query = "SELECT * FROM age_time_30"
+        cursor.execute(query)
+        records = cursor.fetchall()
+        cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
+
+        table_frame = tk.Frame(self.graph_frame3)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("AgeGroup", "ScreeningTime", "TicketCount")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        self.sort_orders = {col: False for col in columns}
+
+        def sort_by_column(col):
+            descending = self.sort_orders[col]
+            self.sort_orders[col] = not descending
+
+            sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
+
+            for item in tree.get_children():
+                tree.delete(item)
+            for record in sorted_records:
+                tree.insert('', 'end', values=record)
+
+        tree.heading("AgeGroup", text="Age Group")
+        tree.heading("ScreeningTime", text="Screening Time")
+        tree.heading("TicketCount", text="Customer Count")
+        tree.column("AgeGroup", width=100, anchor="center")
+        tree.column("ScreeningTime", width=120, anchor="center")
+        tree.column("TicketCount", width=100, anchor="center")
+
+        for col in columns:
+            tree.heading(col, text=col, command=lambda c=col: sort_by_column(c))
+            tree.column(col, anchor="center", width=120)
 
         for row in records:
             tree.insert('', 'end', values=row)
 
+        self.hide_button3()
+        self.show_age_time_button()
+    def age_time_30(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+        self.graph_frame3.update_idletasks()
+
+        cursor = self.main.mydb.cursor()
+        query = "SELECT * FROM age_time_30"
+        cursor.execute(query)
+        records = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
+
+        table_frame = tk.Frame(self.graph_frame3)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("AgeGroup", "ScreeningTime", "TicketCount")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        self.sort_orders = {col: False for col in columns}
+
+        def sort_by_column(col):
+            descending = self.sort_orders[col]
+            self.sort_orders[col] = not descending
+
+            sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
+
+            for item in tree.get_children():
+                tree.delete(item)
+            for record in sorted_records:
+                tree.insert('', 'end', values=record)
+
+        tree.heading("AgeGroup", text="Age Group")
+        tree.heading("ScreeningTime", text="Screening Time")
+        tree.heading("TicketCount", text="Customer Count")
+        tree.column("AgeGroup", width=100, anchor="center")
+        tree.column("ScreeningTime", width=120, anchor="center")
+        tree.column("TicketCount", width=100, anchor="center")
+
+        for col in columns:
+            tree.heading(col, text=col, command=lambda c=col: sort_by_column(c))
+            tree.column(col, anchor="center", width=120)
+
+        for row in records:
+            tree.insert('', 'end', values=row)
+    def age_time_90(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+        self.graph_frame3.update_idletasks()
+
+        cursor = self.main.mydb.cursor()
+        query = "SELECT * FROM age_time_90"
+        cursor.execute(query)
+        records = cursor.fetchall()
+        cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
+
+        table_frame = tk.Frame(self.graph_frame3)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("AgeGroup", "ScreeningTime", "TicketCount")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        self.sort_orders = {col: False for col in columns}
+
+        def sort_by_column(col):
+            descending = self.sort_orders[col]
+            self.sort_orders[col] = not descending
+
+            sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
+
+            for item in tree.get_children():
+                tree.delete(item)
+            for record in sorted_records:
+                tree.insert('', 'end', values=record)
+
+        tree.heading("AgeGroup", text="Age Group")
+        tree.heading("ScreeningTime", text="Screening Time")
+        tree.heading("TicketCount", text="Customer Count")
+        tree.column("AgeGroup", width=100, anchor="center")
+        tree.column("ScreeningTime", width=120, anchor="center")
+        tree.column("TicketCount", width=100, anchor="center")
+
+        for col in columns:
+            tree.heading(col, text=col, command=lambda c=col: sort_by_column(c))
+            tree.column(col, anchor="center", width=120)
+
+        for row in records:
+            tree.insert('', 'end', values=row)
+    def age_time_year(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+        self.graph_frame3.update_idletasks()
+
+        cursor = self.main.mydb.cursor()
+        query = "SELECT * FROM age_time_year"
+        cursor.execute(query)
+        records = cursor.fetchall()
+        cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
+
+        table_frame = tk.Frame(self.graph_frame3)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("AgeGroup", "ScreeningTime", "TicketCount")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        self.sort_orders = {col: False for col in columns}
+
+        def sort_by_column(col):
+            descending = self.sort_orders[col]
+            self.sort_orders[col] = not descending
+
+            sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
+
+            for item in tree.get_children():
+                tree.delete(item)
+            for record in sorted_records:
+                tree.insert('', 'end', values=record)
+
+        tree.heading("AgeGroup", text="Age Group")
+        tree.heading("ScreeningTime", text="Screening Time")
+        tree.heading("TicketCount", text="Customer Count")
+        tree.column("AgeGroup", width=100, anchor="center")
+        tree.column("ScreeningTime", width=120, anchor="center")
+        tree.column("TicketCount", width=100, anchor="center")
+
+        for col in columns:
+            tree.heading(col, text=col, command=lambda c=col: sort_by_column(c))
+            tree.column(col, anchor="center", width=120)
+
+        for row in records:
+            tree.insert('', 'end', values=row)
+    def age_time_all(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+        self.graph_frame3.update_idletasks()
+
+        cursor = self.main.mydb.cursor()
+        query="SELECT * FROM age_time_all"
+        cursor.execute(query)
+        records = cursor.fetchall()
+        cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
+
+        table_frame = tk.Frame(self.graph_frame3)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("AgeGroup", "ScreeningTime", "TicketCount")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        self.sort_orders = {col: False for col in columns}
+
+        def sort_by_column(col):
+            descending = self.sort_orders[col]
+            self.sort_orders[col] = not descending
+
+            sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
+
+            for item in tree.get_children():
+                tree.delete(item)
+            for record in sorted_records:
+                tree.insert('', 'end', values=record)
+
+        tree.heading("AgeGroup", text="Age Group")
+        tree.heading("ScreeningTime", text="Screening Time")
+        tree.heading("TicketCount", text="Customer Count")
+        tree.column("AgeGroup", width=100, anchor="center")
+        tree.column("ScreeningTime", width=120, anchor="center")
+        tree.column("TicketCount", width=100, anchor="center")
+
+        for col in columns:
+            tree.heading(col, text=col, command=lambda c=col: sort_by_column(c))
+            tree.column(col, anchor="center", width=120)
+
+        for row in records:
+            tree.insert('', 'end', values=row)
+    #Format-Age
+    def display_format_age(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+        self.graph_frame3.update_idletasks()
+
+        cursor = self.main.mydb.cursor()
+        query = "SELECT * FROM age_format_30"
+        cursor.execute(query)
+        records = cursor.fetchall()
+        cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
+
+        table_frame = tk.Frame(self.graph_frame3)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("AgeGroup", "MovieFormat", "TicketsSold")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        self.sort_orders = {col: False for col in columns}
+
+        def sort_by_column(col):
+            descending = self.sort_orders[col]
+            self.sort_orders[col] = not descending
+
+            sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
+
+            for item in tree.get_children():
+                tree.delete(item)
+            for record in sorted_records:
+                tree.insert('', 'end', values=record)
+
+        tree.heading("AgeGroup", text="Age Group")
+        tree.heading("MovieFormat", text="Movie Format")
+        tree.heading("TicketsSold", text="Customer Count")
+        tree.column("AgeGroup", width=100, anchor="center")
+        tree.column("MovieFormat", width=120, anchor="center")
+        tree.column("TicketsSold", width=100, anchor="center")
+
+        for col in columns:
+            tree.heading(col, text=col, command=lambda c=col: sort_by_column(c))
+            tree.column(col, anchor="center", width=120)
+
+        for row in records:
+            tree.insert('', 'end', values=row)
+
+        self.hide_button3()
+        self.show_age_format_button()
+    def age_format_30(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+        self.graph_frame3.update_idletasks()
+
+        cursor = self.main.mydb.cursor()
+        query = "SELECT * FROM age_format_30"
+        cursor.execute(query)
+        records = cursor.fetchall()
+        cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
+
+        table_frame = tk.Frame(self.graph_frame3)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("AgeGroup", "MovieFormat", "TicketsSold")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        self.sort_orders = {col: False for col in columns}
+
+        def sort_by_column(col):
+            descending = self.sort_orders[col]
+            self.sort_orders[col] = not descending
+
+            sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
+
+            for item in tree.get_children():
+                tree.delete(item)
+            for record in sorted_records:
+                tree.insert('', 'end', values=record)
+
+        tree.heading("AgeGroup", text="Age Group")
+        tree.heading("MovieFormat", text="Movie Format")
+        tree.heading("TicketsSold", text="Customer Count")
+        tree.column("AgeGroup", width=100, anchor="center")
+        tree.column("MovieFormat", width=120, anchor="center")
+        tree.column("TicketsSold", width=100, anchor="center")
+
+        for col in columns:
+            tree.heading(col, text=col, command=lambda c=col: sort_by_column(c))
+            tree.column(col, anchor="center", width=120)
+
+        for row in records:
+            tree.insert('', 'end', values=row)
+    def age_format_90(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+        self.graph_frame3.update_idletasks()
+
+        cursor = self.main.mydb.cursor()
+        query = "SELECT * FROM age_format_90"
+        cursor.execute(query)
+        records = cursor.fetchall()
+        cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
+
+        table_frame = tk.Frame(self.graph_frame3)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("AgeGroup", "MovieFormat", "TicketsSold")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        self.sort_orders = {col: False for col in columns}
+
+        def sort_by_column(col):
+            descending = self.sort_orders[col]
+            self.sort_orders[col] = not descending
+
+            sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
+
+            for item in tree.get_children():
+                tree.delete(item)
+            for record in sorted_records:
+                tree.insert('', 'end', values=record)
+
+        tree.heading("AgeGroup", text="Age Group")
+        tree.heading("MovieFormat", text="Movie Format")
+        tree.heading("TicketsSold", text="Customer Count")
+        tree.column("AgeGroup", width=100, anchor="center")
+        tree.column("MovieFormat", width=120, anchor="center")
+        tree.column("TicketsSold", width=100, anchor="center")
+
+        for col in columns:
+            tree.heading(col, text=col, command=lambda c=col: sort_by_column(c))
+            tree.column(col, anchor="center", width=120)
+
+        for row in records:
+            tree.insert('', 'end', values=row)
+    def age_format_year(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+        self.graph_frame3.update_idletasks()
+
+        cursor = self.main.mydb.cursor()
+        query = "SELECT * FROM age_format_year"
+        cursor.execute(query)
+        records = cursor.fetchall()
+        cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
+
+        table_frame = tk.Frame(self.graph_frame3)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("AgeGroup", "MovieFormat", "TicketsSold")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        self.sort_orders = {col: False for col in columns}
+
+        def sort_by_column(col):
+            descending = self.sort_orders[col]
+            self.sort_orders[col] = not descending
+
+            sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
+
+            for item in tree.get_children():
+                tree.delete(item)
+            for record in sorted_records:
+                tree.insert('', 'end', values=record)
+
+        tree.heading("AgeGroup", text="Age Group")
+        tree.heading("MovieFormat", text="Movie Format")
+        tree.heading("TicketsSold", text="Customer Count")
+        tree.column("AgeGroup", width=100, anchor="center")
+        tree.column("MovieFormat", width=120, anchor="center")
+        tree.column("TicketsSold", width=100, anchor="center")
+
+        for col in columns:
+            tree.heading(col, text=col, command=lambda c=col: sort_by_column(c))
+            tree.column(col, anchor="center", width=120)
+
+        for row in records:
+            tree.insert('', 'end', values=row)
+    def age_format_all(self):
+        for widget in self.graph_frame3.winfo_children():
+            widget.destroy()
+        self.graph_frame3.update_idletasks()
+
+        cursor = self.main.mydb.cursor()
+        query="SELECT * FROM age_format_all"
+        cursor.execute(query)
+        records = cursor.fetchall()
+        cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe3 = df.copy()
+
+
+        table_frame = tk.Frame(self.graph_frame3)
+        table_frame.pack(fill="both", expand=True)
+
+        columns = ("AgeGroup", "MovieFormat", "TicketsSold")
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=10)
+        tree.pack(side="left", fill="both", expand=True)
+
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+        scrollbar.pack(side="right", fill="y")
+        tree.configure(yscrollcommand=scrollbar.set)
+
+        self.sort_orders = {col: False for col in columns}
+
+        def sort_by_column(col):
+            descending = self.sort_orders[col]
+            self.sort_orders[col] = not descending
+
+            sorted_records = sorted(records, key=lambda x: x[columns.index(col)], reverse=descending)
+
+            for item in tree.get_children():
+                tree.delete(item)
+            for record in sorted_records:
+                tree.insert('', 'end', values=record)
+
+        tree.heading("AgeGroup", text="Age Group")
+        tree.heading("MovieFormat", text="Movie Format")
+        tree.heading("TicketsSold", text="Customer Count")
+        tree.column("AgeGroup", width=100, anchor="center")
+        tree.column("MovieFormat", width=120, anchor="center")
+        tree.column("TicketsSold", width=100, anchor="center")
+
+        for col in columns:
+            tree.heading(col, text=col, command=lambda c=col: sort_by_column(c))
+            tree.column(col, anchor="center", width=120)
+
+        for row in records:
+            tree.insert('', 'end', values=row)
 
 if __name__ == "__main__":
     app=Liemora()
