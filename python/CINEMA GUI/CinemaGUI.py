@@ -11,6 +11,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.dates as mdates
 from matplotlib.ticker import MaxNLocator
+from tkinter import filedialog
 import os
 
 
@@ -409,8 +410,6 @@ class Admin(tk.Toplevel):
         self.sort_orders = {}
         self.sort_states = {}
 
-
-        # Style configuration
         style = ttk.Style()
         style.theme_use('default')
         fixed_width = 20
@@ -465,6 +464,8 @@ class Admin(tk.Toplevel):
                 self.revenue_monthly_btn = tk.Button(self.buttons_frame, text="Monthly", width=20, height=2,command=self.revenue_monthly)
                 self.revenue_quarterly_btn = tk.Button(self.buttons_frame, text="Quarterly", width=20, height=2,command=self.revenue_quarterly)
                 self.revenue_yearly_btn = tk.Button(self.buttons_frame, text="Yearly", width=20, height=2,command=self.revenue_yearly)
+                self.revenue_yearly_btn2 = tk.Button(self.buttons_frame, text="Export as Excel", width=20, height=2,
+                                                    command=self.excel1)
 
                 #Ticket
                 self.ticket_daily_btn = tk.Button(self.buttons_frame, text="Daily", width=20, height=2,command=self.ticket_daily)
@@ -586,17 +587,18 @@ class Admin(tk.Toplevel):
         self.main.account_entry.delete(0, tk.END)
         self.main.password_entry.delete(0, tk.END)
         self.main.deiconify()
-    #DEF Show/hide buttons
     def hide_time_range_totalrevenue(self):
         self.revenue_daily_btn.pack_forget()
         self.revenue_monthly_btn.pack_forget()
         self.revenue_quarterly_btn.pack_forget()
         self.revenue_yearly_btn.pack_forget()
+        self.revenue_yearly_btn2.pack_forget()
     def show_time_range_totalrevenue(self):
         self.revenue_daily_btn.pack(side="right", padx=10)
         self.revenue_monthly_btn.pack(side="right", padx=10)
         self.revenue_quarterly_btn.pack(side="right", padx=10)
         self.revenue_yearly_btn.pack(side="right", padx=10)
+        self.revenue_yearly_btn2.pack(side="left", padx=10)
     def hide_time_range_buttons(self):
         self.all_time_btn.pack_forget()
         self.last_year_btn.pack_forget()
@@ -1261,6 +1263,39 @@ class Admin(tk.Toplevel):
             year_month, total_revenue = row
             formatted_revenue = "{:,.0f} ₫".format(total_revenue).replace(",", ".")
             tree.insert("", "end", values=(year_month, formatted_revenue))
+    def excel1(self):
+        try:
+            cursor = self.main.mydb.cursor()
+            query = """
+                    SELECT
+                        DATE(PayTime) AS PayDate,
+                        SUM(Amount) AS TotalRevenue
+                    FROM Payments
+                    GROUP BY PayDate
+                    ORDER BY PayDate DESC;
+                """
+            cursor.execute(query)
+            data = cursor.fetchall()
+            cursor.close()
+            if not data:
+                messagebox.showwarning("No Data", "No revenue data found to export.")
+                return
+            cleaned_data = []
+            for row in data:
+                pay_date, revenue = row
+                cleaned_data.append((pay_date, revenue))
+            df = pd.DataFrame(cleaned_data, columns=["Date", "Total Revenue (₫)"])
+            file_path = filedialog.asksaveasfilename(
+                defaultextension=".xlsx",
+                filetypes=[("Excel files", "*.xlsx")],
+                title="Save Excel File"
+            )
+            if not file_path:
+                return
+            df.to_excel(file_path, index=False)
+            messagebox.showinfo("Success", f"Revenue data exported to:\n{file_path}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export data:\n{e}")
     #Ticket
     def display_ticket(self):
         for widget in self.graph_frame.winfo_children():
@@ -1546,7 +1581,6 @@ class Admin(tk.Toplevel):
 
 
     #DEF TAB2
-
     #Show/Hide button
     def hide_button2(self):
         self.hide_movie_button()
@@ -2890,7 +2924,6 @@ class Admin(tk.Toplevel):
             tree.insert('', 'end', values=formatted_row)
 
     #DEF TAB3
-
     #Show/hide buttons
     def hide_button3(self):
         self.hide_age_button()
@@ -2939,8 +2972,6 @@ class Admin(tk.Toplevel):
         self.age_format_90_bt.pack_forget()
         self.age_format_year_bt.pack_forget()
         self.age_format_all_bt.pack_forget()
-
-
     #AGE
     def display_age(self):
         for widget in self.graph_frame3.winfo_children():
@@ -3073,7 +3104,6 @@ class Admin(tk.Toplevel):
         canvas = FigureCanvasTkAgg(fig, master=self.graph_frame3)
         canvas.draw()
         canvas.get_tk_widget().pack(pady=20)
-
     #Genre-age
     def display_age_genre(self):
         for widget in self.graph_frame3.winfo_children():
@@ -3297,7 +3327,6 @@ class Admin(tk.Toplevel):
 
         for row in records:
             tree.insert('', 'end', values=row)
-
     #ScreeningTime-Age
     def display_time_age(self):
         for widget in self.graph_frame3.winfo_children():
@@ -3532,7 +3561,6 @@ class Admin(tk.Toplevel):
 
         for row in records:
             tree.insert('', 'end', values=row)
-
     #Format-Age
     def display_format_age(self):
         for widget in self.graph_frame3.winfo_children():
