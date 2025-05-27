@@ -1132,4 +1132,111 @@ CROSS JOIN Formats f
 LEFT JOIN Sales s ON s.AgeGroup = a.AgeGroup AND s.MovieFormat = f.MovieFormat
 ORDER BY a.AgeMin, f.MovieFormat;
 
+-- Format-Performance
+CREATE OR REPLACE VIEW genre_format_30 AS
+SELECT 
+    m.Genre AS MovieGenre,
+    s.MovieFormat,
+    COUNT(t.TicketID) AS TotalTicketsSold,
+    IFNULL(SUM(p.Amount), 0) AS TotalRevenue
+FROM 
+    Movies m
+JOIN 
+    Screenings s ON m.MovieID = s.MovieID
+JOIN 
+    Tickets t ON s.ScreeningID = t.ScreeningID
+LEFT JOIN 
+    Payments p ON t.TicketID = p.TicketID
+WHERE 
+    p.PayTime >= NOW() - INTERVAL 30 DAY
+GROUP BY 
+    m.Genre, s.MovieFormat
+ORDER BY 
+    MovieFormat;
+    
+-- Format-Performance
+CREATE OR REPLACE VIEW genre_format_30 AS
+SELECT 
+    m.Genre AS MovieGenre,
+    s.MovieFormat,
+    COUNT(t.TicketID) AS TotalTicketsSold,
+    IFNULL(SUM(p.Amount), 0) AS TotalRevenue
+FROM 
+    Movies m
+JOIN 
+    Screenings s ON m.MovieID = s.MovieID
+JOIN 
+    Tickets t ON s.ScreeningID = t.ScreeningID
+LEFT JOIN 
+    Payments p ON t.TicketID = p.TicketID
+WHERE 
+    p.PayTime >= NOW() - INTERVAL 30 DAY
+GROUP BY 
+    m.Genre, s.MovieFormat
+ORDER BY 
+    MovieFormat;
+    
+-- Format-Performance
+CREATE OR REPLACE VIEW genre_format_90 AS
+SELECT 
+    m.Genre AS MovieGenre,
+    s.MovieFormat,
+    COUNT(t.TicketID) AS TotalTicketsSold,
+    IFNULL(SUM(p.Amount), 0) AS TotalRevenue
+FROM 
+    Movies m
+JOIN 
+    Screenings s ON m.MovieID = s.MovieID
+JOIN 
+    Tickets t ON s.ScreeningID = t.ScreeningID
+LEFT JOIN 
+    Payments p ON t.TicketID = p.TicketID
+WHERE 
+    p.PayTime >= NOW() - INTERVAL 90 DAY
+GROUP BY 
+    m.Genre, s.MovieFormat
+ORDER BY 
+    MovieFormat;
+    
+-- Format-Performance
+CREATE OR REPLACE VIEW genre_format_year AS
+SELECT 
+    m.Genre AS MovieGenre,
+    s.MovieFormat,
+    COUNT(t.TicketID) AS TotalTicketsSold,
+    IFNULL(SUM(p.Amount), 0) AS TotalRevenue
+FROM 
+    Movies m
+JOIN 
+    Screenings s ON m.MovieID = s.MovieID
+JOIN 
+    Tickets t ON s.ScreeningID = t.ScreeningID
+LEFT JOIN 
+    Payments p ON t.TicketID = p.TicketID
+WHERE 
+    p.PayTime >= NOW() - INTERVAL 365 DAY
+GROUP BY 
+    m.Genre, s.MovieFormat
+ORDER BY 
+    MovieFormat;
+    
+-- Format-Performance
+CREATE OR REPLACE VIEW genre_format_all AS
+SELECT 
+    m.Genre AS MovieGenre,
+    s.MovieFormat,
+    COUNT(t.TicketID) AS TotalTicketsSold,
+    IFNULL(SUM(p.Amount), 0) AS TotalRevenue
+FROM 
+    Movies m
+JOIN 
+    Screenings s ON m.MovieID = s.MovieID
+JOIN 
+    Tickets t ON s.ScreeningID = t.ScreeningID
+LEFT JOIN 
+    Payments p ON t.TicketID = p.TicketID
+GROUP BY 
+    m.Genre, s.MovieFormat
+ORDER BY 
+    MovieFormat;
 
