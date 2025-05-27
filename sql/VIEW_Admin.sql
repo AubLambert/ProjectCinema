@@ -284,7 +284,7 @@ GROUP BY
 ORDER BY 
     fg.PeriodStart ASC;
     
-    
+-- TICKET
 CREATE OR REPLACE VIEW ticket_30days AS
 WITH RECURSIVE DateRange AS (
     SELECT DATE_SUB(CURDATE(), INTERVAL 30 DAY) AS PaymentDate
@@ -344,6 +344,7 @@ LEFT JOIN Tickets t ON s.ScreeningID = t.ScreeningID
 LEFT JOIN Payments p ON t.TicketID = p.TicketID
 WHERE s.ScreeningDate >= CURDATE() - INTERVAL 14 DAY
 GROUP BY m.MovieID, m.MovieTitle, m.Genre
+HAVING TotalRevenue > 0
 ORDER BY 
     TotalRevenue DESC,
     TicketsSold DESC,
@@ -370,6 +371,7 @@ LEFT JOIN Tickets t ON s.ScreeningID = t.ScreeningID
 LEFT JOIN Payments p ON t.TicketID = p.TicketID
 WHERE s.ScreeningDate >= CURDATE() - INTERVAL 30 DAY
 GROUP BY m.MovieID, m.MovieTitle, m.Genre
+HAVING TotalRevenue > 0
 ORDER BY 
     TotalRevenue DESC,
     TicketsSold DESC,
@@ -396,6 +398,7 @@ LEFT JOIN Tickets t ON s.ScreeningID = t.ScreeningID
 LEFT JOIN Payments p ON t.TicketID = p.TicketID
 WHERE s.ScreeningDate >= CURDATE() - INTERVAL 60 DAY
 GROUP BY m.MovieID, m.MovieTitle, m.Genre
+HAVING TotalRevenue > 0
 ORDER BY 
     TotalRevenue DESC,
     TicketsSold DESC,
