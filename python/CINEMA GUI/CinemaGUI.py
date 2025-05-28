@@ -21,16 +21,25 @@ class Liemora(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("LIEMORA Cinema Login")
-        self.geometry("700x500")
+        self.geometry("800x600")
         self.resizable(False, False)
         self.mydb = None #!
         self.timeslot_window = None #!
+        icon_path = os.path.join(base_dir, "Images","wang.png")
+        if os.path.exists(icon_path):
+            if icon_path.endswith(".ico"):
+                self.iconbitmap(icon_path)
+            else:
+                icon_image = Image.open(icon_path).resize((32, 32), Image.LANCZOS)
+                icon_photo = ImageTk.PhotoImage(icon_image)
+                self.iconphoto(True, icon_photo)
+                self.icon_photo = icon_photo
+
         self.build_login_ui()
 
     def build_login_ui(self):
-        #Đổi lại path của ảnh
         img_path = os.path.join(base_dir, "Images", "Cat.jpg")
-        bg_image = Image.open(img_path).resize((700, 500), Image.LANCZOS)
+        bg_image = Image.open(img_path).resize((800, 600), Image.LANCZOS)
         bg_photo = ImageTk.PhotoImage(bg_image)
         self.bg_photo = bg_photo
 
@@ -39,7 +48,7 @@ class Liemora(tk.Tk):
         canvas.create_image(0, 0, image=bg_photo, anchor="nw")
 
         frame = tk.Frame(canvas, bd=2, relief="solid", padx=25, pady=25)
-        canvas.create_window(350, 250, window=frame)
+        canvas.create_window(400, 300, window=frame)
 
         tk.Label(frame, text="LIEMORA Cinema", font=("Helvetica", 14, "bold")).pack(pady=(0, 20))
         tk.Label(frame, text="Account").pack()
@@ -144,7 +153,7 @@ class staff_ui(tk.Toplevel):
                                   justify="center", state = dashboard_state,
                                   command=self.go_to_report)
         dashboard_btn.pack(pady=10)
-#Ticket search
+
 class ticket_searching(tk.Toplevel):
     def __init__(self, main,username):
         super().__init__(main)
