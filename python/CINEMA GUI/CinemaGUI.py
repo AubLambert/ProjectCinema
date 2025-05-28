@@ -26,14 +26,10 @@ class Liemora(tk.Tk):
         self.mydb = None #!
         self.timeslot_window = None #!
         icon_path = os.path.join(base_dir, "Images","wang.png")
-        if os.path.exists(icon_path):
-            if icon_path.endswith(".ico"):
-                self.iconbitmap(icon_path)
-            else:
-                icon_image = Image.open(icon_path).resize((32, 32), Image.LANCZOS)
-                icon_photo = ImageTk.PhotoImage(icon_image)
-                self.iconphoto(True, icon_photo)
-                self.icon_photo = icon_photo
+        icon_image = Image.open(icon_path).resize((32, 32), Image.LANCZOS)
+        icon_photo = ImageTk.PhotoImage(icon_image)
+        self.iconphoto(True, icon_photo)
+        self.icon_photo = icon_photo
 
         self.build_login_ui()
 
