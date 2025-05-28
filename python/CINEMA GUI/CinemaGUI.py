@@ -90,6 +90,14 @@ class staff_ui(tk.Toplevel):
         self.configure(bg="white")
         self.resizable(False, False)
 
+        base_dir = os.path.dirname(__file__)
+        img_path = os.path.join(base_dir, "Images", "catmenu.jpg")
+        bg_image = Image.open(img_path).resize((500, 500), Image.LANCZOS)
+        self.bg_photo = ImageTk.PhotoImage(bg_image)
+        self.canvas = tk.Canvas(self, width=500, height=500, highlightthickness=0)
+        self.canvas.place(x=0, y=0, relwidth=1, relheight=1)
+        self.canvas.create_image(0, 0, image=self.bg_photo, anchor="nw")
+
         self.protocol("WM_DELETE_WINDOW", self.on_close)
         self.staff_interface()
     def on_close(self):
@@ -121,34 +129,43 @@ class staff_ui(tk.Toplevel):
         self.destroy()
 
     def staff_interface(self):
-        self.configure(bg="white")
+        self.canvas.create_rectangle(0, 0, 500, 500, fill="black", stipple="gray50")
 
-        tk.Button(self, text="Logout", font=10, width=7, command=self.logout) \
+        frame_style = {"bg": "#1C2526", "bd": 2, "relief": "solid"}
+        btn_style = {
+            "font": ("Helvetica", 15, "bold"),
+            "width": 20,
+            "bg": "#FF4444",
+            "fg": "white",
+            "activebackground": "#CC0000",
+            "activeforeground": "white",
+            "relief": "raised",
+            "bd": 3
+        }
+
+        tk.Button(self, text="Logout", font=("Helvetica", 10, "bold"), width=7, command=self.logout,
+                  bg="#FFD700", fg="black", activebackground="#DAA520", activeforeground="black",
+                  relief="raised", bd=3) \
             .grid(row=0, column=0, sticky="nw", padx=20, pady=20)
-
-        top_frame = tk.Frame(self, bg="white")
+        top_frame = tk.Frame(self, **frame_style)
         top_frame.place(relx=0.5, y=100, anchor="n")
+        top_label = tk.Label(top_frame, text="Welcome", font=("Helvetica", 25, "bold"), bg=frame_style["bg"],
+                             fg="#FFD700", justify="center")
+        top_label.pack(padx=15, pady=10)
 
-        option_frame = tk.Frame(self, bg="white")
+        option_frame = tk.Frame(self, **frame_style)
         option_frame.place(relx=0.5, y=200, anchor="n")
 
-        top_label = tk.Label(top_frame, text="Welcome", font=("bold", 25), bg="white", justify="center")
-        top_label.pack(padx=5, pady=5)
+        search_btn = tk.Button(option_frame, text="Search Ticket", command=self.go_to_searching, **btn_style)
+        search_btn.pack(pady=10, padx=10)
 
-        search_btn = tk.Button(option_frame, text="Search ticket", font=("bold", 15), width=20, justify="center",
-                               command=self.go_to_searching)
-        search_btn.pack(pady=10, ipadx=4)
-
-        booking_btn = tk.Button(option_frame, text="Ticket booking", font=("bold", 15), width=20, justify="center",
-                                command=self.go_to_booking)
-        booking_btn.pack(pady=10)
+        booking_btn = tk.Button(option_frame, text="Ticket Booking", command=self.go_to_booking, **btn_style)
+        booking_btn.pack(pady=10, padx=10)
 
         dashboard_state = "normal" if self.username == "admin" else "disabled"
-
-        dashboard_btn = tk.Button(option_frame, text="Business Dashboard", font=("bold", 15), width=20,
-                                  justify="center", state = dashboard_state,
-                                  command=self.go_to_report)
-        dashboard_btn.pack(pady=10)
+        dashboard_btn = tk.Button(option_frame, text="Business Dashboard", state=dashboard_state,
+                                  command=self.go_to_report, **btn_style)
+        dashboard_btn.pack(pady=10, padx=10)
 
 class ticket_searching(tk.Toplevel):
     def __init__(self, main,username):
@@ -954,7 +971,7 @@ class Admin(tk.Toplevel):
         self.title("Business Dashboard")
         self.geometry("1350x750")
         self.resizable(False, False)
-        self.configure(bg="white")
+        self.configure(bg="#FAFAFA")
         self.main = main
         self.protocol("WM_DELETE_WINDOW", self.on_close)
         self.sort_orders = {}
@@ -966,35 +983,49 @@ class Admin(tk.Toplevel):
         self.current_figure2 = None
         self.current_figure3 = None
 
-        self.tab_control = ttk.Notebook(self)
+        style = ttk.Style()
+        style.configure("Modern.TNotebook",
+                        background="#FAFAFA",
+                        borderwidth=0)
+        style.configure("Modern.TNotebook.Tab",
+                        background="white",
+                        foreground="#333333",
+                        padding=[15, 8],
+                        borderwidth=0,width=19)
+        style.map("Modern.TNotebook.Tab",
+                  background=[("selected", "white"), ("active", "#F8F9FA")])
+
+        self.tab_control = ttk.Notebook(self, style="Modern.TNotebook")
         self.tab_control.pack(expand=True, fill='both', padx=20, pady=20)
-        self.tab1 = tk.Frame(self.tab_control)
-        self.tab2 = tk.Frame(self.tab_control)
-        self.tab3 = tk.Frame(self.tab_control)
+
+        self.tab1 = tk.Frame(self.tab_control, bg="white")
+        self.tab2 = tk.Frame(self.tab_control, bg="white")
+        self.tab3 = tk.Frame(self.tab_control, bg="white")
 
         self.tab_control.add(self.tab1, text='📊 Sales Overview')
-        self.tab_control.add(self.tab2, text='📈 Performance Report')
+        self.tab_control.add(self.tab2, text='📈 Performance')
         self.tab_control.add(self.tab3, text='👥 Customer Insight')
+
 
         self.tab_control.bind("<<NotebookTabChanged>>", self.on_tab_changed)
 
-
         for tab in (self.tab1, self.tab2, self.tab3):
-            main_frame = tk.Frame(tab)
+            main_frame = tk.Frame(tab, bg="white")
             main_frame.pack(fill="both", expand=True)
 
-            self.left_frame = tk.Frame(main_frame, width=180)
+            self.left_frame = tk.Frame(main_frame, width=180, bg="#F8F9FA", relief="flat")
             self.left_frame.pack(side="left", fill="y")
 
-            right_frame = tk.Frame(main_frame)
+            right_frame = tk.Frame(main_frame, bg="white")
             right_frame.pack(side="right", fill="both", expand=True)
 
-            #Button
+            # Button
             if tab == self.tab1:
-                self.graph_frame = tk.Frame(right_frame)
+                self.buttons_frame = tk.Frame(right_frame, bg="white")
+                self.buttons_frame.pack(fill="x", pady=15,side="bottom")
+
+                self.graph_frame = tk.Frame(right_frame, bg="white", relief="flat")
                 self.graph_frame.pack(fill="both", expand=True)
-                self.buttons_frame = tk.Frame(right_frame)
-                self.buttons_frame.pack(fill="x", pady=10)
 
                 #Left buttons
                 tk.Button(self.left_frame, text="Logout",width=20, command=self.logout).pack(pady=3,padx=5,side="bottom",ipady=10)
@@ -1027,10 +1058,12 @@ class Admin(tk.Toplevel):
                 self.ticket_yearly_btn = tk.Button(self.buttons_frame, text="Yearly", width=20, command=self.ticket_yearly)
 
             elif tab == self.tab2:
-                self.graph_frame2 = tk.Frame(right_frame)
+                self.buttons_frame2 = tk.Frame(right_frame, bg="white")
+                self.buttons_frame2.pack(fill="x", pady=15, side="bottom")
+
+                self.graph_frame2 = tk.Frame(right_frame, bg="white", relief="flat", bd=0)
                 self.graph_frame2.pack(fill="both", expand=True)
-                self.buttons_frame2 = tk.Frame(right_frame)
-                self.buttons_frame2.pack(fill="x", pady=10)
+
 
                 tk.Button(self.left_frame, text="Logout",width=20,command=self.logout).pack(pady=3, padx=5,ipady=10,side="bottom",)
                 tk.Button(self.left_frame, text="Movie Performance", width=20, command=self.display_movie).pack(pady=3, padx=5,ipady=10)
@@ -1078,10 +1111,11 @@ class Admin(tk.Toplevel):
                                          command=self.format_all)
 
             elif tab == self.tab3:
-                self.graph_frame3 = tk.Frame(right_frame)
+                self.buttons_frame3 = tk.Frame(right_frame, bg="white")
+                self.buttons_frame3.pack(fill="x", pady=15, side="bottom")
+
+                self.graph_frame3 = tk.Frame(right_frame, bg="white", relief="flat", bd=0)
                 self.graph_frame3.pack(fill="both", expand=True)
-                self.buttons_frame3 = tk.Frame(right_frame)
-                self.buttons_frame3.pack(fill="x", pady=10)
 
                 tk.Button(self.left_frame, text="Logout",width=20, command=self.logout).pack(pady=3, padx=5,ipady=10,side="bottom")
                 tk.Button(self.left_frame, text="Age Distribution", width=20, command=self.display_age).pack(pady=3, padx=5,ipady=10)
@@ -1311,7 +1345,7 @@ class Admin(tk.Toplevel):
 
             canvas = FigureCanvasTkAgg(fig, master=self.graph_frame)
             canvas.draw()
-            canvas.get_tk_widget().pack(fill='both', expand=True)
+            canvas.get_tk_widget().pack(fill ="both", expand=True)
         except Exception as e:
             print(f"Error generating chart: {e}")
         self.hide_time_range_ticket()
@@ -2800,7 +2834,7 @@ class Admin(tk.Toplevel):
 
         canvas = FigureCanvasTkAgg(fig, master=self.graph_frame2)
         canvas.draw()
-        canvas.get_tk_widget().pack(fill="both", expand=True, padx=10, pady=10)
+        canvas.get_tk_widget().pack(fill="both", expand=True)
         plt.close(fig)
     #Screeningtime
     def display_screening_time(self):
