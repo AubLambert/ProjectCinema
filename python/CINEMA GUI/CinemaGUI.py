@@ -118,9 +118,9 @@ class staff_ui(tk.Toplevel):
     def staff_interface(self):
         tk.Button(self, text="Logout", font=10, width=7, command=self.logout).grid(row=0, column=0, sticky="nw", padx=20, pady=20)
         top_frame = tk.Frame(self, bg="white")
-        top_frame.place(x=190,y=100)
+        top_frame.place(x=170,y=100)
         option_frame = tk.Frame(self, bg="white")
-        option_frame.place(x=191,y=200)
+        option_frame.place(x=170,y=200)
         #Welcome
         top_label = tk.Label(top_frame, text="Welcome", font=("bold",25),justify="center")
         top_label.pack(padx=5, pady=5)
@@ -211,9 +211,10 @@ class ticket_searching(tk.Toplevel):
         
         headings = ["Ticket ID", "Customer Name", "Phone", "Movie", "Room", "Date", "Seat", "Time", "Price (VND)", "Payment Time", "Action"]
         for col, title in enumerate(headings):
-            lbl = tk.Label(self.heading_frame, text=title, font=('Arial', 10, 'bold'),
+            lbl = tk.Label(self.heading_frame, text=title, font=('Arial', 9, 'bold'),
                            borderwidth=1, relief='solid', width=17)
             lbl.grid(row=0, column=col, sticky='nsew')
+            
         
         # Results frame
         self.inner_frame = tk.Frame(self.scrollable_container, bg='white')
@@ -298,7 +299,7 @@ class ticket_searching(tk.Toplevel):
             for j, val in enumerate(values):
                 lbl = tk.Label(self.inner_frame, text=val, font=('Arial', 10), bg='white', 
                              relief='solid', borderwidth=1, width=17)
-                lbl.grid(row=i, column=j, sticky='nsew')  # Fixed: use self.inner_frame
+                lbl.grid(row=i, column=j, sticky='nsew')
 
                 # Make Cancel button clickable
                 if j == len(values)-1 and val == 'Cancel':
@@ -321,7 +322,6 @@ class ticket_searching(tk.Toplevel):
             return False
 
     def handle_action_click(self, ticket_id):
-        # TODO
         result = tk.messagebox.askyesno("Confirm Cancellation", 
                                       f"Are you sure you want to cancel ticket {ticket_id}?")
         if result:
@@ -634,7 +634,7 @@ class SeatBooking(tk.Toplevel):
                     fg_color = "black"
                     state = "normal"
                   
-                seat_button = tk.Button(seat_frame, width=4, height=2, text=f"{seat_number}", relief=tk.RIDGE,bd=1,
+                seat_button = tk.Button(seat_frame, width=4, height=1, text=f"{seat_number}", relief=tk.RIDGE,bd=1,
                     fg=fg_color, state=state, bg = bg_color, command=lambda s=seat_number: self.toggle_seat(s) #seat selection command
                 )
                 seat_button.grid(row=row+1, column=col+1, padx=15, pady=5)
