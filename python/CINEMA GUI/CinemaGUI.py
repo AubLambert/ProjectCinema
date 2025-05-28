@@ -225,7 +225,7 @@ class ticket_searching(tk.Toplevel):
         
         headings = ["Ticket ID", "Customer Name", "Phone", "Movie", "Room", "Date", "Seat", "Time", "Price (VND)", "Payment Time", "Action"]
         for col, title in enumerate(headings):
-            lbl = tk.Label(self.heading_frame, text=title, font=('Arial', 9, 'bold'),
+            lbl = tk.Label(self.heading_frame, text=title, font=('Arial', 10, 'bold'),
                            borderwidth=1, relief='solid', width=17)
             lbl.grid(row=0, column=col, sticky='nsew')
             
@@ -699,6 +699,7 @@ class CustomerFormApp(tk.Toplevel):
         self.total_price = total_price
         self.amount_due_var = StringVar(value=f"{self.total_price:.2f}")
         self.protocol("WM_DELETE_WINDOW", self.on_close)
+        self.resizable(False, False)
         self.create_widgets()
     
     def back4(self):
