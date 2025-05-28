@@ -25,27 +25,6 @@ BEGIN
 END//
 DELIMITER ;
 
--- BƯỚC 4: Trigger cập nhật khi cập nhật vé (nếu đổi ghế)
-DELIMITER //
-CREATE TRIGGER update_seat_status_after_update
-AFTER UPDATE ON Tickets
-FOR EACH ROW
-BEGIN
-    -- Nếu đổi ghế khác
-    IF OLD.SeatID != NEW.SeatID THEN
-        -- Ghế cũ chuyển về Available
-        UPDATE Seats 
-        SET SeatStatus = 'Available' 
-        WHERE SeatID = OLD.SeatID;
-        
-        -- Ghế mới chuyển thành Booked
-        UPDATE Seats 
-        SET SeatStatus = 'Booked' 
-        WHERE SeatID = NEW.SeatID;
-    END IF;
-END//
-DELIMITER ;
-
 -- Event tự động reset ghế sau khi suất chiếu kết thúc
 SET GLOBAL event_scheduler = ON;
 DELIMITER //
