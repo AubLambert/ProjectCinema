@@ -71,10 +71,7 @@ class Liemora(tb.Window):
             if self.mydb.is_connected():
                 messagebox.showinfo("Login Success", f"Welcome, {username}")
                 self.withdraw()
-                if username == "admin":
-                    Admin(self)
-                else:
-                    staff_ui(self, username)
+                staff_ui(self, username)
             else:
                 messagebox.showerror("Login Failed", "Error Occurred")
 
@@ -90,7 +87,7 @@ class staff_ui(tk.Toplevel):
         self.geometry("500x500")
         self.configure(bg="white")
         self.resizable(False, False)
-        
+
         self.protocol("WM_DELETE_WINDOW", self.on_close)
         self.staff_interface()
     def on_close(self):
@@ -98,7 +95,7 @@ class staff_ui(tk.Toplevel):
             self.main.mydb.close()
         self.destroy()
         self.main.destroy()
-        
+
     def logout(self):
         if self.main.mydb.is_connected():
             self.main.mydb.close()
@@ -106,31 +103,48 @@ class staff_ui(tk.Toplevel):
         self.main.account_entry.delete(0, tk.END)
         self.main.password_entry.delete(0, tk.END)
         self.main.deiconify()
-        
+
     def go_to_booking(self):
         Movie(self.main, self.username)
         self.destroy()
-        
+
     def go_to_searching(self):
         ticket_searching(self.main, self.username)
         self.destroy()
-        
+
+    def go_to_report(self):
+        Admin(self.main, self.username)
+        self.destroy()
+
     def staff_interface(self):
-        tk.Button(self, text="Logout", font=10, width=7, command=self.logout).grid(row=0, column=0, sticky="nw", padx=20, pady=20)
+        self.configure(bg="white")
+
+        tk.Button(self, text="Logout", font=10, width=7, command=self.logout) \
+            .grid(row=0, column=0, sticky="nw", padx=20, pady=20)
+
         top_frame = tk.Frame(self, bg="white")
-        top_frame.place(x=170,y=100)
+        top_frame.place(relx=0.5, y=100, anchor="n")
+
         option_frame = tk.Frame(self, bg="white")
-        option_frame.place(x=170,y=200)
-        #Welcome
-        top_label = tk.Label(top_frame, text="Welcome", font=("bold",25),justify="center")
+        option_frame.place(relx=0.5, y=200, anchor="n")
+
+        top_label = tk.Label(top_frame, text="Welcome", font=("bold", 25), bg="white", justify="center")
         top_label.pack(padx=5, pady=5)
-        #Options
-        search_btn = tk.Button(option_frame, text="Search ticket", font=("bold",15), justify="center",
-                               command = self.go_to_searching)
+
+        search_btn = tk.Button(option_frame, text="Search ticket", font=("bold", 15), width=20, justify="center",
+                               command=self.go_to_searching)
         search_btn.pack(pady=10, ipadx=4)
-        booking_btn = tk.Button(option_frame, text="Ticket booking", font=("bold", 15), justify="center",
-                                command= self.go_to_booking)
+
+        booking_btn = tk.Button(option_frame, text="Ticket booking", font=("bold", 15), width=20, justify="center",
+                                command=self.go_to_booking)
         booking_btn.pack(pady=10)
+
+        dashboard_state = "normal" if self.username == "admin" else "disabled"
+
+        dashboard_btn = tk.Button(option_frame, text="Business Dashboard", font=("bold", 15), width=20,
+                                  justify="center", state = dashboard_state,
+                                  command=self.go_to_report)
+        dashboard_btn.pack(pady=10)
 
 #Ticket search
 class ticket_searching(tk.Toplevel):
@@ -153,7 +167,7 @@ class ticket_searching(tk.Toplevel):
         
     def back2(self):
         self.destroy()
-        self.main.deiconify()
+        staff_ui(self.main, self.username)
         
     def search_interface(self):
         back_btn = tk.Button(
@@ -908,11 +922,11 @@ class CustomerFormApp(tk.Toplevel):
         self.month_entry.bind('<FocusOut>', self.check_auto_discount)
         self.year_entry.bind('<FocusOut>', self.check_auto_discount)
 
-
-class Admin(tb.Window):
-    def __init__(self, main):
-        super().__init__(themename="litera")
-        self.title("Liemora's Report")
+class Admin(tk.Toplevel):
+    def __init__(self, main, username):
+        super().__init__(main)
+        self.username = username
+        self.title("Business Dashboard")
         self.geometry("1600x900")
         self.resizable(False, False)
         self.configure(bg="white")
@@ -929,11 +943,11 @@ class Admin(tb.Window):
 
 
 
-        self.tab_control = tb.Notebook(self)
+        self.tab_control = ttk.Notebook(self)
         self.tab_control.pack(expand=True, fill='both', padx=20, pady=20)
-        self.tab1 = tb.Frame(self.tab_control)
-        self.tab2 = tb.Frame(self.tab_control)
-        self.tab3 = tb.Frame(self.tab_control)
+        self.tab1 = tk.Frame(self.tab_control)
+        self.tab2 = tk.Frame(self.tab_control)
+        self.tab3 = tk.Frame(self.tab_control)
 
         self.tab_control.add(self.tab1, text='📊 Sales Overview')
         self.tab_control.add(self.tab2, text='📈 Performance Report')
@@ -943,155 +957,155 @@ class Admin(tb.Window):
 
 
         for tab in (self.tab1, self.tab2, self.tab3):
-            main_frame = tb.Frame(tab)
+            main_frame = tk.Frame(tab)
             main_frame.pack(fill="both", expand=True)
 
-            self.left_frame = tb.Frame(main_frame, width=180)
+            self.left_frame = tk.Frame(main_frame, width=180)
             self.left_frame.pack(side="left", fill="y")
 
-            right_frame = tb.Frame(main_frame)
+            right_frame = tk.Frame(main_frame)
             right_frame.pack(side="right", fill="both", expand=True)
 
             #Button
             if tab == self.tab1:
-                self.graph_frame = tb.Frame(right_frame)
+                self.graph_frame = tk.Frame(right_frame)
                 self.graph_frame.pack(fill="both", expand=True)
-                self.buttons_frame = tb.Frame(right_frame)
+                self.buttons_frame = tk.Frame(right_frame)
                 self.buttons_frame.pack(fill="x", pady=10)
 
                 #Left buttons
-                tb.Button(self.left_frame, text="Logout",width=20, command=self.logout).pack(pady=3,padx=5,side="bottom",ipady=10)
-                tb.Button(self.left_frame, text="Export as Excel\n(With PNG if available)", width=20, command=self.excel_export).pack(pady=3,padx=5,side="bottom",ipady=10)
-                tb.Button(self.left_frame, width=20,  text="Total Revenue",command=self.display_total_revenue).pack(pady=3, padx=5,ipady=10)
-                tb.Button(self.left_frame,width=20, text="Revenue Trends", command=self.display_revenue_sales_chart).pack(pady=3,padx=5,ipady=10)
-                tb.Button(self.left_frame, text="Total Ticket Sold", width=20,  command=self.display_ticket).pack(pady=3, padx=5,ipady=10)
-                tb.Button(self.left_frame, text="Tickets Sold Trend", width=20, command=self.display_ticket_chart).pack(pady=3, padx=5,ipady=10)
+                tk.Button(self.left_frame, text="Logout",width=20, command=self.logout).pack(pady=3,padx=5,side="bottom",ipady=10)
+                tk.Button(self.left_frame, text="Export as Excel\n(With PNG if available)", width=20, command=self.excel_export).pack(pady=3,padx=5,side="bottom",ipady=10)
+                tk.Button(self.left_frame, width=20,  text="Total Revenue",command=self.display_total_revenue).pack(pady=3, padx=5,ipady=10)
+                tk.Button(self.left_frame,width=20, text="Revenue Trends", command=self.display_revenue_sales_chart).pack(pady=3,padx=5,ipady=10)
+                tk.Button(self.left_frame, text="Total Ticket Sold", width=20,  command=self.display_ticket).pack(pady=3, padx=5,ipady=10)
+                tk.Button(self.left_frame, text="Tickets Sold Trend", width=20, command=self.display_ticket_chart).pack(pady=3, padx=5,ipady=10)
 
                 #Revenue and ticket trend buttons
-                self.all_time_btn = tb.Button(self.buttons_frame, text="All time", width=20,
+                self.all_time_btn = tk.Button(self.buttons_frame, text="All time", width=20,
                                               command=lambda: self.update_chart_by_range("all"))
-                self.last_year_btn = tb.Button(self.buttons_frame, text="Last year", width=20,
+                self.last_year_btn = tk.Button(self.buttons_frame, text="Last year", width=20,
                                                command=lambda: self.update_chart_by_range("year"))
-                self.last_6_months_btn = tb.Button(self.buttons_frame, text="Last 6 months", width=20,
+                self.last_6_months_btn = tk.Button(self.buttons_frame, text="Last 6 months", width=20,
                                                    command=lambda: self.update_chart_by_range("6m"))
-                self.last_30_days_btn = tb.Button(self.buttons_frame, text="Last 30 days", width=20,
+                self.last_30_days_btn = tk.Button(self.buttons_frame, text="Last 30 days", width=20,
                                                   command=lambda: self.update_chart_by_range("30"))
 
                 #Revenue
-                self.revenue_daily_btn = tb.Button(self.buttons_frame, text="Daily",width=20,command=self.revenue_daily)
-                self.revenue_monthly_btn = tb.Button(self.buttons_frame, text="Monthly", width=20, command=self.revenue_monthly)
-                self.revenue_quarterly_btn = tb.Button(self.buttons_frame, text="Quarterly", width=20, command=self.revenue_quarterly)
-                self.revenue_yearly_btn = tb.Button(self.buttons_frame, text="Yearly", width=20, command=self.revenue_yearly)
+                self.revenue_daily_btn = tk.Button(self.buttons_frame, text="Daily",width=20,command=self.revenue_daily)
+                self.revenue_monthly_btn = tk.Button(self.buttons_frame, text="Monthly", width=20, command=self.revenue_monthly)
+                self.revenue_quarterly_btn = tk.Button(self.buttons_frame, text="Quarterly", width=20, command=self.revenue_quarterly)
+                self.revenue_yearly_btn = tk.Button(self.buttons_frame, text="Yearly", width=20, command=self.revenue_yearly)
 
                 #Ticket
-                self.ticket_daily_btn = tb.Button(self.buttons_frame, text="Daily", width=20, command=self.ticket_daily)
-                self.ticket_monthly_btn = tb.Button(self.buttons_frame, text="Monthly", width=20,command=self.ticket_monthly)
-                self.ticket_quarterly_btn = tb.Button(self.buttons_frame, text="Quarterly", width=20, command=self.ticket_quarterly)
-                self.ticket_yearly_btn = tb.Button(self.buttons_frame, text="Yearly", width=20, command=self.ticket_yearly)
+                self.ticket_daily_btn = tk.Button(self.buttons_frame, text="Daily", width=20, command=self.ticket_daily)
+                self.ticket_monthly_btn = tk.Button(self.buttons_frame, text="Monthly", width=20,command=self.ticket_monthly)
+                self.ticket_quarterly_btn = tk.Button(self.buttons_frame, text="Quarterly", width=20, command=self.ticket_quarterly)
+                self.ticket_yearly_btn = tk.Button(self.buttons_frame, text="Yearly", width=20, command=self.ticket_yearly)
 
             elif tab == self.tab2:
-                self.graph_frame2 = tb.Frame(right_frame)
+                self.graph_frame2 = tk.Frame(right_frame)
                 self.graph_frame2.pack(fill="both", expand=True)
-                self.buttons_frame2 = tb.Frame(right_frame)
+                self.buttons_frame2 = tk.Frame(right_frame)
                 self.buttons_frame2.pack(fill="x", pady=10)
 
-                tb.Button(self.left_frame, text="Logout",width=20,command=self.logout).pack(pady=3, padx=5,ipady=10,side="bottom",)
-                tb.Button(self.left_frame, text="Movie Performance", width=20, command=self.display_movie).pack(pady=3, padx=5,ipady=10)
-                tb.Button(self.left_frame, text="Occupancy Rate", width=20,  command=self.display_occupation).pack(pady=3, padx=5,ipady=10)
-                tb.Button(self.left_frame, text="Screening Time", width=20, command=self.display_screening_time).pack(pady=3, padx=5,ipady=10)
-                tb.Button(self.left_frame, text="Weekday Performance", width=20, command=self.day_performance).pack(pady=3, padx=5,ipady=10)
-                tb.Button(self.left_frame, text="Movie Format", width=20,
+                tk.Button(self.left_frame, text="Logout",width=20,command=self.logout).pack(pady=3, padx=5,ipady=10,side="bottom",)
+                tk.Button(self.left_frame, text="Movie Performance", width=20, command=self.display_movie).pack(pady=3, padx=5,ipady=10)
+                tk.Button(self.left_frame, text="Occupancy Rate", width=20,  command=self.display_occupation).pack(pady=3, padx=5,ipady=10)
+                tk.Button(self.left_frame, text="Screening Time", width=20, command=self.display_screening_time).pack(pady=3, padx=5,ipady=10)
+                tk.Button(self.left_frame, text="Weekday Performance", width=20, command=self.day_performance).pack(pady=3, padx=5,ipady=10)
+                tk.Button(self.left_frame, text="Movie Format", width=20,
                           command=self.format_performance).pack(pady=3, padx=5,ipady=10)
-                tb.Button(self.left_frame, text="Export as Excel\n(With PNG if available)", width=20,
+                tk.Button(self.left_frame, text="Export as Excel\n(With PNG if available)", width=20,
                                               command=self.excel_export2).pack(pady=3, padx=5,ipady=10, side="bottom")
 
                 #Movies
-                self.last_14days = tb.Button(self.buttons_frame2, text="Last 14 days", width=20,command=self.display_movie14)
-                self.last_30days = tb.Button(self.buttons_frame2, text="Last 30 days", width=20, command=self.display_movie30)
-                self.last_60days = tb.Button(self.buttons_frame2, text="Last 60 days", width=20, command=self.display_movie60)
+                self.last_14days = tk.Button(self.buttons_frame2, text="Last 14 days", width=20,command=self.display_movie14)
+                self.last_30days = tk.Button(self.buttons_frame2, text="Last 30 days", width=20, command=self.display_movie30)
+                self.last_60days = tk.Button(self.buttons_frame2, text="Last 60 days", width=20, command=self.display_movie60)
 
                 #Occupancy
-                self.Occupation_table = tb.Button(self.buttons_frame2, text="Table", width=20,
+                self.Occupation_table = tk.Button(self.buttons_frame2, text="Table", width=20,
                                              command=self.display_occupation_table)
-                self.Occupation_graph = tb.Button(self.buttons_frame2, text="Graph", width=20,
+                self.Occupation_graph = tk.Button(self.buttons_frame2, text="Graph", width=20,
                                                   command=self.display_occupation_graph)
 
                 #Screening
-                self.screening30 = tb.Button(self.buttons_frame2, text="Last 30 days", width=20,
+                self.screening30 = tk.Button(self.buttons_frame2, text="Last 30 days", width=20,
                                              command=self.display_screening30)
-                self.screening90 = tb.Button(self.buttons_frame2, text="Last 90 days", width=20,
+                self.screening90 = tk.Button(self.buttons_frame2, text="Last 90 days", width=20,
                                            command=self.display_screening90)
-                self.screening = tb.Button(self.buttons_frame2, text="All time", width=20,
+                self.screening = tk.Button(self.buttons_frame2, text="All time", width=20,
                                            command=self.display_screening)
                 #Day Performance
-                self.day_30 = tb.Button(self.buttons_frame2, text="Last 30 days", width=20,
+                self.day_30 = tk.Button(self.buttons_frame2, text="Last 30 days", width=20,
                                              command=self.display_day30)
-                self.day_90 = tb.Button(self.buttons_frame2, text="Last 90 days", width=20,
+                self.day_90 = tk.Button(self.buttons_frame2, text="Last 90 days", width=20,
                                              command=self.display_day90)
-                self.day_all = tb.Button(self.buttons_frame2, text="All time", width=20,
+                self.day_all = tk.Button(self.buttons_frame2, text="All time", width=20,
                                              command=self.display_day_all)
                 #Format Performance
-                self.format_30_bt = tb.Button(self.buttons_frame2, text="Last 30 days", width=20,
+                self.format_30_bt = tk.Button(self.buttons_frame2, text="Last 30 days", width=20,
                                          command=self.format_30)
-                self.format_90_bt = tb.Button(self.buttons_frame2, text="Last 90 days", width=20,
+                self.format_90_bt = tk.Button(self.buttons_frame2, text="Last 90 days", width=20,
                                          command=self.format_90)
-                self.format_year_bt = tb.Button(self.buttons_frame2, text="Last year", width=20,
+                self.format_year_bt = tk.Button(self.buttons_frame2, text="Last year", width=20,
                                          command=self.format_year)
-                self.format_all_bt = tb.Button(self.buttons_frame2, text="All time", width=20,
+                self.format_all_bt = tk.Button(self.buttons_frame2, text="All time", width=20,
                                          command=self.format_all)
 
             elif tab == self.tab3:
-                self.graph_frame3 = tb.Frame(right_frame)
+                self.graph_frame3 = tk.Frame(right_frame)
                 self.graph_frame3.pack(fill="both", expand=True)
-                self.buttons_frame3 = tb.Frame(right_frame)
+                self.buttons_frame3 = tk.Frame(right_frame)
                 self.buttons_frame3.pack(fill="x", pady=10)
 
-                tb.Button(self.left_frame, text="Logout",width=20, command=self.logout).pack(pady=3, padx=5,ipady=10,side="bottom")
-                tb.Button(self.left_frame, text="Age Distribution", width=20, command=self.display_age).pack(pady=3, padx=5,ipady=10)
-                tb.Button(self.left_frame, text="Genre By Age", width=20, command=self.display_age_genre).pack(pady=3, padx=5,ipady=10)
-                tb.Button(self.left_frame, text="Time Preference By Age", width=20,command=self.display_time_age).pack(pady=3, padx=5,ipady=10)
-                tb.Button(self.left_frame, text="Format Preference By Age", width=20,command=self.display_format_age).pack(pady=3, padx=5,ipady=10)
-                tb.Button(self.left_frame, text="Export as Excel\n(With PNG if available)", width=20,
+                tk.Button(self.left_frame, text="Logout",width=20, command=self.logout).pack(pady=3, padx=5,ipady=10,side="bottom")
+                tk.Button(self.left_frame, text="Age Distribution", width=20, command=self.display_age).pack(pady=3, padx=5,ipady=10)
+                tk.Button(self.left_frame, text="Genre By Age", width=20, command=self.display_age_genre).pack(pady=3, padx=5,ipady=10)
+                tk.Button(self.left_frame, text="Time Preference By Age", width=20,command=self.display_time_age).pack(pady=3, padx=5,ipady=10)
+                tk.Button(self.left_frame, text="Format Preference By Age", width=20,command=self.display_format_age).pack(pady=3, padx=5,ipady=10)
+                tk.Button(self.left_frame, text="Export as Excel\n(With PNG if available)", width=20,
                                                command=self.excel_export3).pack(pady=3, padx=5,ipady=10, side="bottom")
 
                 #Age
-                self.age_90 = tb.Button(self.buttons_frame3, text="Last 90 days", width=20,
+                self.age_90 = tk.Button(self.buttons_frame3, text="Last 90 days", width=20,
                                         command=self.age90)
-                self.age_year = tb.Button(self.buttons_frame3, text="Last year", width=20,
+                self.age_year = tk.Button(self.buttons_frame3, text="Last year", width=20,
                                         command=self.ageyear)
-                self.age_all = tb.Button(self.buttons_frame3, text="All time", width=20,
+                self.age_all = tk.Button(self.buttons_frame3, text="All time", width=20,
                                          command=self.ageall)
                 #Age-Genre
-                self.genre_17 = tb.Button(self.buttons_frame3, text="Age 12-17", width=20,
+                self.genre_17 = tk.Button(self.buttons_frame3, text="Age 12-17", width=20,
                                         command=self.genre17)
-                self.genre_25 = tb.Button(self.buttons_frame3, text="Age 18-25", width=20,
+                self.genre_25 = tk.Button(self.buttons_frame3, text="Age 18-25", width=20,
                                         command=self.genre25)
-                self.genre_40 = tb.Button(self.buttons_frame3, text="Age 26-40", width=20,
+                self.genre_40 = tk.Button(self.buttons_frame3, text="Age 26-40", width=20,
                                         command=self.genre40)
-                self.genre_60 = tb.Button(self.buttons_frame3, text="Age 41-60", width=20,
+                self.genre_60 = tk.Button(self.buttons_frame3, text="Age 41-60", width=20,
                                           command=self.genre60)
-                self.genre_above = tb.Button(self.buttons_frame3, text="Above 60+", width=20,
+                self.genre_above = tk.Button(self.buttons_frame3, text="Above 60+", width=20,
                                           command=self.genre_above_60)
-                self.genre_screening = tb.Button(self.buttons_frame3, text="Genre Screening Count", width=20,
+                self.genre_screening = tk.Button(self.buttons_frame3, text="Genre Screening Count", width=20,
                                              command=self.genre_screening_1)
 
                 #Age-ScreeningTime
-                self.age_time_30_bt = tb.Button(self.buttons_frame3, text="Last 30 days", width=20,
+                self.age_time_30_bt = tk.Button(self.buttons_frame3, text="Last 30 days", width=20,
                                           command=self.age_time_30)
-                self.age_time_90_bt = tb.Button(self.buttons_frame3, text="Last 90 days", width=20,
+                self.age_time_90_bt = tk.Button(self.buttons_frame3, text="Last 90 days", width=20,
                                           command=self.age_time_90)
-                self.age_time_year_bt = tb.Button(self.buttons_frame3, text="Last year", width=20,
+                self.age_time_year_bt = tk.Button(self.buttons_frame3, text="Last year", width=20,
                                           command=self.age_time_year)
-                self.age_time_all_bt = tb.Button(self.buttons_frame3, text="All time", width=20,
+                self.age_time_all_bt = tk.Button(self.buttons_frame3, text="All time", width=20,
                                           command=self.age_time_all)
                 #Age-Format
-                self.age_format_30_bt = tb.Button(self.buttons_frame3, text="Last 30 days", width=20,
+                self.age_format_30_bt = tk.Button(self.buttons_frame3, text="Last 30 days", width=20,
                                                  command=self.age_format_30)
-                self.age_format_90_bt = tb.Button(self.buttons_frame3, text="Last 90 days", width=20,
+                self.age_format_90_bt = tk.Button(self.buttons_frame3, text="Last 90 days", width=20,
                                                  command=self.age_format_90)
-                self.age_format_year_bt = tb.Button(self.buttons_frame3, text="Last year", width=20,
+                self.age_format_year_bt = tk.Button(self.buttons_frame3, text="Last year", width=20,
                                                  command=self.age_format_year)
-                self.age_format_all_bt = tb.Button(self.buttons_frame3, text="All time", width=20,
+                self.age_format_all_bt = tk.Button(self.buttons_frame3, text="All time", width=20,
                                                  command=self.age_format_all)
 
     def on_tab_changed(self, event):
