@@ -20,9 +20,9 @@ from ttkbootstrap.constants import *
 
 base_dir = os.path.dirname(__file__)
 warnings.filterwarnings("ignore", message="pandas only supports SQLAlchemy")
-class Liemora(tk.Tk):
+class Liemora(tb.Window):
     def __init__(self):
-        super().__init__()
+        super().__init__(themename="litera")
         self.title("LIEMORA Cinema Login")
         self.geometry("700x500")
         self.resizable(False, False)
@@ -907,8 +907,8 @@ class CustomerFormApp(tk.Toplevel):
         self.day_entry.bind('<FocusOut>', self.check_auto_discount)
         self.month_entry.bind('<FocusOut>', self.check_auto_discount)
         self.year_entry.bind('<FocusOut>', self.check_auto_discount)
-    
-       
+
+
 class Admin(tb.Window):
     def __init__(self, main):
         super().__init__(themename="litera")
