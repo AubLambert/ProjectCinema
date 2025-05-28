@@ -330,7 +330,6 @@ class ticket_searching(tk.Toplevel):
                              relief='solid', borderwidth=1, width=17)
                 lbl.grid(row=i, column=j, sticky='nsew')
 
-                # Make Cancel button clickable
                 if j == len(values)-1 and val == 'Cancel':
                     lbl.bind("<Button-1>", lambda e, tid=ticket_id: self.handle_action_click(tid))
                     lbl.config(fg='red', cursor='hand2')
