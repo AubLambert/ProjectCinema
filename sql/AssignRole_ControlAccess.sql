@@ -21,6 +21,9 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON cinema_management.cinemarooms TO 'manage
 GRANT SELECT ON cinema_management.movies TO 'ticket_clerk'@'localhost';
 GRANT SELECT ON cinema_management.screenings TO 'ticket_clerk'@'localhost';
 GRANT SELECT ON cinema_management.cinemarooms TO 'ticket_clerk'@'localhost';
+GRANT SELECT ON cinema_management.seats TO 'ticket_clerk'@'localhost';
 
-GRANT SELECT, INSERT ON cinema_management.customers TO 'ticket_clerk'@'localhost';
-GRANT SELECT, INSERT ON cinema_management.tickets TO 'ticket_clerk'@'localhost';
+GRANT SELECT, INSERT, DELETE ON cinema_management.customers TO 'ticket_clerk'@'localhost';
+GRANT SELECT, INSERT, DELETE ON cinema_management.tickets TO 'ticket_clerk'@'localhost';
+GRANT SELECT, INSERT, DELETE ON cinema_management.payments TO 'ticket_clerk'@'localhost';
+GRANT EXECUTE ON PROCEDURE cinema_management.ticket_booking TO 'ticket_clerk'@'localhost'

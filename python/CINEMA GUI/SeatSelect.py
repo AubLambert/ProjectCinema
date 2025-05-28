@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import *
 import mysql.connector
 from mysql.connector import Error
+from Payment import CustomerFormApp
 
 class SeatBooking:
     def __init__(self, parent, db_connection, screening_id, room_name, seat_price):
@@ -22,6 +23,7 @@ class SeatBooking:
         self.booked_seats = set()  #Query booked seat
         self.room_id = self.room_name #Catch screenid from previous tab (query room id from screen id)
         
+        self.query_booked_seats()
         self.main_interface()
         self.root.mainloop()
         
@@ -65,7 +67,7 @@ class SeatBooking:
                                          bg="#4CAF50", fg="white",
                                          width=10, height=1,
                                          state="disabled",
-                                         command="") #Transition to payment screen #TODO: continue command
+                                         command= self.go_to_payment()) #Transition to payment screen #TODO: continue command
         self.continue_button.place(x=1050,y=350)
         ###Screen label
         screen_label = tk.Label(top_frame, text = "Screen", width=30, font = ("Bold",30), justify = "center", bg = "light grey")
@@ -151,8 +153,17 @@ class SeatBooking:
            self.continue_button.config(state="normal")
        else:
            self.continue_button.config(state="disabled")
-           
-           
+    
+    def go_to_payment(self):
+        self.root.destroy()
+#TODO        
+CustomerFormApp(
+        screening_id=self.screening_id,
+        selected_seats=list(self.selected_seats.keys()),
+        seat_price=self.seat_price,
+        db_connection=self.db
+ )
+          
        
 if __name__ == "__main__":
     app=SeatBooking()

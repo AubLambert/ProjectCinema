@@ -5,30 +5,33 @@ import mysql.connector
 from mysql.connector import Error
 from datetime import datetime
 
-mydb = mysql.connector.connect(
-    host = "localhost",
-    user = "admin",
-    password = "quang123",
-    database="cinema_management"
-)
 
-
-class ticket_searching:
-    def __init__(self):
-        self.root = tk.Tk()
-        self.root.title("Ticket searching")
-        self.root.geometry("960x600")
-        self.root.resizable(False, False)
+class ticket_searching(tk.Toplevel):
+    def __init__(self, main,username):
+        super().__init__(main)
+        self.main = main
+        self.username = username
+        self.title("Ticket searching")
+        self.geometry("960x600")
+        self.resizable(False, False)
+        self.protocol("WM_DELETE_WINDOW", self.on_close)
         
         self.search_interface()
-        self.root.mainloop()
+    
+    def on_close(self):
+        if self.main.mydb.is_connected():
+            self.main.mydb.close()
+        self.destroy()
+        self.main.destroy()  
+        
+    def back2(self):
+        self.destroy()
+        self.main.deiconify()
         
     def search_interface(self):
-        ### Back button:
-       #TODO:back command     
         back_btn = tk.Button(
-            self.root, text="BACK", font=('Arial', 10), borderwidth=1, width=7, height=1,
-            command=""
+            self, text="BACK", font=('Arial', 10), borderwidth=1, width=7, height=1,
+            command= self.back2
         )
         back_btn.place(x=30, y=30)
         
@@ -36,7 +39,7 @@ class ticket_searching:
         ### Searchbar with effect
         self.search_var = tk.StringVar()
         search_entry = tk.Entry(
-            self.root, textvariable=self.search_var, font=('Arial', 12), justify="center", relief='solid',fg ="grey",
+            self, textvariable=self.search_var, font=('Arial', 12), justify="center", relief='solid',fg ="grey",
             borderwidth=1, width=50
         )
         search_entry.place(x=230, y=65, width=500, height=30)
@@ -47,13 +50,13 @@ class ticket_searching:
         search_entry.bind('<Return>', lambda event: self.search_ticket())
         
         search_btn = tk.Button(
-            self.root, text="Search", font=('Arial', 10), bg='#007bff', fg='white', relief='solid',
+            self, text="Search", font=('Arial', 10), bg='#007bff', fg='white', relief='solid',
             padx=20, pady=5, command= self.search_ticket
         )
         search_btn.place(x=750, y=65, width=80, height=30)
         
         # Result panel outer frame
-        self.canvas_frame = tk.Frame(self.root)
+        self.canvas_frame = tk.Frame(self)
         self.canvas_frame.place(x=79.5, y=130, width=800, height=320)
         
         # Outer canvas
@@ -112,7 +115,7 @@ class ticket_searching:
     def search_ticket(self):
         user_input = self.search_var.get().strip()
         try:
-            mycursor= mydb.cursor()
+            mycursor= self.main.db.cursor()
             query = """
             SELECT t.TicketID, c.CustomerName, c.PhoneNumber, m.MovieTitle, r.RoomName, se.SeatNumber, 
             s.ScreeningDate, s.ScreeningTime, s.Price, p.PayTime
@@ -178,7 +181,7 @@ class ticket_searching:
             self.rows.append(widgets)
         
         # Update canvas scroll region after adding content
-        self.root.after(10, lambda: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+        self.after(10, lambda: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
 
     def check_action_conditions(self, ticket_data):
         try:
@@ -211,7 +214,5 @@ class ticket_searching:
             except Error as e:
                 messagebox.showerror("Database Error", f"An error occurred: {e}")
 
-if __name__ == "__main__":
-    app=ticket_searching()
+
     
-mydb.close()
