@@ -46,32 +46,20 @@ BEGIN
 END//
 DELIMITER ;
 
-/*
--- BƯỚC 5: Event tự động reset ghế sau khi suất chiếu kết thúc
+-- Event tự động reset ghế sau khi suất chiếu kết thúc
+SET GLOBAL event_scheduler = ON;
 DELIMITER //
-CREATE EVENT reset_expired_bookings
-ON SCHEDULE EVERY 1 HOUR
+CREATE EVENT clear_expired_seats
+ON SCHEDULE EVERY 1 MINUTE
 DO
 BEGIN
-    -- Cập nhật trạng thái ghế về Available cho các suất chiếu đã kết thúc
-    UPDATE Seats s
-    JOIN Tickets t ON s.SeatID = t.SeatID
-    JOIN Screenings sc ON t.ScreeningID = sc.ScreeningID
-    SET s.SeatStatus = 'Available'
-    WHERE ADDTIME(CONCAT(sc.ScreeningDate, ' ', sc.ScreeningTime), 
-                  SEC_TO_TIME(m.DurationMinutes * 60)) < NOW()
-    AND s.SeatStatus = 'Booked';
-    
-    -- Xóa các vé đã hết hạn (suất chiếu đã kết thúc)
-    DELETE t FROM Tickets t
-    JOIN Screenings sc ON t.ScreeningID = sc.ScreeningID
-    JOIN Movies m ON sc.MovieID = m.MovieID
-    WHERE ADDTIME(CONCAT(sc.ScreeningDate, ' ', sc.ScreeningTime), 
-                  SEC_TO_TIME(m.DurationMinutes * 60)) < NOW();
-    
-    -- Xóa các payment tương ứng với vé đã bị xóa
-    DELETE p FROM Payments p
-    WHERE p.TicketID NOT IN (SELECT TicketID FROM Tickets);
-END//
+	UPDATE Seats
+	SET SeatStatus = 'Available'
+	WHERE SeatID IN (
+		SELECT SeatID
+		FROM Tickets t
+		JOIN Screenings s ON t.ScreeningID = s.ScreeningID
+		WHERE TIMESTAMP(s.ScreeningDate, s.ScreeningTime) < NOW()
+		);
+END //
 DELIMITER ;
-*/
