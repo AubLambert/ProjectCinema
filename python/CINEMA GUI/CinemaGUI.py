@@ -776,7 +776,7 @@ class Admin(tb.Window):
 
                 tb.Button(self.left_frame, text="Logout",width=20,command=self.logout).pack(pady=3, padx=5,ipady=10,side="bottom",)
                 tb.Button(self.left_frame, text="Movie Performance", width=20, command=self.display_movie).pack(pady=3, padx=5,ipady=10)
-                tb.Button(self.left_frame, text="Occupation Rate", width=20,  command=self.display_occupation).pack(pady=3, padx=5,ipady=10)
+                tb.Button(self.left_frame, text="Occupancy Rate", width=20,  command=self.display_occupation).pack(pady=3, padx=5,ipady=10)
                 tb.Button(self.left_frame, text="Screening Time", width=20, command=self.display_screening_time).pack(pady=3, padx=5,ipady=10)
                 tb.Button(self.left_frame, text="Weekday Performance", width=20, command=self.day_performance).pack(pady=3, padx=5,ipady=10)
                 tb.Button(self.left_frame, text="Movie Format", width=20,
@@ -789,7 +789,7 @@ class Admin(tb.Window):
                 self.last_30days = tb.Button(self.buttons_frame2, text="Last 30 days", width=20, command=self.display_movie30)
                 self.last_60days = tb.Button(self.buttons_frame2, text="Last 60 days", width=20, command=self.display_movie60)
 
-                #Occupation
+                #Occupancy
                 self.Occupation_table = tb.Button(self.buttons_frame2, text="Table", width=20,
                                              command=self.display_occupation_table)
                 self.Occupation_graph = tb.Button(self.buttons_frame2, text="Graph", width=20,
@@ -2408,7 +2408,7 @@ class Admin(tb.Window):
             "Tickets_Sold": "Tickets Sold",
             "Total_Screenings": "Total Screenings",
             "TotalSeat": "Total Seats",
-            "OccupationRate": "Occupation Rate (%)"
+            "OccupationRate": "Occupancy Rate (%)"
         }
         col_types = {
             "Month": "text",
@@ -2529,7 +2529,7 @@ class Admin(tb.Window):
 
         ax2 = ax1.twinx()
         ax2.plot(months, occupation_rates, color='darkgreen', marker='o', label='Occupation Rate (%)')
-        ax2.set_ylabel('Occupation Rate (%)', color='darkgreen')
+        ax2.set_ylabel('Occupancy Rate (%)', color='darkgreen')
         ax2.tick_params(axis='y', labelcolor='darkgreen')
         ax2.set_ylim(0, max(occupation_rates) + 1)
 
