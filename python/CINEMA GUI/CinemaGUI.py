@@ -1780,18 +1780,22 @@ class Admin(tk.Toplevel):
         for widget in self.graph_frame.winfo_children():
             widget.destroy()
         self.graph_frame.update_idletasks()
+
         cursor = self.main.mydb.cursor()
         query = """
-                SELECT
-                    DATE(PayTime) AS PayDate,
-                    SUM(Amount) AS TotalRevenue
-                FROM Payments
-                GROUP BY PayDate
-                ORDER BY PayDate DESC;
-                """
+                        SELECT
+                            DATE(PayTime) AS PayDate,
+                            SUM(Amount) AS TotalRevenue
+                        FROM Payments
+                        GROUP BY PayDate
+                        ORDER BY PayDate DESC;
+                        """
         cursor.execute(query)
         data = cursor.fetchall()
         cursor.close()
+        df = pd.read_sql(query, self.main.mydb)
+        self.current_dataframe = df.copy()
+
         df = pd.read_sql(query, self.main.mydb)
         self.current_dataframe = df.copy()
 
@@ -1800,8 +1804,6 @@ class Admin(tk.Toplevel):
 
         columns = ("YearMonth", "TotalRevenue")
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20)
-        tree.heading("YearMonth", text="Date")
-        tree.heading("TotalRevenue", text="Total Revenue")
         tree.column("YearMonth", width=150, anchor="center")
         tree.column("TotalRevenue", width=200, anchor="center")
 
@@ -1810,6 +1812,19 @@ class Admin(tk.Toplevel):
         scrollbar.pack(side="right", fill="y")
         tree.pack(fill="both", expand=True)
 
+        def sort_column(col, reverse):
+            data_list = [(tree.set(k, col), k) for k in tree.get_children('')]
+            if col == "TotalRevenue":
+                data_list.sort(key=lambda t: int(t[0].replace(".", "").replace(" ₫", "")), reverse=reverse)
+            else:
+                data_list.sort(reverse=reverse)
+
+            for index, (val, k) in enumerate(data_list):
+                tree.move(k, '', index)
+            tree.heading(col, command=lambda: sort_column(col, not reverse))
+
+        tree.heading("YearMonth", text="Date", command=lambda: sort_column("YearMonth", False))
+        tree.heading("TotalRevenue", text="Total Revenue", command=lambda: sort_column("TotalRevenue", False))
         for row in data:
             year_month, total_revenue = row
             formatted_revenue = "{:,.0f} ₫".format(total_revenue).replace(",", ".")
