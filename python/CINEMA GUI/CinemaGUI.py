@@ -38,24 +38,26 @@ class Liemora(tk.Tk):
         bg_image = Image.open(img_path).resize((800, 600), Image.LANCZOS)
         bg_photo = ImageTk.PhotoImage(bg_image)
         self.bg_photo = bg_photo
+        self.configure(bg='#f0f2f5')
+
 
         canvas = tk.Canvas(self, width=650, height=450)
         canvas.pack(fill="both", expand=True)
         canvas.create_image(0, 0, image=bg_photo, anchor="nw")
 
-        frame = tk.Frame(canvas, bd=2, relief="solid", padx=25, pady=25)
-        canvas.create_window(400, 300, window=frame)
+        frame = tk.Frame(canvas, bd=2, relief="solid",borderwidth=2,padx=60, pady=25,bg='#f0f2f5')
+        canvas.create_window(400, 370, window=frame)
 
         tk.Label(frame, text="LIEMORA Cinema", font=("Helvetica", 14, "bold")).pack(pady=(0, 20))
         tk.Label(frame, text="Account").pack()
-        self.account_entry = tk.Entry(frame, width=30)
+        self.account_entry = tk.Entry(frame, width=35, highlightthickness=1, highlightbackground="black")
         self.account_entry.pack(pady=5)
 
         tk.Label(frame, text="Password").pack()
-        self.password_entry = tk.Entry(frame, show="*", width=30)
+        self.password_entry = tk.Entry(frame, show="*", width=35, highlightthickness=1, highlightbackground="black")
         self.password_entry.pack(pady=5)
 
-        login_btn = tk.Button(frame, text="Login", width=10, command=self.login)
+        login_btn = tk.Button(frame, text="Login", width=10,relief="solid",borderwidth=1,bg="azure3", command=self.login)
         login_btn.pack(pady=10)
         self.bind("<Return>", lambda e: self.login())
 
@@ -87,6 +89,7 @@ class staff_ui(tk.Toplevel):
         self.username=username
         self.title("Staff interface")
         self.geometry("500x500")
+        self.configure(bg='#f0f2f5')
         self.configure(bg="white")
         self.resizable(False, False)
 
@@ -172,11 +175,12 @@ class ticket_searching(tk.Toplevel):
         super().__init__(main)
         self.main = main
         self.username = username
-        self.title("Ticket searching")
+        self.title("Ticket Searching")
         self.geometry("960x600")
         self.resizable(False, False)
         self.protocol("WM_DELETE_WINDOW", self.on_close)
-        
+
+        self.configure(bg='#f0f2f5')
         self.search_interface()
     
     def on_close(self):
@@ -193,71 +197,62 @@ class ticket_searching(tk.Toplevel):
         
     def search_interface(self):
         back_btn = tk.Button(
-            self, text="BACK", font=('Arial', 10), borderwidth=1, width=7, height=1,
-            command= self.back2
+            self,text="Back", font=('Arial', 10), width=7, command=self.back2
         )
-        back_btn.place(x=30, y=30)
-        
-        
-        ### Searchbar with effect
+        back_btn.place(x=30, y=30, width=70, height=30)
+
         self.search_var = tk.StringVar()
         search_entry = tk.Entry(
-            self, textvariable=self.search_var, font=('Arial', 12), justify="center", relief='solid',fg ="grey",
-            borderwidth=1, width=50
+            self, textvariable=self.search_var, font=('Arial', 12),
+            justify="center", relief='solid',borderwidth=2, fg="grey"
         )
         search_entry.place(x=230, y=65, width=500, height=30)
         search_entry.insert(0, "Type in phone number or ticketID")
-        
         search_entry.bind('<FocusIn>', self.on_entry_click)
         search_entry.bind('<FocusOut>', self.on_focusout)
         search_entry.bind('<Return>', lambda event: self.search_ticket())
-        
+
         search_btn = tk.Button(
-            self, text="Search", font=('Arial', 10), bg='#007bff', fg='white', relief='solid',
-            padx=20, pady=5, command= self.search_ticket
+            self, text="Search", font=('Arial', 10), bg='#007bff', fg='white', relief='flat',
+            padx=20, pady=5, command=self.search_ticket
         )
         search_btn.place(x=750, y=65, width=80, height=30)
-        
-        # Result panel outer frame
-        self.canvas_frame = tk.Frame(self)
+
+        self.canvas_frame = tk.Frame(self, bg='white', bd=1, relief='solid')
         self.canvas_frame.place(x=79.5, y=130, width=800, height=320)
-        
-        # Outer canvas
-        self.canvas = tk.Canvas(self.canvas_frame, bg='white')
+
+        self.canvas = tk.Canvas(self.canvas_frame, bg='white', highlightthickness=0)
         self.scrollbar_x = tk.Scrollbar(self.canvas_frame, orient='horizontal', command=self.canvas.xview)
         self.scrollbar_y = tk.Scrollbar(self.canvas_frame, orient='vertical', command=self.canvas.yview)
         self.canvas.configure(xscrollcommand=self.scrollbar_x.set, yscrollcommand=self.scrollbar_y.set)
-        
+
         self.scrollbar_x.pack(side='bottom', fill='x')
         self.scrollbar_y.pack(side='right', fill='y')
         self.canvas.pack(side='left', fill='both', expand=True)
-        
-        # Container canvas
+
         self.scrollable_container = tk.Frame(self.canvas, bg='white')
         self.canvas.create_window((0, 0), window=self.scrollable_container, anchor='nw')
-        
-        # Bind scroll region update
+
         self.scrollable_container.bind(
             "<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
         )
-        
-        # Headings frame
+
         self.heading_frame = tk.Frame(self.scrollable_container, bg='white')
         self.heading_frame.grid(row=0, column=0, sticky='nw')
-        
-        headings = ["Ticket ID", "Customer Name", "Phone", "Movie", "Room", "Date", "Seat", "Time", "Price (VND)", "Payment Time", "Action"]
+
+        headings = ["Ticket ID", "Customer Name", "Phone", "Movie", "Room", "Date", "Seat", "Time", "Price (VND)",
+                    "Payment Time", "Action"]
         for col, title in enumerate(headings):
-            lbl = tk.Label(self.heading_frame, text=title, font=('Arial', 10, 'bold'),
-                           borderwidth=1, relief='solid', width=17)
-            lbl.grid(row=0, column=col, sticky='nsew')
-            
-        
-        # Results frame
+            lbl = tk.Label(
+                self.heading_frame, text=title, font=('Arial', 10, 'bold'),
+                bg='white', fg='#555', borderwidth=1, relief='solid', width=17, anchor='center'
+            )
+            lbl.grid(row=0, column=col, sticky='nsew', padx=0, pady=0)
+
         self.inner_frame = tk.Frame(self.scrollable_container, bg='white')
         self.inner_frame.grid(row=1, column=0, sticky='nw')
         self.rows = []
-    
-            
+
     def on_entry_click(self, event):
         if self.search_var.get() == "Type in phone number or ticketID":
             self.search_var.set("")
@@ -273,8 +268,7 @@ class ticket_searching(tk.Toplevel):
             for w in widgets:
                 w.destroy()
         self.rows.clear()
-        
-        
+
     # Find customer's ticket through input
     def search_ticket(self):
         user_input = self.search_var.get().strip()
@@ -312,7 +306,6 @@ class ticket_searching(tk.Toplevel):
             print("No tickets found for this phone number.")
             self.display_results([])
 
-        
     def display_results(self, results):
         self.clear_rows()
         
@@ -386,7 +379,7 @@ class Movie(tk.Toplevel):
         super().__init__(main)
         self.title("Movie Selection")
         self.geometry("1000x700")
-        self.configure(bg="white")
+        self.configure(bg='#f0f2f5')
         self.main = main
         self.username = username
         self.movie_image_map = {}
@@ -407,7 +400,8 @@ class Movie(tk.Toplevel):
         staff_ui(self.main, self.username)
 
     def movie_ui(self):
-        tk.Button(self, text="Back", font=10, width=7, command=self.back1).grid(row=0, column=0, sticky="nw", padx=20, pady=20)
+        tk.Button(self, text="Back", font=('Arial', 10), width=7, command=self.back1).grid(row=0, column=0, sticky="nw",
+                                                                                           padx=20, pady=20)
 
         titles = ["John Wick", "Edge of Tomorrow", "Interstellar", "Coco", "Parasite", "The Revenant"]
         images = [
@@ -421,7 +415,7 @@ class Movie(tk.Toplevel):
 
         self.movie_image_map = dict(zip(titles, images))
 
-        grid_frame = tk.Frame(self, bg="white")
+        grid_frame = tk.Frame(self, bg="#f0f2f5")
         grid_frame.place(relx=0.5, rely=0.55, anchor="center")
 
         for i, (title, img_path) in enumerate(zip(titles, images)):
@@ -431,18 +425,26 @@ class Movie(tk.Toplevel):
             except:
                 img = None
 
-            btn = tk.Button(grid_frame, image=img, width=180, height=230,
-                            command=lambda t=title: self.show_timeslots(t), bg="white", relief="solid", borderwidth=1)
+            btn = tk.Button(
+                grid_frame, image=img, width=180, height=230,
+                command=lambda t=title: self.show_timeslots(t),
+                bg="white", relief="solid", borderwidth=2
+            )
             btn.image = img
-            btn.grid(row=(i // 3) * 2, column=i % 3, padx=20, pady=10)
+            btn.grid(row=(i // 3) * 2, column=i % 3, padx=50, pady=11)
 
-            tk.Label(grid_frame, text=title, bg="white", font=("Helvetica", 12)).grid(row=(i // 3) * 2 + 1, column=i % 3, pady=10)
+            lbl = tk.Label(
+                grid_frame, text=title, bg="#f0f2f5", font=("Helvetica", 12),
+                borderwidth=0, relief='flat', width=20, height=1, anchor='center'
+            )
+            lbl.grid(row=(i // 3) * 2 + 1, column=i % 3, pady=5)
 
     def show_timeslots(self, movie_title):
         if hasattr(self, 'timeslot_window') and self.timeslot_window.winfo_exists():
             self.timeslot_window.destroy()
 
         self.timeslot_window = tk.Toplevel(self)
+        self.configure(bg='#f0f2f5')
         self.timeslot_window.transient()
         self.timeslot_window.grab_set()
         self.timeslot_window.title(f"Select Timeslot - {movie_title}")
@@ -457,7 +459,7 @@ class Movie(tk.Toplevel):
         self.timeslot_window.configure(bg="white")
         self.timeslot_window.resizable(False, False)
 
-        tk.Button(self.timeslot_window, text="BACK", command=self.timeslot_window.destroy).place(x=15, y=15)
+        tk.Button(self.timeslot_window,text="Back", font=('Arial', 10), width=7, command=self.timeslot_window.destroy).place(x=15, y=15)
 
         try:
             img_path = self.movie_image_map[movie_title]
@@ -563,7 +565,8 @@ class SeatBooking(tk.Toplevel):
         self.seat_price = seat_price
         self.total_price = 0
         self.protocol("WM_DELETE_WINDOW", self.on_close)
-        
+        self.configure(bg='#f0f2f5')
+
         self.geometry("1200x700")
         self.title("Seat booking")
         self.resizable(False, False)
@@ -733,6 +736,7 @@ class CustomerFormApp(tk.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.on_close)
         self.resizable(False, False)
         self.create_widgets()
+        self.configure(bg='#f0f2f5')
 
     def back4(self):
         self.destroy()
@@ -1010,7 +1014,7 @@ class Admin(tk.Toplevel):
         self.tab_control.bind("<<NotebookTabChanged>>", self.on_tab_changed)
 
         for tab in (self.tab1, self.tab2, self.tab3):
-            main_frame = tk.Frame(tab, bg="white")
+            main_frame = tk.Frame(tab, bg="white",relief="solid",borderwidth=0)
             main_frame.pack(fill="both", expand=True)
 
             self.left_frame = tk.Frame(main_frame, width=180, bg="#F8F9FA", relief="flat")
