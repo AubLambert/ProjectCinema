@@ -14,15 +14,12 @@ from matplotlib.ticker import MaxNLocator
 from tkinter import filedialog
 import os
 import warnings
-import ttkbootstrap as tb
-from ttkbootstrap.constants import *
-
 
 base_dir = os.path.dirname(__file__)
 warnings.filterwarnings("ignore", message="pandas only supports SQLAlchemy")
-class Liemora(tb.Window):
+class Liemora(tk.Tk):
     def __init__(self):
-        super().__init__(themename="litera")
+        super().__init__()
         self.title("LIEMORA Cinema Login")
         self.geometry("700x500")
         self.resizable(False, False)
@@ -648,7 +645,7 @@ class SeatBooking(tk.Toplevel):
                     fg_color = "black"
                     state = "normal"
                   
-                seat_button = tk.Button(seat_frame, width=4, height=1, text=f"{seat_number}", relief=tk.RIDGE,bd=1,
+                seat_button = tk.Button(seat_frame, width=4, height=2, text=f"{seat_number}", relief=tk.RIDGE,bd=1,
                     fg=fg_color, state=state, bg = bg_color, command=lambda s=seat_number: self.toggle_seat(s) #seat selection command
                 )
                 seat_button.grid(row=row+1, column=col+1, padx=15, pady=5)
@@ -928,7 +925,7 @@ class Admin(tk.Toplevel):
         super().__init__(main)
         self.username = username
         self.title("Business Dashboard")
-        self.geometry("1600x900")
+        self.geometry("1350x750")
         self.resizable(False, False)
         self.configure(bg="white")
         self.main = main
@@ -941,8 +938,8 @@ class Admin(tk.Toplevel):
         self.current_figure = None
         self.current_figure2 = None
         self.current_figure3 = None
-
-
+        for widget in self.winfo_children():
+            widget.destroy()
 
         self.tab_control = ttk.Notebook(self)
         self.tab_control.pack(expand=True, fill='both', padx=20, pady=20)
