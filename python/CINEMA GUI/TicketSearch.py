@@ -115,7 +115,7 @@ class ticket_searching(tk.Toplevel):
     def search_ticket(self):
         user_input = self.search_var.get().strip()
         try:
-            mycursor= self.main.db.cursor()
+            mycursor= self.main.mydb.cursor()
             query = """
             SELECT t.TicketID, c.CustomerName, c.PhoneNumber, m.MovieTitle, r.RoomName, se.SeatNumber, 
             s.ScreeningDate, s.ScreeningTime, s.Price, p.PayTime
@@ -199,10 +199,10 @@ class ticket_searching(tk.Toplevel):
                                       f"Are you sure you want to cancel ticket {ticket_id}?")
         if result:
             try:
-                mycursor = mydb.cursor()
+                mycursor = self.main.mydb.cursor()
                 delete_query = "DELETE FROM Tickets WHERE TicketID = %s"
                 mycursor.execute(delete_query, (ticket_id,))
-                mydb.commit()
+                self.main.mydb.commit()
     
                 if mycursor.rowcount > 0:
                     messagebox.showinfo("Success", f"Ticket {ticket_id} successfully cancelled.")

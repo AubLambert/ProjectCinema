@@ -13,7 +13,6 @@ import matplotlib.dates as mdates
 from matplotlib.ticker import MaxNLocator
 from tkinter import filedialog
 import os
-from TicketSearch import ticket_searching
 import warnings
 import ttkbootstrap as tb
 from ttkbootstrap.constants import *
@@ -121,18 +120,231 @@ class staff_ui(tk.Toplevel):
         top_frame = tk.Frame(self, bg="white")
         top_frame.place(x=190,y=100)
         option_frame = tk.Frame(self, bg="white")
-        option_frame.place(x=210,y=200)
+        option_frame.place(x=191,y=200)
         #Welcome
-        top_label = tk.Label(top_frame, text="Welcome", font=("bold",20),justify="center")
+        top_label = tk.Label(top_frame, text="Welcome", font=("bold",25),justify="center")
         top_label.pack(padx=5, pady=5)
         #Options
-        search_btn = tk.Button(option_frame, text="Search ticket", font=("bold",10), justify="center",
+        search_btn = tk.Button(option_frame, text="Search ticket", font=("bold",15), justify="center",
                                command = self.go_to_searching)
-        search_btn.pack(pady=10, ipadx=3)
-        booking_btn = tk.Button(option_frame, text="Ticket booking", font=("bold", 10), justify="center",
+        search_btn.pack(pady=10, ipadx=4)
+        booking_btn = tk.Button(option_frame, text="Ticket booking", font=("bold", 15), justify="center",
                                 command= self.go_to_booking)
         booking_btn.pack(pady=10)
+
+#Ticket search
+class ticket_searching(tk.Toplevel):
+    def __init__(self, main,username):
+        super().__init__(main)
+        self.main = main
+        self.username = username
+        self.title("Ticket searching")
+        self.geometry("960x600")
+        self.resizable(False, False)
+        self.protocol("WM_DELETE_WINDOW", self.on_close)
         
+        self.search_interface()
+    
+    def on_close(self):
+        if self.main.mydb.is_connected():
+            self.main.mydb.close()
+        self.destroy()
+        self.main.destroy()  
+        
+    def back2(self):
+        self.destroy()
+        self.main.deiconify()
+        
+    def search_interface(self):
+        back_btn = tk.Button(
+            self, text="BACK", font=('Arial', 10), borderwidth=1, width=7, height=1,
+            command= self.back2
+        )
+        back_btn.place(x=30, y=30)
+        
+        
+        ### Searchbar with effect
+        self.search_var = tk.StringVar()
+        search_entry = tk.Entry(
+            self, textvariable=self.search_var, font=('Arial', 12), justify="center", relief='solid',fg ="grey",
+            borderwidth=1, width=50
+        )
+        search_entry.place(x=230, y=65, width=500, height=30)
+        search_entry.insert(0, "Type in phone number or ticketID")
+        
+        search_entry.bind('<FocusIn>', self.on_entry_click)
+        search_entry.bind('<FocusOut>', self.on_focusout)
+        search_entry.bind('<Return>', lambda event: self.search_ticket())
+        
+        search_btn = tk.Button(
+            self, text="Search", font=('Arial', 10), bg='#007bff', fg='white', relief='solid',
+            padx=20, pady=5, command= self.search_ticket
+        )
+        search_btn.place(x=750, y=65, width=80, height=30)
+        
+        # Result panel outer frame
+        self.canvas_frame = tk.Frame(self)
+        self.canvas_frame.place(x=79.5, y=130, width=800, height=320)
+        
+        # Outer canvas
+        self.canvas = tk.Canvas(self.canvas_frame, bg='white')
+        self.scrollbar_x = tk.Scrollbar(self.canvas_frame, orient='horizontal', command=self.canvas.xview)
+        self.scrollbar_y = tk.Scrollbar(self.canvas_frame, orient='vertical', command=self.canvas.yview)
+        self.canvas.configure(xscrollcommand=self.scrollbar_x.set, yscrollcommand=self.scrollbar_y.set)
+        
+        self.scrollbar_x.pack(side='bottom', fill='x')
+        self.scrollbar_y.pack(side='right', fill='y')
+        self.canvas.pack(side='left', fill='both', expand=True)
+        
+        # Container canvas
+        self.scrollable_container = tk.Frame(self.canvas, bg='white')
+        self.canvas.create_window((0, 0), window=self.scrollable_container, anchor='nw')
+        
+        # Bind scroll region update
+        self.scrollable_container.bind(
+            "<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        )
+        
+        # Headings frame
+        self.heading_frame = tk.Frame(self.scrollable_container, bg='white')
+        self.heading_frame.grid(row=0, column=0, sticky='nw')
+        
+        headings = ["Ticket ID", "Customer Name", "Phone", "Movie", "Room", "Date", "Seat", "Time", "Price (VND)", "Payment Time", "Action"]
+        for col, title in enumerate(headings):
+            lbl = tk.Label(self.heading_frame, text=title, font=('Arial', 10, 'bold'),
+                           borderwidth=1, relief='solid', width=17)
+            lbl.grid(row=0, column=col, sticky='nsew')
+        
+        # Results frame
+        self.inner_frame = tk.Frame(self.scrollable_container, bg='white')
+        self.inner_frame.grid(row=1, column=0, sticky='nw')
+        self.rows = []
+    
+            
+    def on_entry_click(self, event):
+        if self.search_var.get() == "Type in phone number or ticketID":
+            self.search_var.set("")
+            event.widget.config(fg='black')
+
+    def on_focusout(self, event):
+        if self.search_var.get() == "":
+            self.search_var.set("Type in phone number or ticketID")
+            event.widget.config(fg='grey')
+            
+    def clear_rows(self):
+        for widgets in self.rows:
+            for w in widgets:
+                w.destroy()
+        self.rows.clear()
+        
+        
+    # Find customer's ticket through input
+    def search_ticket(self):
+        user_input = self.search_var.get().strip()
+        try:
+            mycursor= self.main.mydb.cursor()
+            query = """
+            SELECT t.TicketID, c.CustomerName, c.PhoneNumber, m.MovieTitle, r.RoomName, se.SeatNumber, 
+            s.ScreeningDate, s.ScreeningTime, s.Price, p.PayTime
+            FROM Tickets t
+            JOIN Customers c ON t.CustomerID = c.CustomerID
+            JOIN Screenings s ON t.ScreeningID = s.ScreeningID
+            JOIN Seats se ON t.SeatID = se.SeatID
+            JOIN Movies m ON s.MovieID = m.MovieID
+            JOIN Cinemarooms r ON s.RoomID = r.RoomID
+            JOIN Payments p ON t.TicketID = p.TicketID
+            WHERE {}
+            """
+            if user_input.isdigit():
+                condition = "t.TicketID = %s OR c.PhoneNumber = %s"
+            
+            final_query = query.format(condition)
+            mycursor.execute(final_query, (user_input, user_input))
+            results = mycursor.fetchall()
+            print(results)
+            self.display_results(results)
+        
+        except Error as e:
+            print(f"Database error: {e}")
+            return []
+        except Exception as e:
+            print(f"Error: {e}")
+            self.display_results([])
+
+        if not results:
+            print("No tickets found for this phone number.")
+            self.display_results([])
+
+        
+    def display_results(self, results):
+        self.clear_rows()
+        
+        if not results:
+            # Show "No results found" message
+            no_result_lbl = tk.Label(self.inner_frame, text="No tickets found", 
+                                   font=('Arial', 12), bg='white', fg='gray')
+            no_result_lbl.grid(row=0, column=0, columnspan=11, pady=20)
+            self.rows.append([no_result_lbl])
+            return
+        
+        for i, row in enumerate(results):
+            widgets = []
+            ticket_id, customer_name, phone_number, movie, room, seat_num, date, time, price, pay_time = row
+            
+            # Check if action should be available
+            show_action = self.check_action_conditions(row)
+            values = [ticket_id, customer_name, phone_number, movie, room, date, seat_num, time, price, pay_time, 'Cancel' if show_action else '']
+
+            for j, val in enumerate(values):
+                lbl = tk.Label(self.inner_frame, text=val, font=('Arial', 10), bg='white', 
+                             relief='solid', borderwidth=1, width=17)
+                lbl.grid(row=i, column=j, sticky='nsew')  # Fixed: use self.inner_frame
+
+                # Make Cancel button clickable
+                if j == len(values)-1 and val == 'Cancel':
+                    lbl.bind("<Button-1>", lambda e, tid=ticket_id: self.handle_action_click(tid))
+                    lbl.config(fg='red', cursor='hand2')
+
+                widgets.append(lbl)
+            self.rows.append(widgets)
+        
+        # Update canvas scroll region after adding content
+        self.after(10, lambda: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+
+    def check_action_conditions(self, ticket_data):
+        try:
+            ticket_date = datetime.strptime(str(ticket_data[6]), '%Y-%m-%d').date()
+            today = datetime.now().date()
+            return ticket_date >= today
+        except (ValueError, IndexError) as e:
+            print(f"Date parsing error: {e}")
+            return False
+
+    def handle_action_click(self, ticket_id):
+        # TODO
+        result = tk.messagebox.askyesno("Confirm Cancellation", 
+                                      f"Are you sure you want to cancel ticket {ticket_id}?")
+        if result:
+            try:
+                mycursor = self.main.mydb.cursor()
+                delete_payment = "DELETE FROM Payments WHERE TicketID = %s"
+                mycursor.execute(delete_payment, (ticket_id,))
+                
+                delete_ticket = "DELETE FROM Tickets WHERE TicketID = %s"
+                mycursor.execute(delete_ticket, (ticket_id,))
+
+                self.main.mydb.commit()
+    
+                if mycursor.rowcount > 0:
+                    messagebox.showinfo("Success", f"Ticket {ticket_id} successfully cancelled.")
+                else:
+                    messagebox.showwarning("Warning", f"Ticket {ticket_id} was not found or already deleted.")
+    
+                self.search_ticket()  # Refresh the results
+    
+            except Error as e:
+                messagebox.showerror("Database Error", f"An error occurred: {e}")
+                
 class Movie(tk.Toplevel):
     def __init__(self, main, username):
         super().__init__(main)
@@ -177,7 +389,7 @@ class Movie(tk.Toplevel):
             try:
                 img = Image.open(img_path).resize((180, 230))
                 img = ImageTk.PhotoImage(img)
-            except Exception as e:
+            except:
                 img = None
 
             btn = tk.Button(grid_frame, image=img, width=180, height=230,
@@ -237,7 +449,7 @@ class Movie(tk.Toplevel):
         tree.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        now = datetime.now()
+
         cursor = self.main.mydb.cursor()
 
         query = """
@@ -322,10 +534,10 @@ class SeatBooking(tk.Toplevel):
         self.main_interface()
         
     def on_close(self):
-        if self.db and self.db.is_connected():
+        if self.db.is_connected():
             self.db.close()
         self.destroy()
-        self.parent.destroy()    
+        self.parent.destroy()
     def query_booked_seats(self):
         cursor = self.db.cursor()
         query = """
@@ -360,7 +572,7 @@ class SeatBooking(tk.Toplevel):
         left_frame.place(x=100,y=350, anchor="w")
         
         #Main interface
-        #TODO: back command
+
         back_button = tk.Button(self, text="BACK", font=("Arial", 10), width=7, height=1, command=self.log_out_2)
         back_button.place(x=30, y=30)
         
@@ -370,7 +582,7 @@ class SeatBooking(tk.Toplevel):
                                          bg="#4CAF50", fg="white",
                                          width=10, height=1,
                                          state="disabled",
-                                         command=self.go_to_payment) #Transition to payment screen #TODO: continue command
+                                         command=self.go_to_payment)
         self.continue_button.place(x=1050,y=350)
         ###Screen label
         screen_label = tk.Label(top_frame, text = "Screen", width=30, font = ("Bold",30), justify = "center", bg = "light grey")
@@ -472,8 +684,17 @@ class CustomerFormApp(tk.Toplevel):
         self.selected_seats = selected_seats
         self.total_price = total_price
         self.amount_due_var = StringVar(value=f"{self.total_price:.2f}")
+        self.protocol("WM_DELETE_WINDOW", self.on_close)
         self.create_widgets()
-
+    
+    def back4(self):
+        self.destroy()
+        self.parent.deiconify()
+    def on_close(self):
+        if self.parent.db.is_connected():
+            self.parent.db.close()
+        self.destroy()
+        self.parent.destroy()  
 
 #wot da hell
     def validate_day_input(self, text):
@@ -606,11 +827,11 @@ class CustomerFormApp(tk.Toplevel):
                     messagebox.showerror("Database Error", f"Error: {seat_err}")
                     continue
                     # Insert payments for each ticket
-                for ticket_id in ticket_ids:
-                    cursor.execute("""
-                        INSERT INTO Payments (CustomerID, ScreeningID, TicketID, Amount, PayTime)
-                        VALUES (%s, %s, %s, %s, NOW())
-                    """, (customer_id, screening_id, ticket_id, amount_due/len(ticket_ids)))
+            for ticket_id in ticket_ids:
+                cursor.execute("""
+                    INSERT INTO Payments (CustomerID, ScreeningID, TicketID, Amount, PayTime)
+                    VALUES (%s, %s, %s, %s, NOW())
+                """, (customer_id, screening_id, ticket_id, amount_due/len(ticket_ids)))
             self.mydb.commit()
             messagebox.showinfo("Success", f"{len(ticket_ids)} ticket(s) booked successfully!")
                 
@@ -624,7 +845,7 @@ class CustomerFormApp(tk.Toplevel):
     def create_widgets(self):
         #Confirm button
         Button(self, text="Confirm", font=("Arial", 10), width=15, command=self.confirm_form).place(x=330, y=420)
-        Button(self, text="BACK", font=("Arial", 10), width=7).place(x=10, y=10)
+        Button(self, text="BACK", font=("Arial", 10), width=7, command= self.back4).place(x=10, y=10)
         
         #Customer name
         Label(self, text="Customer Name:").place(x=80, y=100)
