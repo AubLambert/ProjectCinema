@@ -90,8 +90,10 @@ class staff_ui(tk.Toplevel):
     def on_close(self):
         if self.main.mydb.is_connected():
             self.main.mydb.close()
-        self.destroy()
-        self.main.destroy()
+        root = self
+        while root.master is not None:
+            root = root.master
+        root.destroy()
 
     def logout(self):
         if self.main.mydb.is_connected():
@@ -142,7 +144,6 @@ class staff_ui(tk.Toplevel):
                                   justify="center", state = dashboard_state,
                                   command=self.go_to_report)
         dashboard_btn.pack(pady=10)
-
 #Ticket search
 class ticket_searching(tk.Toplevel):
     def __init__(self, main,username):
@@ -159,8 +160,10 @@ class ticket_searching(tk.Toplevel):
     def on_close(self):
         if self.main.mydb.is_connected():
             self.main.mydb.close()
-        self.destroy()
-        self.main.destroy()  
+        root = self
+        while root.master is not None:
+            root = root.master
+        root.destroy()
         
     def back2(self):
         self.destroy()
@@ -366,20 +369,23 @@ class Movie(tk.Toplevel):
         self.username = username
         self.movie_image_map = {}
         self.protocol("WM_DELETE_WINDOW", self.on_close)
+        self.resizable(False, False)
         self.movie_ui()
 
     def on_close(self):
         if self.main.mydb.is_connected():
             self.main.mydb.close()
-        self.destroy()
-        self.main.destroy()
+        root = self
+        while root.master is not None:
+            root = root.master
+        root.destroy()
 
     def back1(self):
         self.destroy()
-        self.main.deiconify()
+        staff_ui(self.main, self.username)
 
     def movie_ui(self):
-        tk.Button(self, text="Logout", font=10, width=7, command=self.back1).grid(row=0, column=0, sticky="nw", padx=20, pady=20)
+        tk.Button(self, text="Back", font=10, width=7, command=self.back1).grid(row=0, column=0, sticky="nw", padx=20, pady=20)
 
         titles = ["John Wick", "Edge of Tomorrow", "Interstellar", "Coco", "Parasite", "The Revenant"]
         images = [
@@ -415,6 +421,8 @@ class Movie(tk.Toplevel):
             self.timeslot_window.destroy()
 
         self.timeslot_window = tk.Toplevel(self)
+        self.timeslot_window.transient()
+        self.timeslot_window.grab_set()
         self.timeslot_window.title(f"Select Timeslot - {movie_title}")
 
         screen_width = self.winfo_screenwidth()
@@ -425,6 +433,7 @@ class Movie(tk.Toplevel):
         y_pos = int((screen_height - win_height) / 2)
         self.timeslot_window.geometry(f"{win_width}x{win_height}+{x_pos}+{y_pos}")
         self.timeslot_window.configure(bg="white")
+        self.timeslot_window.resizable(False, False)
 
         tk.Button(self.timeslot_window, text="BACK", command=self.timeslot_window.destroy).place(x=15, y=15)
 
@@ -448,8 +457,8 @@ class Movie(tk.Toplevel):
         tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=10)
 
         style = ttk.Style()
-        style.configure("Treeview.Heading", font=("Helvetica", 13, "bold"))
-        style.configure("Treeview", font=("Helvetica", 12), rowheight=36)
+        style.configure("Custom.Treeview.Heading", font=("Helvetica", 13, "bold"))
+        style.configure("Custom.Treeview", font=("Helvetica", 12), rowheight=36)
 
         for col in columns:
             tree.heading(col, text=col)
@@ -547,8 +556,10 @@ class SeatBooking(tk.Toplevel):
     def on_close(self):
         if self.db.is_connected():
             self.db.close()
-        self.destroy()
-        self.parent.destroy()
+        root = self
+        while root.master is not None:
+            root = root.master
+        root.destroy()
     def query_booked_seats(self):
         cursor = self.db.cursor()
         query = """
@@ -682,10 +693,11 @@ class SeatBooking(tk.Toplevel):
            
     def go_to_payment(self):
         self.withdraw()
-        CustomerFormApp(self, self.db, self.screening_id, self.selected_seats, self.total_price)
+        CustomerFormApp(self, self.db, self.screening_id, self.selected_seats, self.total_price, self.parent, self)
 
 class CustomerFormApp(tk.Toplevel):
-    def __init__(self, parent, db_connection, screening_id, selected_seats, total_price):
+    def __init__(self, parent, db_connection, screening_id, selected_seats, total_price, movie_window,
+                 seat_booking_window):
         super().__init__(parent)
         self.parent = parent
         self.title("Customer Form")
@@ -694,31 +706,40 @@ class CustomerFormApp(tk.Toplevel):
         self.screening_id = screening_id
         self.selected_seats = selected_seats
         self.total_price = total_price
+        self.movie_window = movie_window
+        self.seat_booking_window = seat_booking_window
         self.amount_due_var = StringVar(value=f"{self.total_price:.2f}")
         self.protocol("WM_DELETE_WINDOW", self.on_close)
         self.resizable(False, False)
         self.create_widgets()
-    
+
     def back4(self):
         self.destroy()
         self.parent.deiconify()
-    def on_close(self):
-        if self.parent.db.is_connected():
-            self.parent.db.close()
-        self.destroy()
-        self.parent.destroy()  
 
-#wot da hell
+    def on_close(self):
+        if self.mydb.is_connected():
+            self.mydb.close()
+        root = self
+        while root.master is not None:
+            root = root.master
+        root.destroy()
+
     def validate_day_input(self, text):
         return text == "" or (text.isdigit() and len(text) <= 2 and (len(text) < 2 or 1 <= int(text) <= 31))
+
     def validate_month_input(self, text):
         return text == "" or (text.isdigit() and len(text) <= 2 and (len(text) < 2 or 1 <= int(text) <= 12))
+
     def validate_year_input(self, text):
         return text == "" or (text.isdigit() and len(text) <= 4)
+
     def validate_name_input(self, text):
         return text == "" or all(char.isalpha() or char.isspace() for char in text)
+
     def validate_phone_input(self, text):
         return text == "" or text.isdigit()
+
     def calculate_amount_due(self, *args):
         try:
             price = float(self.total_price)
@@ -731,23 +752,26 @@ class CustomerFormApp(tk.Toplevel):
                 self.discount_entry.insert(0, str(discount))
 
             amount_due = price * (100 - discount) / 100
-            self.amount_due_var.set(f"{amount_due:.2f}")
-        except ValueError:
-            self.amount_due_var.set(f"{self.total_price:.2f}")
+            rounded_amount = round(amount_due)
 
+            formatted_amount = f"{rounded_amount:,}".replace(",", "X").replace(".", ",").replace("X", ".") + "₫"
+            self.amount_due_var.set(formatted_amount)
+        except ValueError:
+            fallback_amount = round(float(self.total_price))
+            formatted_fallback = f"{fallback_amount:,}".replace(",", "X").replace(".", ",").replace("X", ".") + "₫"
+            self.amount_due_var.set(formatted_fallback)
 
     def confirm_form(self):
         customer_name = self.customer_name_entry.get().strip()
         phone = self.phone_entry.get().strip()
+
         day = self.day_entry.get().strip()
         month = self.month_entry.get().strip()
         year = self.year_entry.get().strip()
         dob = f"{year}-{month.zfill(2)}-{day.zfill(2)}" if day and month and year else None
         screening_id = self.screening_id
-        amount_due = float(self.amount_due_var.get())
-        
-
-        self.book_ticket_and_insert_payment(customer_name, dob, phone, screening_id, self.selected_seats, amount_due)
+        amount_str = self.amount_due_var.get().replace("₫", "").replace(".", "").replace(",", ".").strip()
+        amount_due = float(amount_str)
 
         if not customer_name or not phone:
             self.error_label.config(text="Please enter customer name and phone number!")
@@ -755,6 +779,11 @@ class CustomerFormApp(tk.Toplevel):
         else:
             self.error_label.config(text="")
 
+        self.book_ticket_and_insert_payment(customer_name, dob, phone, screening_id, self.selected_seats, amount_due)
+
+        self.destroy()
+        self.seat_booking_window.destroy()
+        self.movie_window.deiconify()
 
     def check_auto_discount(self, event=None):
         try:
@@ -775,7 +804,6 @@ class CustomerFormApp(tk.Toplevel):
                 discount = 20
             elif is_birthday:
                 discount = 15
-
             else:
                 discount = None
 
@@ -794,12 +822,11 @@ class CustomerFormApp(tk.Toplevel):
             self.discount_entry.delete(0, tk.END)
             self.discount_entry.config(state="readonly")
             self.calculate_amount_due()
-            
+
     def book_ticket_and_insert_payment(self, customer_name, dob, phone, screening_id, selected_seats, amount_due):
         try:
             cursor = self.mydb.cursor()
             ticket_ids = []
-            #Query customer
             cursor.execute("SELECT CustomerID FROM Customers WHERE PhoneNumber = %s", (phone,))
             customer_id_result = cursor.fetchone()
             if customer_id_result:
@@ -811,42 +838,42 @@ class CustomerFormApp(tk.Toplevel):
                 )
                 cursor.execute("SELECT LAST_INSERT_ID()")
                 customer_id = cursor.fetchone()[0]
-            #Query room
+
             cursor.execute("SELECT RoomID FROM Screenings WHERE ScreeningID = %s", (screening_id,))
             room_id_result = cursor.fetchone()
             if not room_id_result:
                 messagebox.showerror("Error", "Screening does not exist")
                 return
-            room_id = room_id_result[0]  
-              
+            room_id = room_id_result[0]
+
             for seat in selected_seats.keys():
                 try:
                     cursor.execute("SELECT SeatID FROM Seats WHERE RoomID = %s AND SeatNumber = %s", (room_id, seat))
                     seat_id_result = cursor.fetchone()
-                    seat_id = seat_id_result[0]    
-                    
+                    seat_id = seat_id_result[0]
+
                     cursor.execute("INSERT INTO Tickets(CustomerID,ScreeningID,SeatID) VALUES(%s,%s,%s)",
-                    (customer_id,screening_id,seat_id))
-    
+                                   (customer_id, screening_id, seat_id))
+
                     cursor.execute("""
-                       SELECT TicketID FROM Tickets 
-                       WHERE CustomerID = %s AND ScreeningID = %s AND SeatID = %s
-                       ORDER BY TicketID DESC LIMIT 1
-                   """, (customer_id, screening_id, seat_id))
+                        SELECT TicketID FROM Tickets 
+                        WHERE CustomerID = %s AND ScreeningID = %s AND SeatID = %s
+                        ORDER BY TicketID DESC LIMIT 1
+                    """, (customer_id, screening_id, seat_id))
                     ticket_id = cursor.fetchone()[0]
                     ticket_ids.append(ticket_id)
                 except mysql.connector.Error as seat_err:
                     messagebox.showerror("Database Error", f"Error: {seat_err}")
                     continue
-                    # Insert payments for each ticket
+
             for ticket_id in ticket_ids:
                 cursor.execute("""
                     INSERT INTO Payments (CustomerID, ScreeningID, TicketID, Amount, PayTime)
                     VALUES (%s, %s, %s, %s, NOW())
-                """, (customer_id, screening_id, ticket_id, amount_due/len(ticket_ids)))
+                """, (customer_id, screening_id, ticket_id, amount_due / len(ticket_ids)))
             self.mydb.commit()
             messagebox.showinfo("Success", f"{len(ticket_ids)} ticket(s) booked successfully!")
-                
+
         except mysql.connector.Error as err:
             if cursor:
                 messagebox.showerror("Database Error", f"Error: {err}")
@@ -854,45 +881,56 @@ class CustomerFormApp(tk.Toplevel):
             if cursor:
                 cursor.close()
 
+    def check_inputs(self, event=None):
+        name = self.customer_name_entry.get().strip()
+        phone = self.phone_entry.get().strip()
+        if name and phone:
+            self.confirm_button.config(state="normal")
+        else:
+            self.confirm_button.config(state="disabled")
+
     def create_widgets(self):
-        #Confirm button
-        Button(self, text="Confirm", font=("Arial", 10), width=15, command=self.confirm_form).place(x=330, y=420)
-        Button(self, text="BACK", font=("Arial", 10), width=7, command= self.back4).place(x=10, y=10)
-        
-        #Customer name
+        # Confirm button
+        self.confirm_button = Button(self, text="Confirm", font=("Arial", 10), width=15, command=self.confirm_form,
+                                     state="disabled")
+        self.confirm_button.place(x=330, y=420)
+        Button(self, text="BACK", font=("Arial", 10), width=7, command=self.back4).place(x=10, y=10)
+
+        # Customer name
         Label(self, text="Customer Name:").place(x=80, y=100)
         vcmd_name = (self.register(self.validate_name_input), '%P')
-        self.customer_name_entry = tk.Entry(self, width=40, validate='key', validatecommand = vcmd_name)
+        self.customer_name_entry = tk.Entry(self, width=40, validate='key', validatecommand=vcmd_name)
         self.customer_name_entry.place(x=250, y=100)
-        
-        #DOB
+
+        # DOB
         Label(self, text="DOB - optional:").place(x=80, y=150)
-        self.day_entry = tk.Entry(self, width=3, validate='key', validatecommand=(self.register(self.validate_day_input), '%P'))
+        self.day_entry = tk.Entry(self, width=3, validate='key',
+                                  validatecommand=(self.register(self.validate_day_input), '%P'))
         self.day_entry.place(x=250, y=150)
         Label(self, text="/").place(x=275, y=150)
-        self.month_entry = tk.Entry(self, width=3, validate='key', validatecommand=(self.register(self.validate_month_input), '%P'))
+        self.month_entry = tk.Entry(self, width=3, validate='key',
+                                    validatecommand=(self.register(self.validate_month_input), '%P'))
         self.month_entry.place(x=285, y=150)
         Label(self, text="/").place(x=310, y=150)
-        self.year_entry = tk.Entry(self, width=5, validate='key', validatecommand=(self.register(self.validate_year_input), '%P'))
+        self.year_entry = tk.Entry(self, width=5, validate='key',
+                                   validatecommand=(self.register(self.validate_year_input), '%P'))
         self.year_entry.place(x=320, y=150)
-        
-        #Phone number
+
+        # Phone number
         Label(self, text="Phone Number:").place(x=80, y=200)
         vcmd_phone = (self.register(self.validate_phone_input), '%P')
-        self.phone_entry = tk.Entry(self, width=40, validate='key', validatecommand = vcmd_phone)
+        self.phone_entry = tk.Entry(self, width=40, validate='key', validatecommand=vcmd_phone)
         self.phone_entry.place(x=250, y=200)
-        
 
-        #Seat number
+        # Seat number
         Label(self, text="Seat Number:").place(x=80, y=250)
         self.seat_entry = tk.Entry(self, width=20, state="normal")
         self.seat_entry.place(x=250, y=250)
         seats_str = ", ".join(self.selected_seats.keys())
         self.seat_entry.insert(0, seats_str)
         self.seat_entry.configure(state="readonly")
-        
-        
-        #Price        
+
+        # Price
         Label(self, text="Price (VND):").place(x=500, y=260)
         self.price_entry = tk.Entry(self, width=20, state="normal")
         self.price_entry.place(x=610, y=260)
@@ -904,12 +942,16 @@ class CustomerFormApp(tk.Toplevel):
         self.discount_entry.place(x=610, y=300)
 
         Label(self, text="Amount Due (VND):").place(x=500, y=340)
-        Label(self, textvariable=self.amount_due_var, width=18, relief="sunken", bg="white", anchor="w").place(x=610, y=340)
+        self.amount_due_entry = tk.Entry(self, width=20, state="readonly", textvariable=self.amount_due_var)
+        self.amount_due_entry.place(x=610, y=340)
 
         self.price_entry.bind('<KeyRelease>', self.calculate_amount_due)
         self.discount_entry.bind('<KeyRelease>', self.calculate_amount_due)
         self.price_entry.bind('<FocusOut>', self.calculate_amount_due)
         self.discount_entry.bind('<FocusOut>', self.calculate_amount_due)
+
+        self.customer_name_entry.bind('<KeyRelease>', self.check_inputs)
+        self.phone_entry.bind('<KeyRelease>', self.check_inputs)
 
         self.calculate_amount_due()
 
@@ -938,8 +980,6 @@ class Admin(tk.Toplevel):
         self.current_figure = None
         self.current_figure2 = None
         self.current_figure3 = None
-        for widget in self.winfo_children():
-            widget.destroy()
 
         self.tab_control = ttk.Notebook(self)
         self.tab_control.pack(expand=True, fill='both', padx=20, pady=20)
@@ -1192,8 +1232,10 @@ class Admin(tk.Toplevel):
     def on_close(self):
         if self.main.mydb and self.main.mydb.is_connected():
             self.main.mydb.close()
-        self.destroy()
-        self.main.destroy()
+        root = self
+        while root.master is not None:
+            root = root.master
+        root.destroy()
     def logout(self):
         self.main.mydb.close()
         self.destroy()
