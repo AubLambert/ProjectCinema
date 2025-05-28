@@ -1260,11 +1260,8 @@ class Admin(tk.Toplevel):
             root = root.master
         root.destroy()
     def logout(self):
-        self.main.mydb.close()
         self.destroy()
-        self.main.account_entry.delete(0, tk.END)
-        self.main.password_entry.delete(0, tk.END)
-        self.main.deiconify()
+        staff_ui(self.main, self.username)
     def hide_time_range_totalrevenue(self):
         self.revenue_daily_btn.pack_forget()
         self.revenue_monthly_btn.pack_forget()
