@@ -1032,7 +1032,10 @@ class Admin(tk.Toplevel):
 
                 #Left buttons
                 tk.Button(self.left_frame, text="Logout",width=20, command=self.logout).pack(pady=3,padx=5,side="bottom",ipady=10)
-                tk.Button(self.left_frame, text="Export as Excel\n(With PNG if available)", width=20, command=self.excel_export).pack(pady=3,padx=5,side="bottom",ipady=10)
+                tk.Button(self.left_frame, text="Export as Excel", width=20, command=self.excel_export).pack(
+                    pady=3, padx=5, side="bottom", ipady=10)
+                tk.Button(self.left_frame, text="Export chart,graph as PNG", width=20,
+                          command=self.png_export).pack(pady=3, padx=5, side="bottom", ipady=10)
                 tk.Button(self.left_frame, width=20,  text="Total Revenue",command=self.display_total_revenue).pack(pady=3, padx=5,ipady=10)
                 tk.Button(self.left_frame,width=20, text="Revenue Trends", command=self.display_revenue_sales_chart).pack(pady=3,padx=5,ipady=10)
                 tk.Button(self.left_frame, text="Total Ticket Sold", width=20,  command=self.display_ticket).pack(pady=3, padx=5,ipady=10)
@@ -1075,8 +1078,11 @@ class Admin(tk.Toplevel):
                 tk.Button(self.left_frame, text="Weekday Performance", width=20, command=self.day_performance).pack(pady=3, padx=5,ipady=10)
                 tk.Button(self.left_frame, text="Movie Format", width=20,
                           command=self.format_performance).pack(pady=3, padx=5,ipady=10)
-                tk.Button(self.left_frame, text="Export as Excel\n(With PNG if available)", width=20,
+                tk.Button(self.left_frame, text="Export as Excel", width=20,
                                               command=self.excel_export2).pack(pady=3, padx=5,ipady=10, side="bottom")
+                tk.Button(self.left_frame, text="Export chart,graph as PNG", width=20,
+                          command=self.png_export2).pack(pady=3, padx=5, side="bottom", ipady=10)
+
 
                 #Movies
                 self.last_14days = tk.Button(self.buttons_frame2, text="Last 14 days", width=20,command=self.display_movie14)
@@ -1125,8 +1131,10 @@ class Admin(tk.Toplevel):
                 tk.Button(self.left_frame, text="Genre By Age", width=20, command=self.display_age_genre).pack(pady=3, padx=5,ipady=10)
                 tk.Button(self.left_frame, text="Time Preference By Age", width=20,command=self.display_time_age).pack(pady=3, padx=5,ipady=10)
                 tk.Button(self.left_frame, text="Format Preference By Age", width=20,command=self.display_format_age).pack(pady=3, padx=5,ipady=10)
-                tk.Button(self.left_frame, text="Export as Excel\n(With PNG if available)", width=20,
+                tk.Button(self.left_frame, text="Export as Excel", width=20,
                                                command=self.excel_export3).pack(pady=3, padx=5,ipady=10, side="bottom")
+                tk.Button(self.left_frame, text="Export chart,graph as PNG", width=20,
+                          command=self.png_export3).pack(pady=3, padx=5, side="bottom", ipady=10)
 
                 #Age
                 self.age_90 = tk.Button(self.buttons_frame3, text="Last 90 days", width=20,
@@ -1189,8 +1197,21 @@ class Admin(tk.Toplevel):
         self.left_frame.update_idletasks()
         self.tab_control.update()
         self.update_idletasks()
+    def png_export(self):
+        if not hasattr(self, 'current_figure') or self.current_figure is None:
+            messagebox.showwarning("No Figure", "No image available to export.")
+            return
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".png",
+            filetypes=[("PNG Image", "*.png")],
+            title="Save as Image"
+        )
+
+        self.current_figure.savefig(file_path, dpi=300)
     def excel_export(self):
         if self.current_dataframe is None:
+            messagebox.showwarning("No Data", "No data available to export.")
             return
 
         file_path = filedialog.asksaveasfilename(
@@ -1198,20 +1219,11 @@ class Admin(tk.Toplevel):
             filetypes=[("Excel files", "*.xlsx")],
             title="Save as Excel"
         )
-        if file_path:
-            try:
 
-                self.current_dataframe.to_excel(file_path, index=False)
-
-
-                if hasattr(self, 'current_figure') and self.current_figure:
-                    image_path = os.path.splitext(file_path)[0] + ".png"
-                    self.current_figure.savefig(image_path, dpi=300)
-
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to export:\n{e}")
+        self.current_dataframe.to_excel(file_path, index=False)
     def excel_export2(self):
         if self.current_dataframe2 is None:
+            messagebox.showwarning("No Data", "No data available to export.")
             return
 
         file_path = filedialog.asksaveasfilename(
@@ -1219,19 +1231,35 @@ class Admin(tk.Toplevel):
             filetypes=[("Excel files", "*.xlsx")],
             title="Save as Excel"
         )
-        if file_path:
-            try:
 
-                self.current_dataframe2.to_excel(file_path, index=False)
+        self.current_dataframe2.to_excel(file_path, index=False)
+    def png_export2(self):
+        if not hasattr(self, 'current_figure') or self.current_figure2 is None:
+            messagebox.showwarning("No Figure", "No image available to export.")
+            return
 
-                if hasattr(self, 'current_figure') and self.current_figure2:
-                    image_path = os.path.splitext(file_path)[0] + ".png"
-                    self.current_figure2.savefig(image_path, dpi=300)
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".png",
+            filetypes=[("PNG Image", "*.png")],
+            title="Save as Image"
+        )
 
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to export:\n{e}")
+        self.current_figure2.savefig(file_path, dpi=300)
+    def png_export3(self):
+        if not hasattr(self, 'current_figure') or self.current_figure3 is None:
+            messagebox.showwarning("No Figure", "No image available to export.")
+            return
+
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".png",
+            filetypes=[("PNG Image", "*.png")],
+            title="Save as Image"
+        )
+
+        self.current_figure3.savefig(file_path, dpi=300)
     def excel_export3(self):
         if self.current_dataframe3 is None:
+            messagebox.showwarning("No Data", "No data available to export.")
             return
 
         file_path = filedialog.asksaveasfilename(
@@ -1239,17 +1267,10 @@ class Admin(tk.Toplevel):
             filetypes=[("Excel files", "*.xlsx")],
             title="Save as Excel"
         )
-        if file_path:
-            try:
 
-                self.current_dataframe3.to_excel(file_path, index=False)
+        self.current_dataframe3.to_excel(file_path, index=False)
 
-                if hasattr(self, 'current_figure') and self.current_figure3:
-                    image_path = os.path.splitext(file_path)[0] + ".png"
-                    self.current_figure3.savefig(image_path, dpi=300)
 
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to export:\n{e}")
     #DEF TAB1
     def on_close(self):
         if self.main.mydb and self.main.mydb.is_connected():
