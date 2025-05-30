@@ -73,7 +73,6 @@ class Liemora(tk.Tk):
                 database='cinema_management'
             )
             if self.mydb.is_connected():
-                messagebox.showinfo("Login Success", f"Welcome, {username}")
                 self.withdraw()
                 staff_ui(self, username)
             else:
