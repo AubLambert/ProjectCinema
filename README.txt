@@ -1,4 +1,4 @@
-##Option 1: CinemaGUI.exe
+## Option 1: CinemaGUI.exe
 
 -- CinemaGUI application --
 To be able to run CinemaGUI.exe smoothly, users are required to install the following files in sequence:
@@ -23,7 +23,7 @@ Use either "admin" or "ticket_clerk" account to login (login credentials can be 
 To automatically back up the database: Use the database_backup.bat file in our python folder (change the config to suit you) and use Task Scheduler (detailed guide vid:https://www.youtube.com/watch?v=xLOw7LeoBwo)
 
 
-##Option 2: CinemaGUI.py for source code inspection
+## Option 2: CinemaGUI.py for source code inspection
 
 -- CinemaGUI.py Python and SQL setup --
 To be able to operate CinemaGUI.py smoothly, users are required to install the following files in sequence:
@@ -47,3 +47,4 @@ ProjectCinema/
 
 
 Use either "admin" or "ticket_clerk" account to login (login credentials can be found in AssignRole_ControlAccess.sql file)
+
