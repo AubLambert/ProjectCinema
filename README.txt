@@ -1,5 +1,5 @@
 ## Option 1: CinemaGUI.exe
-Executable app can be found at: https://drive.google.com/drive/folders/1FzVOp4zyP3ZbNaE3qptblQQFEyYY4gN-?usp=drive_link
+Executable app and demo can be found at: https://drive.google.com/drive/folders/1FzVOp4zyP3ZbNaE3qptblQQFEyYY4gN-?usp=drive_link
 -- CinemaGUI application --
 To be able to run CinemaGUI.exe smoothly, users are required to install the following files in sequence:
 For SQL database:
@@ -47,5 +47,6 @@ ProjectCinema/
 
 
 Use either "admin" or "ticket_clerk" account to login (login credentials can be found in AssignRole_ControlAccess.sql file)
+
 
 
